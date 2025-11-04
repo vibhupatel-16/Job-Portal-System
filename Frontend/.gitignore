@@ -1,0 +1,11 @@
+.DS_*
+*.log
+logs
+**/*.backup.*
+**/*.back.*
+
+node_mnodules
+bower_components
+
+*.sublime*
+.vscode
