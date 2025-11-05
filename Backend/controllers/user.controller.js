@@ -2,11 +2,14 @@ import { User } from '../models/user.model.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// ---------------- REGISTER ----------------
 export const register = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, password, role } = req.body;
+    const file = req.file; // multer se aayega
 
+    console.log(fullname, email, phoneNumber, password, role, file?.filename);
+
+    // Validation: koi bhi field missing ho to error return karo
     if (!fullname || !email || !phoneNumber || !password || !role) {
       return res.status(400).json({
         message: "Something is missing",
@@ -26,13 +29,16 @@ export const register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user with file path (if available)
     await User.create({
       fullname,
       email,
       phoneNumber,
       password: hashedPassword,
-      role
+      role,
+      profile: {
+        resume: file ? file.path : "" // optional file handling
+      }
     });
 
     return res.status(201).json({
@@ -48,6 +54,7 @@ export const register = async (req, res) => {
     });
   }
 };
+
 
 // ---------------- LOGIN ----------------
 export const login = async (req, res) => {
