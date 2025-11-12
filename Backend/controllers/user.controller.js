@@ -152,17 +152,73 @@ export const logout = async (req, res) => {
 };
 
 // ---------------- UPDATE PROFILE ----------------
+// export const updateProfile = async (req, res) => {
+//   try {
+//     const { fullname, email, phoneNumber, bio, skills } = req.body;
+//     const file = req.file;
+
+   
+//     let skillsArray;
+//     if(skills){
+//   user.profile.skills = skills.split(",");
+
+//     }
+//     const userId = req.id; // middleware will set req.id
+//     let user = await User.findById(userId);
+
+//     if (!user) {
+//       return res.status(404).json({
+//         message: "User not found",
+//         success: false
+//       });
+//     }
+
+//     // Update user data
+
+//     if(fullname) user.fullname = fullname;
+//     if(email) user.email = email;
+//     if(phoneNumber) user.phoneNumber = phoneNumber;
+//     if(bio) user.profile.bio = bio;
+//     if(skills) user.profile.skillsArray = skillsArray;
+   
+
+//     if (file) {
+//       user.profile.resume = file.path; // if resume upload implemented
+//     }
+
+//     await user.save();
+
+//     const updatedUser = {
+//       _id: user._id,
+//       fullname: user.fullname,
+//       email: user.email,
+//       phoneNumber: user.phoneNumber,
+//       role: user.role,
+//       profile: user.profile
+//     };
+
+//     return res.status(200).json({
+//       message: "Profile updated successfully",
+//       user: updatedUser,
+//       success: true
+//     });
+
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({
+//       message: "Internal server error",
+//       success: false
+//     });
+//   }
+// };
+
+
 export const updateProfile = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, bio, skills } = req.body;
     const file = req.file;
 
-   
-    let skillsArray;
-    if(skills){
-        skillsArray = skills.split(",");
-    }
-    const userId = req.id; // middleware will set req.id
+    const userId = req.id; // middleware sets req.id
     let user = await User.findById(userId);
 
     if (!user) {
@@ -173,16 +229,14 @@ export const updateProfile = async (req, res) => {
     }
 
     // Update user data
-
-    if(fullname) user.fullname = fullname;
-    if(email) user.email = email;
-    if(phoneNumber) user.phoneNumber = phoneNumber;
-    if(bio) user.profile.bio = bio;
-    if(skills) user.profile.skillsArray
-   
+    if (fullname) user.fullname = fullname;
+    if (email) user.email = email;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (bio) user.profile.bio = bio;
+    if (skills) user.profile.skills = skills.split(",");
 
     if (file) {
-      user.profile.resume = file.path; // if resume upload implemented
+      user.profile.resume = file.path; // if resume uploaded
     }
 
     await user.save();
