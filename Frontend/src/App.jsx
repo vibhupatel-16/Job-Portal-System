@@ -7,6 +7,8 @@ import Jobs from "./components/Jobs";
 import Browse from "./components/Browse";
 import Profile from "./components/Profile";
 import JobDescription from "./components/JobDescription";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const appRouter = createBrowserRouter([
   {
@@ -20,6 +22,14 @@ const appRouter = createBrowserRouter([
     {
     path:"/signup",
     element:<Signup/>
+  },
+  {
+    path:"/forgot-password",
+    element:<ForgotPassword/>
+  },
+  {
+    path:"/reset-password/:token",
+    element:<ResetPassword/>
   },
    {
     path:"/jobs",
@@ -36,7 +46,8 @@ const appRouter = createBrowserRouter([
    {
     path:"/profile",
     element:<Profile/>
-   }
+   },
+
 
 ])
  function App() {

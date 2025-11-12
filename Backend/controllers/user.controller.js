@@ -216,7 +216,12 @@ export const logout = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, bio, skills } = req.body;
-    const file = req.file;
+    const file = req.file; // multer se uploaded file milti hai
+
+    // 🔹 Console me uploaded file details dikhana (debugging ke liye)
+    if (file) {
+      console.log("Uploaded Resume File Details:", file);
+    }
 
     const userId = req.id; // middleware sets req.id
     let user = await User.findById(userId);
@@ -228,42 +233,51 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    // Update user data
+    // 🔹 Update user fields
     if (fullname) user.fullname = fullname;
     if (email) user.email = email;
     if (phoneNumber) user.phoneNumber = phoneNumber;
     if (bio) user.profile.bio = bio;
     if (skills) user.profile.skills = skills.split(",");
 
+    // 🔹 If new resume uploaded — update path in DB
     if (file) {
-      user.profile.resume = file.path; // if resume uploaded
+      user.profile.resume = file.path; // store file path (like uploads/1731350588843.pdf)
+      user.profile.resumeName = file.originalname; // store original filename (resume.pdf)
     }
 
     await user.save();
 
+    // 🔹 Create response object for frontend
     const updatedUser = {
       _id: user._id,
       fullname: user.fullname,
       email: user.email,
       phoneNumber: user.phoneNumber,
       role: user.role,
-      profile: user.profile
+      profile: {
+        bio: user.profile.bio,
+        skills: user.profile.skills,
+        resume: user.profile.resume,
+        resumeName: user.profile.resumeName || null, // frontend ke liye readable file name
+      },
     };
 
     return res.status(200).json({
-      message: "Profile updated successfully",
+      message: "Profile updated successfully ✅",
       user: updatedUser,
       success: true
     });
 
   } catch (error) {
-    console.log(error);
+    console.log("Update profile error:", error);
     return res.status(500).json({
       message: "Internal server error",
       success: false
     });
   }
 };
+
 
 // ---------------- FORGOT PASSWORD ----------------
 export const forgotPassword = async (req, res) => {
@@ -274,69 +288,97 @@ export const forgotPassword = async (req, res) => {
       return res.status(400).json({ message: "Email is required", success: false });
     }
 
+    // 🔍 Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found", success: false });
     }
 
-    // Generate reset token
+    // 🎟️ Generate secure reset token
     const resetToken = crypto.randomBytes(20).toString("hex");
+
+    // 🔐 Store hashed token and expiry in DB
     user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
-    await user.save();
 
+    await user.save({ validateBeforeSave: false });
+
+    // 🌐 Create reset URL (frontend route)
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    const message = `You requested to reset your password.\n\nPlease click on this link to reset your password: ${resetUrl}\n\nIf you did not request this, please ignore this email.`;
+    // ✉️ Email content
+    const message = `
+      <h3>Hello ${user.fullname || "User"},</h3>
+      <p>You requested a password reset.</p>
+      <p>Click the link below to reset your password:</p>
+      <a href="${resetUrl}" target="_blank">${resetUrl}</a>
+      <p><b>Note:</b> This link will expire in 15 minutes.</p>
+    `;
 
+    // 📤 Send email via NodeMailer
     await sendEmail({
       email: user.email,
       subject: "Password Reset Request",
       message
     });
 
-    res.status(200).json({
-      message: "Reset link sent to your email",
+    return res.status(200).json({
+      message: "Reset link sent to your email!",
       success: true
     });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error", success: false });
+    console.error("Forgot password error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false
+    });
   }
 };
 
-// ---------------- RESET PASSWORD ----------------
+
+/// ---------------- RESET PASSWORD ----------------
 export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
 
+    if (!password) {
+      return res.status(400).json({ message: "Password is required", success: false });
+    }
+
+    // 🧩 Hash the token again to match the one in DB
     const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    // 🔍 Find user with valid token and non-expired link
     const user = await User.findOne({
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() }
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token", success: false });
+      return res.status(400).json({ message: "Invalid or expired reset token", success: false });
     }
 
-    if (!password) {
-      return res.status(400).json({ message: "Password is required", success: false });
-    }
-
-    // Hash new password
-    const bcrypt = await import("bcryptjs");
+    // 🔐 Hash and update new password
     const hashedPassword = await bcrypt.hash(password, 10);
-
     user.password = hashedPassword;
+
+    // 🧹 Clear reset fields
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+
     await user.save();
 
-    res.status(200).json({ message: "Password reset successful", success: true });
+    return res.status(200).json({
+      message: "Password reset successful! Please login again.",
+      success: true
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error", success: false });
+    console.error("Reset password error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false
+    });
   }
 };

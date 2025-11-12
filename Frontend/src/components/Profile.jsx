@@ -9,8 +9,8 @@ import AppliedJobTable from './AppliedJobTable'
 import UpdateProfileDialog from './UpdateProfileDialog'
 import { useSelector } from 'react-redux'
 
-const skills = ["Html", "Css", "Javascript", "React"];
-const isResume = true;
+// const skills = ["Html", "Css", "Javascript", "React"];
+// const isResume = true;
 const Profile = () => {
   const [open, setOpen] = useState(false);
   const {user} = useSelector(store=>store.auth)
@@ -55,17 +55,29 @@ const Profile = () => {
             </div>
            </div>
            <div className='grid w-full max-w-sm items-center gap-1.5'>
-            <Label className='text-md font-bold'>{user?.profile?.resume}</Label>
-             {
-                isResume ? <a target='blank' href='https://www.youtube.com/watch?v=v0_AT8zaLo8' className='text-blue-500 w-full hover:underline cursor-pointer'>Resume Link</a> : <span>NA</span>
-             }
-           </div>
-           <div className='max-w-4xl mx-auto bg-white rounded-2xl'>
+  <Label className='text-md font-bold'>Resume</Label>
+  {
+    user?.profile?.resume ? (
+      <a
+        target='_blank'
+        href={`http://localhost:8000/${user?.profile?.resume}`} // file path from backend
+        className='text-blue-500 w-full hover:underline cursor-pointer break-all'
+      >
+        📄 {user?.profile?.resumeOriginalName || "View Resume"}
+      </a>
+    ) : (
+      <span>NA</span>
+    )
+  }
+</div>
+
+           
+           <UpdateProfileDialog open={open} setOpen={setOpen}/>
+      </div>
+      <div className='max-w-4xl mx-auto bg-white rounded-2xl'>
             <h1 className='text-lg font-bold'>Applied Job</h1>
              <AppliedJobTable/>
            </div>
-           <UpdateProfileDialog open={open} setOpen={setOpen}/>
-      </div>
     </div>
   )
 }

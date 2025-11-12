@@ -142,7 +142,15 @@ const Signup = () => {
 
             }
            
-            <span className='text-sm content-center'>Already have an account?<Link to= "/login" className='text-blue-600'>Login</Link></span>
+           <div className='flex justify-center mt-2'>
+  <span className='text-sm text-center'>
+    Already have an account?{" "}
+    <Link to="/login" className='text-blue-600 hover:underline'>
+      Login
+    </Link>
+  </span>
+</div>
+
         </form>
       </div>
     </div>
