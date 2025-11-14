@@ -9,55 +9,70 @@ import Profile from "./components/Profile";
 import JobDescription from "./components/JobDescription";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import EmployerLogin from "./components/auth/EmployerLogin";
+import ErrorPage from "./pages/ErrorPage"; 
+import EmployerSignup from "./components/auth/EmployerSignup";
+import { useSelector } from "react-redux";
+import { useEffect } from "react";
+
 
 const appRouter = createBrowserRouter([
   {
-    path:"/",
-    element:<Home/>
-  },
-{
-    path:"/login",
-    element:<Login/>
-  },
-    {
-    path:"/signup",
-    element:<Signup/>
+    path: "/",
+    element: <Home />,
+    errorElement: <ErrorPage />, 
   },
   {
-    path:"/forgot-password",
-    element:<ForgotPassword/>
+    path: "/login",
+    element: <Login />,
   },
   {
-    path:"/reset-password/:token",
-    element:<ResetPassword/>
+    path: "/signup",
+    element: <Signup />,
   },
-   {
-    path:"/jobs",
-    element:<Jobs/>
-   },
-   {
-    path:"/description/:id",
-    element:<JobDescription/>
-   },
-   {
+  {
+    path: "/employer-login",
+    element: <EmployerLogin />,
+  },
+  {
+  path: "/employer-signup",
+  element: <EmployerSignup />
+},
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+  },
+  {
+    path: "/reset-password/:token",
+    element: <ResetPassword />,
+  },
+  {
+    path: "/jobs",
+    element: <Jobs />,
+  },
+  {
+    path: "/description/:id",
+    element: <JobDescription />,
+  },
+  {
     path: "/browse",
-    element:<Browse/>
-   },
-   {
-    path:"/profile",
-    element:<Profile/>
-   },
+    element: <Browse />,
+  },
+  {
+    path: "/profile",
+    element: <Profile />,
+  },
+]);
 
-
-])
- function App() {
-  return (
-   <>
-   <RouterProvider router={appRouter}/>
-
-   
+function App() {
   
-   </>
-  );
+  const {isLogin}=useSelector((state)=>state.auth)
+
+  useEffect(()=>{
+    console.log("is login value----> ",isLogin);
+    
+  },[isLogin])
+  return <RouterProvider router={appRouter} />;
 }
+
 export default App;

@@ -46,6 +46,7 @@ const UpdateProfileDialog = ({open, setOpen}) => {
             formData.append("file", input.file);
         }
         try {
+          setLoading(true)
   const res = await axios.post(`${USER_API_END_POINT}/profile/update`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
@@ -63,6 +64,9 @@ const UpdateProfileDialog = ({open, setOpen}) => {
 } catch (error) {
   console.log(error.response?.data || error.message);
   toast.error(error.response?.data?.message || "Something went wrong");
+}
+finally{
+  setLoading(false);
 }
 
 console.log("Updated input data:", input); // ✅ frontend form data check karo

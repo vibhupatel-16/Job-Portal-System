@@ -59,9 +59,83 @@ export const register = async (req, res) => {
 
 
 // ---------------- LOGIN ----------------
+// export const login = async (req, res) => {
+//   try {
+//     // console.log(req.body);
+//     const { email, password, role } = req.body;
+
+//     if (!email || !password || !role) {
+//       return res.status(400).json({
+//         message: "Something is missing",
+//         success: false
+//       });
+//     }
+
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(400).json({
+//         message: "Incorrect email or password",
+//         success: false
+//       });
+//     }
+
+//     // Check password
+//     const isPasswordMatch = await bcrypt.compare(password, user.password);
+//     if (!isPasswordMatch) {
+//       return res.status(400).json({
+//         message: "Incorrect email or password",
+//         success: false
+//       });
+//     }
+
+//     // Check role
+//     if (role !== user.role) {
+//       return res.status(400).json({
+//         message: "Account doesn't exist with current role",
+//         success: false
+//       });
+//     }
+
+//     // Create token
+//     const tokenData = {
+//       userId: user._id
+//     };
+//     const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '1d' });
+
+//     // Return user info (without password)
+//     const userData = {
+//       _id: user._id,
+//       fullname: user.fullname,
+//       email: user.email,
+//       phoneNumber: user.phoneNumber,
+//       role: user.role,
+//       profile: user.profile
+//     };
+
+//     return res.status(200)
+//       .cookie("token", token, {
+//         maxAge: 1 * 24 * 60 * 60 * 1000,
+//         httpOnly: true,
+//         sameSite: 'strict'
+//       })
+//       .json({
+//         message: `Welcome back ${user.fullname}`,
+//         user: userData,
+//         success: true
+//       });
+
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({
+//       message: "Internal server error",
+//       success: false
+//     });
+//   }
+// };
+
+
 export const login = async (req, res) => {
   try {
-    // console.log(req.body);
     const { email, password, role } = req.body;
 
     if (!email || !password || !role) {
@@ -79,7 +153,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Check password
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
       return res.status(400).json({
@@ -88,7 +161,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Check role
     if (role !== user.role) {
       return res.status(400).json({
         message: "Account doesn't exist with current role",
@@ -96,31 +168,31 @@ export const login = async (req, res) => {
       });
     }
 
-    // Create token
     const tokenData = {
-      userId: user._id
-    };
-    const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '1d' });
-
-    // Return user info (without password)
-    const userData = {
-      _id: user._id,
-      fullname: user.fullname,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      role: user.role,
-      profile: user.profile
+      userId: user._id,
+      role: user.role
     };
 
-    return res.status(200)
+    const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: "1d" });
+
+    return res
+      .status(200)
       .cookie("token", token, {
-        maxAge: 1 * 24 * 60 * 60 * 1000,
+        // expiresIn:"2d", 
         httpOnly: true,
-        sameSite: 'strict'
+        secure: true,                     
+        // sameSite: "none",                 
       })
       .json({
         message: `Welcome back ${user.fullname}`,
-        user: userData,
+        user: {
+          _id: user._id,
+          fullname: user.fullname,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          profile: user.profile
+        },
         success: true
       });
 
@@ -243,7 +315,8 @@ export const updateProfile = async (req, res) => {
     // 🔹 If new resume uploaded — update path in DB
     if (file) {
       user.profile.resume = file.path; // store file path (like uploads/1731350588843.pdf)
-      user.profile.resumeName = file.originalname; // store original filename (resume.pdf)
+      user.profile.resumeOriginalName = file.originalname;
+
     }
 
     await user.save();
@@ -264,7 +337,7 @@ export const updateProfile = async (req, res) => {
     };
 
     return res.status(200).json({
-      message: "Profile updated successfully ✅",
+      message: "Profile updated successfully ",
       user: updatedUser,
       success: true
     });
@@ -288,25 +361,25 @@ export const forgotPassword = async (req, res) => {
       return res.status(400).json({ message: "Email is required", success: false });
     }
 
-    // 🔍 Find user by email
+    //  Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found", success: false });
     }
 
-    // 🎟️ Generate secure reset token
+    //  Generate secure reset token
     const resetToken = crypto.randomBytes(20).toString("hex");
 
-    // 🔐 Store hashed token and expiry in DB
+    //  Store hashed token and expiry in DB
     user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
 
     await user.save({ validateBeforeSave: false });
 
-    // 🌐 Create reset URL (frontend route)
+    //  Create reset URL (frontend route)
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    // ✉️ Email content
+    // Email content
     const message = `
       <h3>Hello ${user.fullname || "User"},</h3>
       <p>You requested a password reset.</p>
@@ -315,7 +388,7 @@ export const forgotPassword = async (req, res) => {
       <p><b>Note:</b> This link will expire in 15 minutes.</p>
     `;
 
-    // 📤 Send email via NodeMailer
+    //  Send email via NodeMailer
     await sendEmail({
       email: user.email,
       subject: "Password Reset Request",
@@ -347,10 +420,10 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Password is required", success: false });
     }
 
-    // 🧩 Hash the token again to match the one in DB
+    //  Hash the token again to match the one in DB
     const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
 
-    // 🔍 Find user with valid token and non-expired link
+    //  Find user with valid token and non-expired link
     const user = await User.findOne({
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() }
@@ -360,11 +433,11 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired reset token", success: false });
     }
 
-    // 🔐 Hash and update new password
+    //  Hash and update new password
     const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
 
-    // 🧹 Clear reset fields
+    //  Clear reset fields
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
@@ -382,3 +455,6 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
+
+
+
