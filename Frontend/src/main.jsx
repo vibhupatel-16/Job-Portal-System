@@ -7,12 +7,19 @@ import { Provider } from 'react-redux'
 import store from './redux/store'
 import axios from 'axios'
 
+import {persistStore} from 'redux-persist'
+import {PersistGate} from 'redux-persist/integration/react'
+ const persistor  =persistStore(store)
+
 axios.defaults.withCredentials = true;
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={store}>
-      <App />
+      <PersistGate loading={null} persistor={persistor}>
+        <App />
+      </PersistGate>
+      
     </Provider>
     
     <Toaster/>

@@ -7,11 +7,9 @@ import sendEmail from '../utils/sendEmail.js';
 export const register = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, password, role } = req.body;
-    const file = req.file; // multer se aayega
+    const file = req.file;   // ye Cloudinary se aane wala profilePhoto hai
 
-    // console.log(fullname, email, phoneNumber, password, role, file?.filename);
-
-    // Validation: koi bhi field missing ho to error return karo
+    // Validation
     if (!fullname || !email || !phoneNumber || !password || !role) {
       return res.status(400).json({
         message: "Something is missing",
@@ -19,7 +17,7 @@ export const register = async (req, res) => {
       });
     }
 
-    // Check if user already exists
+    // Existing user check
     let existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -28,10 +26,10 @@ export const register = async (req, res) => {
       });
     }
 
-    // Hash password
+    // Password hash
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with file path (if available)
+    // User create WITHOUT touching other profile fields
     await User.create({
       fullname,
       email,
@@ -39,7 +37,7 @@ export const register = async (req, res) => {
       password: hashedPassword,
       role,
       profile: {
-        resume: file ? file.path : "" // optional file handling
+        profilePhoto: file ? file.path : ""   // ✔️ only photo update
       }
     });
 
@@ -56,6 +54,7 @@ export const register = async (req, res) => {
     });
   }
 };
+
 
 
 // ---------------- LOGIN ----------------
@@ -178,10 +177,10 @@ export const login = async (req, res) => {
     return res
       .status(200)
       .cookie("token", token, {
-        // expiresIn:"2d", 
-        httpOnly: true,
-        secure: true,                     
-        // sameSite: "none",                 
+       httpOnly: true,
+    secure: false,         // localhost MUST be false
+    sameSite: "lax",       // perfect for dev environment
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),                
       })
       .json({
         message: `Welcome back ${user.fullname}`,
@@ -288,14 +287,9 @@ export const logout = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, bio, skills } = req.body;
-    const file = req.file; // multer se uploaded file milti hai
+    const file = req.file; // Cloudinary file
 
-    // 🔹 Console me uploaded file details dikhana (debugging ke liye)
-    if (file) {
-      console.log("Uploaded Resume File Details:", file);
-    }
-
-    const userId = req.id; // middleware sets req.id
+    const userId = req.id;
     let user = await User.findById(userId);
 
     if (!user) {
@@ -305,23 +299,21 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    // 🔹 Update user fields
+    // 🔹 Update user basic details
     if (fullname) user.fullname = fullname;
     if (email) user.email = email;
     if (phoneNumber) user.phoneNumber = phoneNumber;
     if (bio) user.profile.bio = bio;
     if (skills) user.profile.skills = skills.split(",");
 
-    // 🔹 If new resume uploaded — update path in DB
+    // 🔹 If resume uploaded → Save Cloudinary URL
     if (file) {
-      user.profile.resume = file.path; // store file path (like uploads/1731350588843.pdf)
-      user.profile.resumeOriginalName = file.originalname;
-
+      user.profile.resume = file.path;          // Cloudinary file URL
+      user.profile.resumeOriginalName = file.originalname; 
     }
 
     await user.save();
 
-    // 🔹 Create response object for frontend
     const updatedUser = {
       _id: user._id,
       fullname: user.fullname,
@@ -331,13 +323,13 @@ export const updateProfile = async (req, res) => {
       profile: {
         bio: user.profile.bio,
         skills: user.profile.skills,
-        resume: user.profile.resume,
-        resumeName: user.profile.resumeName || null, // frontend ke liye readable file name
-      },
+        resume: user.profile.resume,                 // ← Correct Cloudinary resume URL
+        resumeOriginalName: user.profile.resumeOriginalName
+      }
     };
 
     return res.status(200).json({
-      message: "Profile updated successfully ",
+      message: "Profile updated successfully",
       user: updatedUser,
       success: true
     });

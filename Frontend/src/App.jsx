@@ -14,6 +14,7 @@ import ErrorPage from "./pages/ErrorPage";
 import EmployerSignup from "./components/auth/EmployerSignup";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
+import Companies from "./components/Employer/Companies";
 
 
 const appRouter = createBrowserRouter([
@@ -62,6 +63,10 @@ const appRouter = createBrowserRouter([
     path: "/profile",
     element: <Profile />,
   },
+  {
+    path:"/employer/companies",
+    element:<Companies/>
+  }
 ]);
 
 function App() {

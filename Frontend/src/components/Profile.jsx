@@ -21,7 +21,7 @@ const Profile = () => {
         <div className='flex justify-between'>
             <div className='flex items-center gap-4'>
             <Avatar className= "h-24 w-24">
-            <AvatarImage src="https://tse4.mm.bing.net/th/id/OIP.gACuT28NqAzpSrdFK9eLpgHaHa?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" alt="profile">
+            <AvatarImage src="{user?.profile?.profilePhoto}" alt="profile">
             
             </AvatarImage>
             
@@ -60,7 +60,8 @@ const Profile = () => {
     user?.profile?.resume ? (
       <a
         target='_blank'
-        href={`http://localhost:8000/${user?.profile?.resume}`} // file path from backend
+        href={user?.profile?.resume}
+ // file path from backend
         className='text-blue-500 w-full hover:underline cursor-pointer break-all'
       >
         📄 {user?.profile?.resumeOriginalName || "View Resume"}

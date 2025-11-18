@@ -14,13 +14,13 @@ const UpdateProfileDialog = ({open, setOpen}) => {
     const [loading, setLoading] = useState(false);
     const {user} = useSelector(store=> store.auth);
 
-    const [input, setInput] = useState({
+const [input, setInput] = useState({
   fullname: user?.fullname || "",
   email: user?.email || "",
   phoneNumber: user?.phoneNumber || "",
   bio: user?.profile?.bio || "",
   skills: user?.profile?.skills?.join(", ") || "",
-  file: user?.profile?.resume || null
+  file: null
 });
 
     const dispatch = useDispatch();

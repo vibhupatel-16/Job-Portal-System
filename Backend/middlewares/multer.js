@@ -1,17 +1,19 @@
 import multer from "multer";
-import path from "path";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../utils/cloudinary.js";
 
-// 🔹 Step 1: Storage define karo
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // "uploads" folder me file save hogi
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    // Unique filename banayenge — jaise: 1698778451256.png
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
+// Cloudinary Storage Config
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: "jobportal_uploads/profile_photos", // subfolder
+      allowed_formats: ["jpg", "jpeg", "png"],
+      resource_type: "auto", // allow images
+      public_id: `${Date.now()}-${file.originalname.split('.')[0]}` // unique file name
+    };
+  }
 });
 
-// 🔹 Step 2: Export the upload middleware
+// Multer middleware for single file
 export const singleUpload = multer({ storage }).single("file");

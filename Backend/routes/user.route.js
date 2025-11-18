@@ -47,4 +47,12 @@ router.get("/admin/panel",
     });
   }
 );
+
+router.get("/me", isAuthenticated, (req, res) => {
+  return res.status(200).json({
+    success: true,
+    user: req.user  // req.user isAuthenticated middleware me set hoga
+  });
+});
+
 export default router;
