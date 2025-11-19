@@ -15,6 +15,8 @@ import EmployerSignup from "./components/auth/EmployerSignup";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import Companies from "./components/Employer/Companies";
+import CompanyCreate from "./components/Employer/CompanyCreate";
+import CompanySetup from "./components/Employer/CompanySetup";
 
 
 const appRouter = createBrowserRouter([
@@ -66,7 +68,15 @@ const appRouter = createBrowserRouter([
   {
     path:"/employer/companies",
     element:<Companies/>
-  }
+  },
+    {
+    path:"/employer/companies/create",
+    element:<CompanyCreate/>
+  },
+  {
+    path:"/employer/companies/:id",
+    element:<CompanySetup/>
+  },
 ]);
 
 function App() {
