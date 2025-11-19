@@ -6,17 +6,17 @@ import LatestJobs from './LatestJobs'
 import Footer from './Footer'
 import useGetAllJobs from './hooks/useGetAllJobs'
 import { useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+// import { useNavigate } from 'react-router-dom'
 
 function Home() {
   useGetAllJobs();
   const {user} = useSelector(store=>store.auth);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   useEffect(()=>{
-    if(user.role === "employer"){
-      navigate("/employer/companies");
-    }
-
+    // if(user.role === "employer"){
+    //   navigate("/employer/companies");
+    // }
+   
   },[])
   return (
     <div>

@@ -5,7 +5,7 @@ const isAuthenticated = async (req, res, next) => {
   try {
     // 1️⃣ Token get from cookie or authorization header
     let token = req.cookies?.token;
-    console.log("token is---> ",token);
+    // console.log("token is---> ",token);
     
     
 
