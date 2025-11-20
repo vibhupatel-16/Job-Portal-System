@@ -17,6 +17,8 @@ import { useEffect } from "react";
 import Companies from "./components/Employer/Companies";
 import CompanyCreate from "./components/Employer/CompanyCreate";
 import CompanySetup from "./components/Employer/CompanySetup";
+import EmployerJobs from "./components/Employer/EmployerJobs";
+import PostJob from "./components/Employer/PostJob";
 
 
 const appRouter = createBrowserRouter([
@@ -77,6 +79,14 @@ const appRouter = createBrowserRouter([
     path:"/employer/companies/:id",
     element:<CompanySetup/>
   },
+  {
+    path:"/employer/jobs",
+    element:<EmployerJobs/>
+  },
+  {
+    path:"/employer/jobs/create",
+    element:<PostJob/>
+  }
 ]);
 
 function App() {
