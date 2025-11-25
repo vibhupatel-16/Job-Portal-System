@@ -6,20 +6,27 @@ import cloudinary from "../utils/cloudinary.js";
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
-    // 🔹 If route contains "/company", store in company folder
+
     const isCompanyRoute = req.originalUrl.includes("company");
+    const isProfileUpdate = req.originalUrl.includes("profile/update");
 
     return {
       folder: isCompanyRoute
         ? "jobportal_uploads/company_logos"
         : "jobportal_uploads/profile_photos",
 
-      allowed_formats: ["jpg", "jpeg", "png"],
-      resource_type: "auto",
+      // 🔥 FIX: Allow PDF ONLY during profile/update request
+      allowed_formats: isProfileUpdate
+        ? ["jpg", "jpeg", "png", "pdf"]   // resume support added
+        : ["jpg", "jpeg", "png"],        // rest same as before
+
+      // 🔥 PDFs require this:
+      resource_type: isProfileUpdate ? "raw" : "auto",
+
       public_id: `${Date.now()}-${file.originalname.split(".")[0]}`
     };
   }
 });
 
-// Ek hi upload middleware for all
+// Ek hi upload middleware
 export const singleUpload = multer({ storage }).single("file");

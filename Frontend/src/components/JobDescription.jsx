@@ -118,8 +118,12 @@ const JobDescription = () => {
           Description: <span className='pl-4 font-normal text-gray-800'>{singleJob?.description}</span>
         </h1>
 
+         <h1 className='font-bold my-1'>
+          Requirements: <span className='pl-4 font-normal text-gray-800'>{singleJob?.requirements}</span>
+        </h1>
+        
         <h1 className='font-bold my-1'>
-          Experience: <span className='pl-4 font-normal text-gray-800'>{singleJob?.experienceLevel}</span>
+          Experience: <span className='pl-4 font-normal text-gray-800'>{singleJob?.experienceLevel}Years</span>
         </h1>
 
         <h1 className='font-bold my-1'>
