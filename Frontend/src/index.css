@@ -66,3 +66,29 @@
     @apply bg-background text-foreground;
   }
 }
+.rich-text-content ul {
+  list-style-type: disc !important;
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.rich-text-content ol {
+  list-style-type: decimal !important;
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.rich-text-content h1, 
+.rich-text-content h2,
+.rich-text-content h3  {
+  font-weight: bold;
+  margin: 12px 0;
+}
+
+.rich-text-content img {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px; /* icons ke beech gap */
+  width: 32px;       /* optional: icon size fix */
+  height: auto;
+}
