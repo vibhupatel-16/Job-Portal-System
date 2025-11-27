@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from '../shared/Navbar';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -11,11 +11,21 @@ import {
 import axios from 'axios';
 import { JOB_API_END_POINT } from '@/utils/constant';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2, Briefcase, Building2, MapPin, FileText } from 'lucide-react';
 import RichTextEditor from '../RichTextEditor';
 
-const PostJob = () => {
+const JobSetup = () => {
+  const params = useParams();
+  const navigate = useNavigate();
+
+  const { companies } = useSelector(store => store.company);
+  const { allJobs } = useSelector(store => store.job);
+
+  const jobData = allJobs?.find(j => j._id === params.id);
+
+  const [loading, setLoading] = useState(false);
+
   const [input, setInput] = useState({
     title: "",
     description: "",
@@ -28,9 +38,21 @@ const PostJob = () => {
     companyId: ""
   });
 
-  const { companies } = useSelector(store => store.company);
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (jobData) {
+      setInput({
+        title: jobData.title || "",
+        description: jobData.description || "",
+        requirements: jobData.requirements?.join(", ") || "",
+        salary: jobData.salary || "",
+        location: jobData.location || "",
+        jobType: jobData.jobType || "",
+        experience: jobData.experienceLevel || "",
+        position: jobData.position || "",
+        companyId: jobData.company?._id || ""
+      });
+    }
+  }, [jobData]);
 
   const changeEventHandler = (e) => {
     const { name, value } = e.target;
@@ -38,30 +60,31 @@ const PostJob = () => {
   };
 
   const selectChangeHandler = (value) => {
-    const selectedCompany = companies.find(company => company.name.toLowerCase() === value);
+    const selectedCompany = companies.find(c => c.name.toLowerCase() === value);
     setInput({ ...input, companyId: selectedCompany?._id || "" });
   };
 
   const submitHandler = async (e) => {
     e.preventDefault();
-    const { title, description, requirements, salary, location, jobType, experience, position, companyId } = input;
-
-    if (!title || !description || !requirements || !salary || !location || !jobType || !experience || !position || !companyId) {
-      return toast.error("Please fill all required fields");
-    }
 
     try {
       setLoading(true);
-      const res = await axios.post(`${JOB_API_END_POINT}/post`, input, {
-        headers: { "Content-Type": "application/json" },
-        withCredentials: true
-      });
+
+      const res = await axios.put(
+        `${JOB_API_END_POINT}/update/${params.id}`,
+        input,
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true
+        }
+      );
 
       if (res.data.success) {
-        toast.success(res.data.message);
-        navigate('/employer/jobs');
+        toast.success("Job updated successfully");
+        navigate("/employer/jobs");
       }
     } catch (error) {
+      console.log(error);
       toast.error(error.response?.data?.message || "Server Error");
     } finally {
       setLoading(false);
@@ -76,20 +99,19 @@ const PostJob = () => {
 
         {/* HEADER */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Post a New Job</h1>
-          <p className="text-gray-500 mt-1">Create a job listing and attract the best candidates.</p>
+          <h1 className="text-3xl font-bold text-gray-900">Update Job</h1>
+          <p className="text-gray-500 mt-1">Modify job details and update listing.</p>
         </div>
 
         <form onSubmit={submitHandler} className="space-y-10">
 
-          {/* BASIC DETAILS CARD */}
+          {/* BASIC DETAILS */}
           <div className="bg-[#FAFAFA] p-6 rounded-xl border shadow-sm">
             <h2 className="font-semibold text-lg flex items-center gap-2 mb-4">
               <Briefcase size={18} className="text-purple-600" /> Job Details
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
               <div>
                 <Label>Job Title</Label>
                 <Input
@@ -97,7 +119,6 @@ const PostJob = () => {
                   name="title"
                   value={input.title}
                   onChange={changeEventHandler}
-                  placeholder="Software Developer, UI Designer..."
                   className="mt-1 h-11 rounded-lg"
                 />
               </div>
@@ -109,7 +130,6 @@ const PostJob = () => {
                   name="jobType"
                   value={input.jobType}
                   onChange={changeEventHandler}
-                  placeholder="Full-time, Remote, Internship..."
                   className="mt-1 h-11 rounded-lg"
                 />
               </div>
@@ -121,7 +141,6 @@ const PostJob = () => {
                   name="experience"
                   value={input.experience}
                   onChange={changeEventHandler}
-                  placeholder="0-1 Yrs, 2-5 Yrs..."
                   className="mt-1 h-11 rounded-lg"
                 />
               </div>
@@ -133,18 +152,16 @@ const PostJob = () => {
                   name="position"
                   value={input.position}
                   onChange={changeEventHandler}
-                  placeholder="1, 2, 3..."
                   className="mt-1 h-11 rounded-lg"
                 />
               </div>
-
             </div>
           </div>
 
-          {/* COMPANY CARD */}
+          {/* COMPANY */}
           <div className="bg-[#FAFAFA] p-6 rounded-xl border shadow-sm">
             <h2 className="font-semibold text-lg flex items-center gap-2 mb-4">
-              <Building2 size={18} className="text-purple-600" /> Company Information
+              <Building2 size={18} className="text-purple-600" /> Company
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -152,13 +169,17 @@ const PostJob = () => {
               <div>
                 <Label>Company</Label>
                 <Select onValueChange={selectChangeHandler}>
-                  <SelectTrigger className="w-full mt-1 h-11 rounded-lg">
+                  <SelectTrigger className="mt-1 h-11 rounded-lg">
                     <SelectValue placeholder="Select Company" />
                   </SelectTrigger>
+
                   <SelectContent>
                     <SelectGroup>
                       {companies.map(company => (
-                        <SelectItem key={company._id} value={company.name.toLowerCase()}>
+                        <SelectItem
+                          key={company._id}
+                          value={company.name.toLowerCase()}
+                        >
                           {company.name}
                         </SelectItem>
                       ))}
@@ -174,7 +195,6 @@ const PostJob = () => {
                   name="location"
                   value={input.location}
                   onChange={changeEventHandler}
-                  placeholder="Ahmedabad, Remote..."
                   className="mt-1 h-11 rounded-lg"
                 />
               </div>
@@ -182,29 +202,28 @@ const PostJob = () => {
             </div>
           </div>
 
-          {/* SALARY CARD */}
+          {/* SALARY */}
           <div className="bg-[#FAFAFA] p-6 rounded-xl border shadow-sm">
             <h2 className="font-semibold text-lg flex items-center gap-2 mb-4">
-              <MapPin size={18} className="text-purple-600" /> Salary & Compensation
+              <MapPin size={18} className="text-purple-600" /> Salary
             </h2>
 
             <div className="w-full md:w-1/2">
-              <Label>Salary (LPA)</Label>
+              <Label>Salary</Label>
               <Input
                 type="text"
                 name="salary"
                 value={input.salary}
                 onChange={changeEventHandler}
-                placeholder="3 LPA - 10 LPA"
                 className="mt-1 h-11 rounded-lg"
               />
             </div>
           </div>
 
-          {/* DESCRIPTION CARD */}
+          {/* DESCRIPTION */}
           <div className="bg-[#FAFAFA] p-6 rounded-xl border shadow-sm">
             <h2 className="font-semibold text-lg flex items-center gap-2 mb-4">
-              <FileText size={18} className="text-purple-600" /> Job Description
+              <FileText size={18} className="text-purple-600" /> Description
             </h2>
 
             <Label>Description</Label>
@@ -220,18 +239,18 @@ const PostJob = () => {
             />
           </div>
 
-          {/* SUBMIT BUTTON */}
+          {/* SUBMIT */}
           {loading ? (
             <Button className="w-full h-11 text-lg">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Please Wait
+              Updating...
             </Button>
           ) : (
             <Button
               type="submit"
               className="w-full h-12 text-lg rounded-xl bg-[#6A38C2] hover:bg-[#4f1ea5]"
             >
-              Post New Job
+              Update Job
             </Button>
           )}
 
@@ -241,4 +260,4 @@ const PostJob = () => {
   );
 };
 
-export default PostJob;
+export default JobSetup;

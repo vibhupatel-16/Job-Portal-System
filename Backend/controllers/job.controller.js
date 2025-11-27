@@ -111,3 +111,58 @@ export const getAdminJobs = async(req, res)=>{
 
     }
 }
+
+// UPDATE JOB
+export const updateJob = async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    const userId = req.id;
+
+    const { title, description, requirements, salary, location, jobType, experience, position, companyId } = req.body;
+    // console.log(req.body);
+    // Validation
+    if (!title || !description || !requirements || !salary || !location || !jobType || !experience || !position || !companyId) {
+      return res.status(400).json({
+        message: "Please fill all fields",
+        success: false,
+      });
+    }
+
+    const updatedJob = await Job.findOneAndUpdate(
+      { _id: jobId, created_by: userId },  // only admin can update own posted job
+      {
+        title,
+        description,
+        requirements: requirements.split(","), 
+        salary: Number(salary),
+        location,
+        jobType,
+        experienceLevel: experience,
+        position,
+        company: companyId,
+      },
+      { new: true }
+    );
+
+    if (!updatedJob) {
+      return res.status(404).json({
+        message: "Job not found",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Job updated successfully",
+      job: updatedJob,
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server error",
+      success: false,
+    });
+  }
+};
+
+

@@ -1,9 +1,9 @@
-import React from 'react';
-import { Badge } from './ui/badge';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { Badge } from "./ui/badge";
+import { useNavigate } from "react-router-dom";
 
-// Function to strip HTML and get short text
-const getShortText = (html, maxLength = 150) => {
+// Utility: Strip HTML & shorten text
+const getShortText = (html, maxLength = 120) => {
   const div = document.createElement("div");
   div.innerHTML = html || "";
   const text = div.textContent || div.innerText || "";
@@ -12,35 +12,53 @@ const getShortText = (html, maxLength = 150) => {
 
 function LatestJobCards({ job }) {
   const navigate = useNavigate();
+
   return (
-    <div onClick={()=>{navigate(`/description/${job._id}`)}} className='p-5 rounded-md shadow-md bg-white border-gray-100 cursor-pointer hover:shadow-lg transition'>
-      
+    <div
+      onClick={() => navigate(`/description/${job._id}`)}
+      className="
+        p-6 rounded-xl 
+        shadow-md 
+        bg-white/80 backdrop-blur-lg 
+        border border-gray-200 
+        cursor-pointer 
+        hover:shadow-xl 
+        hover:scale-[1.02] 
+        transition-all duration-300
+      "
+    >
       {/* Company Name */}
       <div>
-        <h1 className='font-medium text-lg'>{job?.company?.name}</h1>
-        <p className='text-sm text-gray-500'>India</p>
+        <h1 className="font-semibold text-xl text-gray-900">{job?.company?.name}</h1>
+        <p className="text-sm text-gray-500 mt-1">India</p>
       </div>
 
-      {/* Title */}
-      <div>
-        <h1 className='font-bold text-lg my-2'>{job?.title}</h1>
+      {/* Job Title */}
+      <div className="mt-4">
+        <h1 className="font-bold text-lg text-[#6A38C2]">{job?.title}</h1>
 
-        {/* Shortened Description */}
-        <p className='text-sm text-gray-600'>
+        <p className="text-sm text-gray-600 mt-2 leading-relaxed">
           {getShortText(job?.description)}
         </p>
 
-        {/* Shortened Requirements */}
-        <p className='text-sm text-gray-600 mt-1'>
+        <p className="text-sm text-gray-600 mt-1 leading-relaxed">
           {getShortText(job?.requirements)}
         </p>
       </div>
 
       {/* Badges */}
-      <div className='flex items-center gap-2 mt-4'>
-        <Badge className='text-blue-700 font-bold' variant="ghost">{job?.position}Postion</Badge>
-        <Badge className='text-[#292929] font-bold' variant="ghost">{job?.jobType}</Badge>
-        <Badge className='text-[#7209b7] font-bold' variant="ghost">{job?.salary} LPA</Badge>
+      <div className="flex flex-wrap items-center gap-2 mt-5">
+        <Badge className="bg-blue-50 text-blue-700 border-blue-200 shadow-sm">
+          {job?.position} Positions
+        </Badge>
+
+        <Badge className="bg-purple-50 text-purple-700 border-purple-200 shadow-sm">
+          {job?.jobType}
+        </Badge>
+
+        <Badge className="bg-green-50 text-green-700 border-green-200 shadow-sm">
+          {job?.salary} LPA
+        </Badge>
       </div>
     </div>
   );

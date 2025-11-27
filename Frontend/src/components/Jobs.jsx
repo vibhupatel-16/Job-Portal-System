@@ -10,7 +10,7 @@ const Jobs = () => {
 
   return (
     <div>
-        <Navbar/>
+        {/* <Navbar/> */}
         
         <div className='max-w-7xl mx-auto mt-5'>
             <div className='flex gap-5'>

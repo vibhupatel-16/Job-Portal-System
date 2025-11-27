@@ -1,107 +1,60 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Navbar from "./components/shared/Navbar";
+import Layout from "./components/Layout";
+
+import Home from "./components/Home";
 import Login from "./components/auth/Login";
 import Signup from "./components/auth/Signup";
-import Home from "./components/Home";
 import Jobs from "./components/Jobs";
 import Browse from "./components/Browse";
 import Profile from "./components/Profile";
 import JobDescription from "./components/JobDescription";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+
+// Employer
 import EmployerLogin from "./components/auth/EmployerLogin";
-import ErrorPage from "./pages/ErrorPage"; 
 import EmployerSignup from "./components/auth/EmployerSignup";
-import { useSelector } from "react-redux";
-import { useEffect } from "react";
 import Companies from "./components/Employer/Companies";
 import CompanyCreate from "./components/Employer/CompanyCreate";
 import CompanySetup from "./components/Employer/CompanySetup";
 import EmployerJobs from "./components/Employer/EmployerJobs";
 import PostJob from "./components/Employer/PostJob";
 import Applicants from "./components/Employer/Applicants";
+import JobSetup from "./components/Employer/JobSetup";
 
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ErrorPage from "./pages/ErrorPage";
 
 const appRouter = createBrowserRouter([
   {
     path: "/",
-    element: <Home />,
-    errorElement: <ErrorPage />, 
+    element: <Layout />,     // ⭐ WRAP ALL ROUTES INSIDE LAYOUT
+    errorElement: <ErrorPage />,
+    children: [
+      { path: "/", element: <Home /> },
+      { path: "/login", element: <Login /> },
+      { path: "/signup", element: <Signup /> },
+      { path: "/employer-login", element: <EmployerLogin /> },
+      { path: "/employer-signup", element: <EmployerSignup /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/reset-password/:token", element: <ResetPassword /> },
+      { path: "/jobs", element: <Jobs /> },
+      { path: "/description/:id", element: <JobDescription /> },
+      { path: "/browse", element: <Browse /> },
+      { path: "/profile", element: <Profile /> },
+
+      // Employer Routes
+      { path: "/employer/companies", element: <Companies /> },
+      { path: "/employer/companies/create", element: <CompanyCreate /> },
+      { path: "/employer/companies/:id", element: <CompanySetup /> },
+      { path: "/employer/jobs", element: <EmployerJobs /> },
+      { path: "/employer/jobs/create", element: <PostJob /> },
+      { path: "/employer/jobs/:id/applicants", element: <Applicants /> },
+      { path: "/employer/jobs/:id", element: <JobSetup /> },
+    ],
   },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
-  {
-    path: "/employer-login",
-    element: <EmployerLogin />,
-  },
-  {
-  path: "/employer-signup",
-  element: <EmployerSignup />
-},
-  {
-    path: "/forgot-password",
-    element: <ForgotPassword />,
-  },
-  {
-    path: "/reset-password/:token",
-    element: <ResetPassword />,
-  },
-  {
-    path: "/jobs",
-    element: <Jobs />,
-  },
-  {
-    path: "/description/:id",
-    element: <JobDescription />,
-  },
-  {
-    path: "/browse",
-    element: <Browse />,
-  },
-  {
-    path: "/profile",
-    element: <Profile />,
-  },
-  {
-    path:"/employer/companies",
-    element:<Companies/>
-  },
-    {
-    path:"/employer/companies/create",
-    element:<CompanyCreate/>
-  },
-  {
-    path:"/employer/companies/:id",
-    element:<CompanySetup/>
-  },
-  {
-    path:"/employer/jobs",
-    element:<EmployerJobs/>
-  },
-  {
-    path:"/employer/jobs/create",
-    element:<PostJob/>
-  },
-  {
-    path:"/employer/jobs/:id/applicants",
-    element:<Applicants/>
-  }
 ]);
 
 function App() {
-  
-  const {isLogin}=useSelector((state)=>state.auth)
-
-  useEffect(()=>{
-    console.log("is login value----> ",isLogin);
-    
-  },[isLogin])
   return <RouterProvider router={appRouter} />;
 }
 

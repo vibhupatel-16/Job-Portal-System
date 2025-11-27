@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom'
 
 const EmployerJobTable = () => {
 
-    const { companies, searchCompanyByText } = useSelector(store => store.company); // default empty array
+    // const { companies, searchCompanyByText } = useSelector(store => store.company); // default empty array
     const {allEmployerJobs, searchJobByText} = useSelector(store=>(store.job));
     const [ filterJobs, setFilterJobs] = useState(allEmployerJobs);
     const navigate = useNavigate();

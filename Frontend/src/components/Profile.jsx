@@ -17,7 +17,7 @@ const Profile = () => {
 
   return (
     <div className='min-h-screen bg-gray-100'>
-      <Navbar />
+      {/* <Navbar /> */}
 
       {/* TOP PROFILE CARD */}
       <div className='max-w-5xl mx-auto bg-white rounded-2xl shadow-md mt-10 p-8 border border-gray-200'>
