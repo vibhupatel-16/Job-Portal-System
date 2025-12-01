@@ -133,7 +133,7 @@ export const updateJob = async (req, res) => {
       {
         title,
         description,
-        requirements: requirements.split(","), 
+        requirements: requirements.split(",")|| "", 
         salary: Number(salary),
         location,
         jobType,

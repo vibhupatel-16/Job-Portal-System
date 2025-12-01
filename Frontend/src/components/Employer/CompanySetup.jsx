@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../shared/Navbar';
 import { Button } from '../ui/button';
-import { ArrowLeft, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import axios from 'axios';
 import { COMPANY_API_END_POINT } from '@/utils/constant';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import useGetCompanyById from '../hooks/useGetCompanyById';
+import { setSingleCompany } from '@/redux/companySlice'; // Redux action to update company
 
 const CompanySetup = () => {
   const params = useParams();
+  const dispatch = useDispatch();
   useGetCompanyById(params.id);
 
   const [input, setInput] = useState({
@@ -27,15 +29,18 @@ const CompanySetup = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Handle input change
   const changeEventHandler = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
   };
 
+  // Handle file selection
   const changeFileHandler = (e) => {
     const file = e.target.files?.[0];
     setInput({ ...input, file });
   };
 
+  // Submit updated company
   const submitHandler = async (e) => {
     e.preventDefault();
 
@@ -59,24 +64,29 @@ const CompanySetup = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
+        // Update Redux state with new company data
+        dispatch(setSingleCompany(res.data.company));
         navigate("/employer/companies");
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Server Error");
     } finally {
       setLoading(false);
     }
   };
 
+  // Sync input state with singleCompany from Redux
   useEffect(() => {
-    setInput({
-      name: singleCompany.name || "",
-      description: singleCompany.description || "",
-      website: singleCompany.website || "",
-      location: singleCompany.location || "",
-      file: null,
-    });
+    if (singleCompany) {
+      setInput({
+        name: singleCompany.name || "",
+        description: singleCompany.description || "",
+        website: singleCompany.website || "",
+        location: singleCompany.location || "",
+        file: null,
+      });
+    }
   }, [singleCompany]);
 
   return (
@@ -84,7 +94,6 @@ const CompanySetup = () => {
       {/* <Navbar /> */}
 
       <div className="max-w-3xl mx-auto mt-12 p-6">
-        {/* CARD */}
         <div className="bg-white shadow-xl border rounded-2xl p-10">
 
           {/* Top Header */}
@@ -162,14 +171,20 @@ const CompanySetup = () => {
                     className="cursor-pointer h-11 rounded-xl shadow-sm"
                   />
 
-                  {/* Show preview if selected */}
-                  {input.file && (
+                  {/* Preview: show new file if selected, otherwise current logo */}
+                  {input.file ? (
                     <img
                       src={URL.createObjectURL(input.file)}
                       alt="preview"
                       className="w-14 h-14 rounded-xl object-cover border shadow-sm"
                     />
-                  )}
+                  ) : singleCompany?.logo ? (
+                    <img
+                      src={`${singleCompany.logo}?t=${new Date().getTime()}`}
+                      alt="Company Logo"
+                      className="w-14 h-14 rounded-xl object-cover border shadow-sm"
+                    />
+                  ) : null}
                 </div>
               </div>
 

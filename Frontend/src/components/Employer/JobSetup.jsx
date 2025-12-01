@@ -38,21 +38,22 @@ const JobSetup = () => {
     companyId: ""
   });
 
-  useEffect(() => {
-    if (jobData) {
-      setInput({
-        title: jobData.title || "",
-        description: jobData.description || "",
-        requirements: jobData.requirements?.join(", ") || "",
-        salary: jobData.salary || "",
-        location: jobData.location || "",
-        jobType: jobData.jobType || "",
-        experience: jobData.experienceLevel || "",
-        position: jobData.position || "",
-        companyId: jobData.company?._id || ""
-      });
-    }
-  }, [jobData]);
+useEffect(() => {
+  if (jobData) {
+    setInput({
+      title: jobData.title || "",
+      description: jobData.description || "",
+      requirements: jobData.requirements?.join("<br>") || "",
+      salary: jobData.salary || "",
+      location: jobData.location || "",
+      jobType: jobData.jobType || "",
+      experience: jobData.experienceLevel || "",
+      position: jobData.position || "",
+      companyId: jobData.company?._id || ""
+    });
+  }
+}, [jobData]);
+
 
   const changeEventHandler = (e) => {
     const { name, value } = e.target;
@@ -65,31 +66,37 @@ const JobSetup = () => {
   };
 
   const submitHandler = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      setLoading(true);
+  try {
+    const formattedData = {
+      ...input,
+      requirements: input.requirements
+        .split("<br>")
+        .map(r => r.trim())
+        .filter(r => r !== "")
+    };
 
-      const res = await axios.put(
-        `${JOB_API_END_POINT}/update/${params.id}`,
-        input,
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true
-        }
-      );
-
-      if (res.data.success) {
-        toast.success("Job updated successfully");
-        navigate("/employer/jobs");
+    const res = await axios.put(
+      `${JOB_API_END_POINT}/update/${params.id}`,
+      formattedData,
+      {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response?.data?.message || "Server Error");
-    } finally {
-      setLoading(false);
+    );
+
+    if (res.data.success) {
+      toast.success("Job updated successfully");
+      navigate("/employer/jobs");
     }
-  };
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Server Error");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="bg-[#F8F9FC] min-h-screen pb-20">

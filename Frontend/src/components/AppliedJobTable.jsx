@@ -31,7 +31,7 @@ const AppliedJobTable = () => {
                   
                   {/* DATE */}
                   <TableCell>
-                    {appliedJob?.createdAt?.split("T")[0] || "N/A"}
+                    {appliedJob?.createdAt.split("T")[0].split("-").reverse().join("-") || "N/A"}
                   </TableCell>
 
                   {/* JOB TITLE – SAFE */}

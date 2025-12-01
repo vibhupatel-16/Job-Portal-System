@@ -2,11 +2,10 @@ import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import cloudinary from "../utils/cloudinary.js";
 
-// Cloudinary Storage Config (Dynamic Folder)
+// Cloudinary Storage Config
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
-
     const isCompanyRoute = req.originalUrl.includes("company");
     const isProfileUpdate = req.originalUrl.includes("profile/update");
 
@@ -15,12 +14,10 @@ const storage = new CloudinaryStorage({
         ? "jobportal_uploads/company_logos"
         : "jobportal_uploads/profile_photos",
 
-      // 🔥 FIX: Allow PDF ONLY during profile/update request
       allowed_formats: isProfileUpdate
-        ? ["jpg", "jpeg", "png", "pdf"]   // resume support added
-        : ["jpg", "jpeg", "png"],        // rest same as before
+        ? ["jpg", "jpeg", "png", "pdf"]
+        : ["jpg", "jpeg", "png"],
 
-      // 🔥 PDFs require this:
       resource_type: isProfileUpdate ? "raw" : "auto",
 
       public_id: `${Date.now()}-${file.originalname.split(".")[0]}`
@@ -28,5 +25,8 @@ const storage = new CloudinaryStorage({
   }
 });
 
-// Ek hi upload middleware
-export const singleUpload = multer({ storage }).single("file");
+// Allow both resume & profilePhoto
+export const upload = multer({ storage }).fields([
+  { name: "file", maxCount: 1 },               // resume
+  { name: "profilePhoto", maxCount: 1 }        // profile photo
+]);

@@ -45,6 +45,10 @@ const [input, setInput] = useState({
         if(input.file){
             formData.append("file", input.file);
         }
+        if (input.profilePhoto) {
+  formData.append("profilePhoto", input.profilePhoto);
+}
+
         try {
           setLoading(true)
   const res = await axios.post(`${USER_API_END_POINT}/profile/update`, formData, {
@@ -137,6 +141,19 @@ setOpen(false);
                     className= "col-span-3"/>
                  </div>
                 </div>
+                <div className='grid grid-cols-4 items-center gap-4'>
+                <Label htmlFor="profilePhoto" className="text-right">Profile Photo</Label>
+                <Input
+                id="profilePhoto"
+                name="profilePhoto"
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                setInput({ ...input, profilePhoto: e.target.files?.[0] })
+                }
+                 className="col-span-3"/>
+                </div>
+
                 <DialogFooter>
                    {
               loading ? <Button className='w-full my-4'><Loader2 className='mr-2 h-4 w-4 animate-spin'></Loader2>Please Wait</Button>:<Button type="submit" className="w-full my-4">update</Button>

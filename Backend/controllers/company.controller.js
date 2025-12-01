@@ -82,9 +82,10 @@ export const getCompanyById = async (req,res)=>{
 export const updateCompany = async (req, res) => {
   try {
     const { name, description, website, location } = req.body;
-    const file = req.file; // Cloudinary uploaded file
 
-    // 🔹 Find company by ID
+    // multer.fields() → files live inside req.files
+    const uploadedFile = req.files?.file?.[0]; // <-- FIXED
+
     const company = await Company.findById(req.params.id);
 
     if (!company) {
@@ -94,15 +95,14 @@ export const updateCompany = async (req, res) => {
       });
     }
 
-    // 🔹 Update text fields only if they exist
     if (name) company.name = name;
     if (description) company.description = description;
     if (website) company.website = website;
     if (location) company.location = location;
 
-    // 🔹 If logo uploaded → save Cloudinary URL
-    if (file) {
-      company.logo = file.path;     // Cloudinary image URL
+    // If new logo uploaded
+    if (uploadedFile) {
+      company.logo = uploadedFile.path; // Cloudinary URL
     }
 
     await company.save();
@@ -121,3 +121,4 @@ export const updateCompany = async (req, res) => {
     });
   }
 };
+

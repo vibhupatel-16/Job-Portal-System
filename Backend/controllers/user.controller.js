@@ -287,7 +287,9 @@ export const logout = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, bio, skills } = req.body;
-    const file = req.file; // Cloudinary file
+
+    const resumeFile = req.files?.file?.[0];
+    const photoFile = req.files?.profilePhoto?.[0];
 
     const userId = req.id;
     let user = await User.findById(userId);
@@ -299,17 +301,22 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    // 🔹 Update user basic details
+    // Basic info update
     if (fullname) user.fullname = fullname;
     if (email) user.email = email;
     if (phoneNumber) user.phoneNumber = phoneNumber;
     if (bio) user.profile.bio = bio;
     if (skills) user.profile.skills = skills.split(",");
 
-    // 🔹 If resume uploaded → Save Cloudinary URL
-    if (file) {
-      user.profile.resume = file.path;          // Cloudinary file URL
-      user.profile.resumeOriginalName = file.originalname; 
+    // Resume file
+    if (resumeFile) {
+      user.profile.resume = resumeFile.path;
+      user.profile.resumeOriginalName = resumeFile.originalname;
+    }
+
+    // Profile photo
+    if (photoFile) {
+      user.profile.profilePhoto = photoFile.path;
     }
 
     await user.save();
@@ -323,8 +330,9 @@ export const updateProfile = async (req, res) => {
       profile: {
         bio: user.profile.bio,
         skills: user.profile.skills,
-        resume: user.profile.resume,                 // ← Correct Cloudinary resume URL
-        resumeOriginalName: user.profile.resumeOriginalName
+        resume: user.profile.resume,
+        resumeOriginalName: user.profile.resumeOriginalName,
+        profilePhoto: user.profile.profilePhoto
       }
     };
 

@@ -1,23 +1,39 @@
 import express from 'express';
-import { forgotPassword,  login, logout, register, resetPassword, updateProfile } from '../controllers/user.controller.js';
+import { 
+  forgotPassword,  
+  login, 
+  logout, 
+  register, 
+  resetPassword, 
+  updateProfile 
+} from '../controllers/user.controller.js';
+
 import isAuthenticated from '../middlewares/isAuthenticated.js';
-import { singleUpload } from '../middlewares/multer.js';
+import { upload } from '../middlewares/multer.js';   // ✔ Correct import
 import { checkRole } from '../middlewares/checkRole.js';
 
 const router = express.Router();
-router.route("/register").post(singleUpload,register);
-router.route("/login").post(login);
-router.route("/logout").get(isAuthenticated,logout);
-router.route("/profile/update").post(isAuthenticated , singleUpload, updateProfile);
 
+// Register user
+router.post("/register", upload, register);
 
-// Forgot password routes
-router.route("/forgot-password").post(forgotPassword);
-router.route("/reset-password/:token").post(resetPassword);
+// Login
+router.post("/login", login);
 
+// Logout
+router.get("/logout", isAuthenticated, logout);
+
+// Update profile (resume + profile photo)
+router.post("/profile/update", isAuthenticated, upload, updateProfile);
+
+// Forgot / Reset password
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
+
+// Role based routes
 router.get("/jobseeker/profile",
   isAuthenticated,
-  checkRole("jobseeker"), // ✅ remove []
+  checkRole("jobseeker"),
   (req, res) => {
     res.status(200).json({
       message: "Welcome Jobseeker! You can update your profile and apply for jobs.",
@@ -28,7 +44,7 @@ router.get("/jobseeker/profile",
 
 router.get("/employer/dashboard",
   isAuthenticated,
-  checkRole("employer"), // ✅ remove []
+  checkRole("employer"),
   (req, res) => {
     res.status(200).json({
       message: "Welcome Employer! You can post and manage jobs here.",
@@ -39,7 +55,7 @@ router.get("/employer/dashboard",
 
 router.get("/admin/panel",
   isAuthenticated,
-  checkRole("admin"), // ✅ remove []
+  checkRole("admin"),
   (req, res) => {
     res.status(200).json({
       message: "Welcome Super Admin! You can manage users, jobs, and companies.",
@@ -48,10 +64,11 @@ router.get("/admin/panel",
   }
 );
 
+// Me endpoint
 router.get("/me", isAuthenticated, (req, res) => {
-  return res.status(200).json({
+  res.status(200).json({
     success: true,
-    user: req.user  // req.user isAuthenticated middleware me set hoga
+    user: req.user
   });
 });
 
