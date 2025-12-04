@@ -134,30 +134,39 @@ export const getJobById = async (req,res)=>{
 }
 //how many create jobs by admin
 
-export const getAdminJobs = async(req, res)=>{
-    try{
-        const adminId = req.id;
-        const jobs = await Job.find({created_by: adminId}).populate({
-            path:'company',
-            createdAt:-1
-        });
-       
-        if(!jobs){
-            return res.status(404).json({
-                message:"jobs not found",
-                success:false
-            })
-        };
+export const getAdminJobs = async (req, res) => {
+  try {
+    const adminId = req.id;
 
-        return res.status(200).json({
-            jobs,
-            success:true
-        })
-    }catch(error){
-        console.log(error);
+    const jobs = await Job.find({ created_by: adminId })
+      .sort({ createdAt: -1 })  // 👈 latest jobs first
+      .populate("company")      // 👈 company details
+      .populate({
+        path: "applications",   // 👈 applicants
+        options: { sort: { createdAt: -1 } }, // latest applicants first
+        populate: [
+          { path: "applicant" }, // applicant details
+          { path: "job" }        // job title for each applicant
+        ]
+      });
 
+    if (!jobs) {
+      return res.status(404).json({
+        message: "No jobs found",
+        success: false
+      });
     }
-}
+
+    return res.status(200).json({
+      jobs, // Now each job has: recent applications + populated job + applicant
+      success: true
+    });
+
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 
 // UPDATE JOB
 export const updateJob = async (req, res) => {
@@ -166,8 +175,7 @@ export const updateJob = async (req, res) => {
     const userId = req.id;
 
     const { title, description, requirements, salary, location, jobType, experience, position, companyId } = req.body;
-    // console.log(req.body);
-    // Validation
+
     if (!title || !description || !requirements || !salary || !location || !jobType || !experience || !position || !companyId) {
       return res.status(400).json({
         message: "Please fill all fields",
@@ -175,18 +183,21 @@ export const updateJob = async (req, res) => {
       });
     }
 
+    // Convert HTML → Array of strings
+    const parsedRequirements = htmlToList(requirements);
+
     const updatedJob = await Job.findOneAndUpdate(
-      { _id: jobId, created_by: userId },  // only admin can update own posted job
+      { _id: jobId, created_by: userId },
       {
         title,
         description,
-        requirements: requirements.split(","), 
+        requirements: parsedRequirements,  // clean list
         salary: Number(salary),
         location,
         jobType,
         experienceLevel: experience,
         position,
-        company: companyId,
+        company: companyId
       },
       { new: true }
     );
@@ -203,6 +214,7 @@ export const updateJob = async (req, res) => {
       job: updatedJob,
       success: true,
     });
+
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -212,4 +224,18 @@ export const updateJob = async (req, res) => {
   }
 };
 
+// Helper function
+function htmlToList(html) {
+  if (typeof html !== "string") return [];
 
+  const text = html
+    .replace(/<br>/g, "\n")
+    .replace(/<\/li>/g, "\n")
+    .replace(/<li>/g, "")
+    .replace(/<\/?[^>]+(>|$)/g, "");
+
+  return text
+    .split("\n")
+    .map(item => item.trim())
+    .filter(item => item.length > 0);
+}

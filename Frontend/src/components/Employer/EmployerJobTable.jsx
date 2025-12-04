@@ -58,7 +58,7 @@ const EmployerJobTable = () => {
 
     <TableCell>{job?.title}</TableCell>
 
-    <TableCell>{job?.createdAt?.split("T")[0]}</TableCell>
+    <TableCell>{job?.createdAt.split("T")[0].split("-").reverse().join("-")}</TableCell>
 
     <TableCell className="text-right cursor-pointer">
         <Popover>

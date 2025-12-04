@@ -40,7 +40,7 @@ const EmployerLogin = () => {
 
       if (res.data.success) {
         dispatch(setUser(res.data.user));
-        navigate('/'); // redirect home or employer dashboard
+        navigate('/employer/dashboard'); // redirect home or employer dashboard
         toast.success(res.data.message);
       }
     } catch (error) {
