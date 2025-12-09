@@ -104,7 +104,7 @@ const EmployerSignup = () => {
 
           <div className='text-center mt-2'>
             <span className='text-sm'>
-              Already have an account? <Link to="/employer/login" className='text-blue-600 hover:underline'>Login</Link>
+              Already have an account? <Link to="/employer-login" className='text-blue-600 hover:underline'>Login</Link>
             </span>
           </div>
         </form>

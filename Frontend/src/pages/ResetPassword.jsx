@@ -56,7 +56,7 @@ const ResetPassword = () => {
 
   return (
     <div>
-      <Navbar />
+      {/* <Navbar /> */}
       <div className="flex justify-center items-center max-w-7xl mx-auto">
         <form
           onSubmit={handleSubmit}

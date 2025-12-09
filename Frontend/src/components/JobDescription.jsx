@@ -88,7 +88,7 @@ const JobDescription = () => {
               </span>
 
               <span className="flex items-center gap-2 text-gray-700 bg-gray-100 px-3 py-1 rounded-md">
-                <IndianRupee size={16} /> {singleJob?.salary}
+                <IndianRupee size={16} /> {singleJob?.salary}LPA
               </span>
 
               <span className="flex items-center gap-2 text-gray-700 bg-gray-100 px-3 py-1 rounded-md">

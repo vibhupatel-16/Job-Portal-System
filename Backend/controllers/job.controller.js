@@ -67,23 +67,56 @@ export const postJob = async(req, res)=>{
 export const getAllJobs = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
+    const location = req.query.location || "";
+    const jobType = req.query.jobType || "";
+    const salary = req.query.salary || "";
+    const experience = req.query.experience || "";
 
-    // ⭐ NEW → Pagination params
+    // ⭐ Pagination params
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 6; 
     const skip = (page - 1) * limit;
 
-    const query = {
-      $or: [
+    // ⭐ FIXED BASE QUERY (keyword optional)
+    const query = {};
+
+    if (keyword) {
+      query.$or = [
         { title: { $regex: keyword, $options: "i" } },
         { description: { $regex: keyword, $options: "i" } },
-      ]
-    };
+      ];
+    }
 
-    // ⭐ New → total count
+    // ⭐ ADDITIONAL FILTERS 
+    if (location) {
+      query.location = { $regex: location, $options: "i" };
+    }
+
+    if (jobType) {
+      query.jobType = { $regex: jobType, $options: "i" };
+    }
+
+   if (salary) {
+  if (salary === "0-40k") {
+    query.salary = { $gte: 0, $lte: 40000 };
+  }
+  if (salary === "42-1lakh") {
+    query.salary = { $gte: 42000, $lte: 100000 };
+  }
+  if (salary === "1lakh-5lakh") {
+    query.salary = { $gte: 100000, $lte: 500000 };
+  }
+}
+
+
+    if (experience) {
+      query.experience = { $regex: experience, $options: "i" };
+    }
+
+    // ⭐ total count
     const totalJobs = await Job.countDocuments(query);
 
-    // ⭐ New → pagination apply
+    // ⭐ pagination apply
     const jobs = await Job.find(query)
       .populate({ path: "company" })
       .sort({ createdAt: -1 })
@@ -99,9 +132,9 @@ export const getAllJobs = async (req, res) => {
 
     return res.status(200).json({
       jobs,
-      totalJobs,            // ⭐ new
-      totalPages: Math.ceil(totalJobs / limit),  // ⭐ new
-      currentPage: page,    // ⭐ new
+      totalJobs,            
+      totalPages: Math.ceil(totalJobs / limit),
+      currentPage: page,
       success: true,
     });
 
@@ -109,6 +142,7 @@ export const getAllJobs = async (req, res) => {
     console.log(error);
   }
 };
+
 
 //job seeker 
 export const getJobById = async (req,res)=>{

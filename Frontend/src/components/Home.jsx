@@ -2,12 +2,13 @@ import React, { useEffect } from 'react'
 import HeroSection from './HeroSection'
 import CategoryCarousal from './CategoryCarousal'
 import LatestJobs from './LatestJobs'
-import useGetAllJobs from './hooks/useGetAllJobs'
+
 import { useSelector } from 'react-redux'
+import useGetHomeJobs from './hooks/useGetHomeJobs'
 // import { useNavigate } from 'react-router-dom'
 
 function Home() {
-  useGetAllJobs();
+  useGetHomeJobs()
   const {user} = useSelector(store=>store.auth);
   // const navigate = useNavigate();
   useEffect(()=>{

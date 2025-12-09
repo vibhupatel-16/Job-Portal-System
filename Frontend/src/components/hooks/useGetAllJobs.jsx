@@ -1,42 +1,48 @@
-import { setAllJob } from '@/redux/jobSlice'
-import { JOB_API_END_POINT } from '@/utils/constant'
-import axios from 'axios'
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useSelector } from "react-redux";
+import { JOB_API_END_POINT } from "../../utils/constant.js";
 
-const useGetAllJobs = () => {
-  const dispatch = useDispatch();
-  const { searchedQuery } = useSelector(store => store.job);
+const usePaginatedJobs = (page = 1, limit = 5) => {
+  const { searchedQuery, filters } = useSelector((state) => state.job);
+
+  const [jobs, setJobs] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAllJobs = async () => {
+    const fetchJobs = async () => {
       try {
-        // Clear old jobs before fetching
-        dispatch(setAllJob([]));
+        setLoading(true);
 
-        const query = searchedQuery?.trim() || "";
-
-        const res = await axios.get(
-          `${JOB_API_END_POINT}/get?keyword=${encodeURIComponent(query)}`,
-          { withCredentials: true }
+        const response = await axios.get(
+          `${JOB_API_END_POINT}/get`, {
+            params: {
+              keyword: searchedQuery || "",
+              location: filters.location || "",
+              industry: filters.industry || "",
+              salary: filters.salary || "",
+              page,
+              limit
+            },
+            withCredentials: true
+          }
         );
 
-        if (res.data.success && res.data.jobs) {
-          dispatch(setAllJob(res.data.jobs));
-        } else {
-          // Agar koi job nahi hai to bhi clear kar do
-          dispatch(setAllJob([]));
-        }
-
-      } catch (error) {
-        console.log("Error fetching jobs:", error);
-        dispatch(setAllJob([])); // Error case me bhi clear kar do
+        setJobs(response.data.jobs || []);
+        setTotalPages(response.data.totalPages || 1);
+      } catch (err) {
+        console.log("API Error:", err);
+        setJobs([]);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchAllJobs();
-  }, [searchedQuery, dispatch]);
+    fetchJobs();
+  }, [page, limit, searchedQuery, filters]);
+
+  return { jobs, totalPages, loading };
 };
 
-
-export default useGetAllJobs;
+export default usePaginatedJobs;
