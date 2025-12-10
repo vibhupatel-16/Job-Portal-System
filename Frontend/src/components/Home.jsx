@@ -1,31 +1,21 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import HeroSection from './HeroSection'
 import CategoryCarousal from './CategoryCarousal'
 import LatestJobs from './LatestJobs'
-
-import { useSelector } from 'react-redux'
 import useGetHomeJobs from './hooks/useGetHomeJobs'
-// import { useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 
 function Home() {
-  useGetHomeJobs()
-  const {user} = useSelector(store=>store.auth);
-  // const navigate = useNavigate();
-  useEffect(()=>{
-    // if(user.role === "employer"){
-    //   navigate("/employer/companies");
-    // }
-   
-  },[])
+  useGetHomeJobs();
+  const { user } = useSelector(store => store.auth);
+
   return (
     <div>
-         
-         <HeroSection/>
-         <CategoryCarousal/>
-         <LatestJobs/>
-         
+      <HeroSection/>
+      <CategoryCarousal/>
+      <LatestJobs/>
     </div>
   )
 }
 
-export default Home
+export default Home;

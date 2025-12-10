@@ -68,7 +68,7 @@ export const getAllJobs = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
     const location = req.query.location || "";
-    const jobType = req.query.jobType || "";
+   
     const salary = req.query.salary || "";
     const experience = req.query.experience || "";
 
@@ -80,38 +80,39 @@ export const getAllJobs = async (req, res) => {
     // ⭐ FIXED BASE QUERY (keyword optional)
     const query = {};
 
-    if (keyword) {
-      query.$or = [
-        { title: { $regex: keyword, $options: "i" } },
-        { description: { $regex: keyword, $options: "i" } },
-      ];
-    }
+   if (keyword) {
+  query.$or = [
+    { title: { $regex: keyword, $options: "i" } },
+    { description: { $regex: keyword, $options: "i" } },
+  ];
+}
+
 
     // ⭐ ADDITIONAL FILTERS 
     if (location) {
       query.location = { $regex: location, $options: "i" };
     }
 
-    if (jobType) {
-      query.jobType = { $regex: jobType, $options: "i" };
-    }
+   
 
    if (salary) {
-  if (salary === "0-40k") {
-    query.salary = { $gte: 0, $lte: 40000 };
+  if (salary === "0-3LPA") {
+    query.salary = { $gte: 0, $lte: 300000 };
   }
-  if (salary === "42-1lakh") {
-    query.salary = { $gte: 42000, $lte: 100000 };
+  if (salary === "3-6LPA") {
+    query.salary = { $gte: 300000, $lte: 600000 };
   }
-  if (salary === "1lakh-5lakh") {
-    query.salary = { $gte: 100000, $lte: 500000 };
+  if (salary === "6-10LPA") {
+    query.salary = { $gte: 600000, $lte: 1000000 };
   }
 }
 
 
-    if (experience) {
-      query.experience = { $regex: experience, $options: "i" };
-    }
+
+   if (experience) {
+  query.experienceLevel = Number(experience);
+}
+
 
     // ⭐ total count
     const totalJobs = await Job.countDocuments(query);

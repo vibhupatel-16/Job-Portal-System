@@ -9,9 +9,8 @@ import {
 import { Button } from './ui/button'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { setSearchedQuery } from '@/redux/jobSlice'
+import { setSearchedQuery, setFilter } from '@/redux/jobSlice'
 
-// ⭐ STATIC CATEGORIES (as you want)
 const category = [
   "Full Stack Developer",
   "React Developer",
@@ -27,9 +26,10 @@ const CategoryCarousal = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const searchJobHandler = (query) => {
-    dispatch(setSearchedQuery(query))
-    navigate('/browse')
+  const searchJobHandler = (cat) => {
+    dispatch(setSearchedQuery(cat));
+    dispatch(setFilter({ location: "", salary: "", experience: "" })); // reset filters
+    navigate('/browse');
   }
 
   return (
@@ -39,7 +39,7 @@ const CategoryCarousal = () => {
           {category.map((cat, index) => (
             <CarouselItem
               key={index}
-              className="md:basis-1/2 lg:basis-1/3" // ⭐ FIXED (your mistake was lg-basis)
+              className="md:basis-1/2 lg:basis-1/3"
             >
               <Button
                 onClick={() => searchJobHandler(cat)}
@@ -51,7 +51,6 @@ const CategoryCarousal = () => {
             </CarouselItem>
           ))}
         </CarouselContent>
-
         <CarouselPrevious />
         <CarouselNext />
       </Carousel>
@@ -59,4 +58,4 @@ const CategoryCarousal = () => {
   )
 }
 
-export default CategoryCarousal
+export default CategoryCarousal;
