@@ -135,11 +135,11 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !password || !role) {
+    if (!email || !password) {
       return res.status(400).json({
-        message: "Something is missing",
+        message: "Email and Password are required",
         success: false
       });
     }
@@ -160,38 +160,24 @@ export const login = async (req, res) => {
       });
     }
 
-    if (role !== user.role) {
-      return res.status(400).json({
-        message: "Account doesn't exist with current role",
-        success: false
-      });
-    }
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.SECRET_KEY,
+      { expiresIn: "1d" }
+    );
 
-    const tokenData = {
-      userId: user._id,
-      role: user.role
-    };
-
-    const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: "1d" });
-
-    return res
-      .status(200)
+    return res.status(200)
       .cookie("token", token, {
-       httpOnly: true,
-    secure: false,         // localhost MUST be false
-    sameSite: "lax",       // perfect for dev environment
-    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),                
+        httpOnly: true,
+        secure: false,      
+        sameSite: "lax",
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       })
       .json({
         message: `Welcome back ${user.fullname}`,
-        user: {
-          _id: user._id,
-          fullname: user.fullname,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          role: user.role,
-          profile: user.profile
-        },
+        token,
+        role: user.role,
+        user,
         success: true
       });
 
@@ -203,6 +189,7 @@ export const login = async (req, res) => {
     });
   }
 };
+
 
 // ---------------- LOGOUT ----------------
 export const logout = async (req, res) => {

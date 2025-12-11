@@ -203,74 +203,68 @@ export const getAdminJobs = async (req, res) => {
 };
 
 
-// UPDATE JOB
 export const updateJob = async (req, res) => {
   try {
     const jobId = req.params.id;
-    const userId = req.id;
 
-    const { title, description, requirements, salary, location, jobType, experience, position, companyId } = req.body;
-
-    if (!title || !description || !requirements || !salary || !location || !jobType || !experience || !position || !companyId) {
-      return res.status(400).json({
-        message: "Please fill all fields",
-        success: false,
-      });
-    }
-
-    // Convert HTML → Array of strings
-    const parsedRequirements = htmlToList(requirements);
-
-    const updatedJob = await Job.findOneAndUpdate(
-      { _id: jobId, created_by: userId },
-      {
-        title,
-        description,
-        requirements: parsedRequirements,  // clean list
-        salary: Number(salary),
-        location,
-        jobType,
-        experienceLevel: experience,
-        position,
-        company: companyId
-      },
-      { new: true }
-    );
-
-    if (!updatedJob) {
+    const job = await Job.findById(jobId);
+    if (!job) {
       return res.status(404).json({
         message: "Job not found",
         success: false,
       });
     }
 
+    // Empty update object
+    const updateData = {};
+
+    // SAFE UPDATE SYSTEM
+    if (req.body.title !== undefined) updateData.title = req.body.title;
+
+    if (req.body.description !== undefined) 
+      updateData.description = req.body.description || "";
+
+    if (req.body.requirements !== undefined) {
+      if (Array.isArray(req.body.requirements)) {
+        updateData.requirements = req.body.requirements;
+      } else {
+        updateData.requirements = [req.body.requirements];
+      }
+    }
+
+    if (req.body.salary !== undefined) updateData.salary = req.body.salary;
+
+    if (req.body.location !== undefined) updateData.location = req.body.location;
+
+    if (req.body.jobType !== undefined) updateData.jobType = req.body.jobType;
+
+    if (req.body.experience !== undefined)
+      updateData.experienceLevel = req.body.experience;
+
+    if (req.body.position !== undefined)
+      updateData.position = req.body.position;
+
+    if (req.body.companyId !== undefined && req.body.companyId !== "")
+      updateData.company = req.body.companyId;
+
+    // Update database
+    const updatedJob = await Job.findByIdAndUpdate(jobId, updateData, {
+      new: true,
+      runValidators: false, // disable strict validation
+    });
+
     return res.status(200).json({
       message: "Job updated successfully",
-      job: updatedJob,
       success: true,
+      job: updatedJob,
     });
 
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      message: "Server error",
+    console.log("UPDATE ERROR:", error.message);
+
+    return res.status(500).json({
+      message: "Internal server error",
       success: false,
     });
   }
 };
-
-// Helper function
-function htmlToList(html) {
-  if (typeof html !== "string") return [];
-
-  const text = html
-    .replace(/<br>/g, "\n")
-    .replace(/<\/li>/g, "\n")
-    .replace(/<li>/g, "")
-    .replace(/<\/?[^>]+(>|$)/g, "");
-
-  return text
-    .split("\n")
-    .map(item => item.trim())
-    .filter(item => item.length > 0);
-}

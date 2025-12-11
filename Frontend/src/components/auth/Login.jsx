@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import Navbar from '../shared/Navbar'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
@@ -14,17 +13,16 @@ import { Loader2 } from 'lucide-react'
 const Login = () => {
   const [input, setInput] = useState({
     email: "",
-    password: "",
-    role: "jobseeker"
+    password: ""
   });
 
-  const { loading } = useSelector(store => store.auth)
+  const { loading } = useSelector(store => store.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const changeEventHandler = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
-  }
+  };
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -36,21 +34,29 @@ const Login = () => {
         `${USER_API_END_POINT}/login`,
         input,
         {
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           withCredentials: true,
         }
       );
 
       if (res.data.success) {
 
-        // 🔥 TOKEN KO LOCALSTORAGE ME SAVE KARO — most important!
+        // Save token
         localStorage.setItem("token", res.data.token);
 
+        // Save user in Redux
         dispatch(setUser(res.data.user));
+
         toast.success(res.data.message);
-        navigate('/');
+
+        // ⭐ If admin → admin panel
+        if (res.data.role === "admin") {
+          navigate("/admin/panel");
+          return;
+        }
+
+        // ⭐ Else normal user → homepage
+        navigate("/");
       }
 
     } catch (error) {
@@ -59,11 +65,10 @@ const Login = () => {
     } finally {
       dispatch(setLoading(false));
     }
-  }
+  };
 
   return (
     <div>
-      {/* <Navbar /> */}
       <div className='flex justify-center items-center max-w-7xl mx-auto'>
         <form onSubmit={submitHandler} className='w-1/2 border border-gray-200 rounded-md p-4 my-10 shadow-sm'>
           <h1 className='font-bold text-xl mb-5 text-center'>Login</h1>

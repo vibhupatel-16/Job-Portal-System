@@ -24,6 +24,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ErrorPage from "./pages/ErrorPage";
 import EmployerDashboard from "./components/Employer/EmployerDashboard";
+import AdminProtectedRoute from "./components/Admin/AdminProtectedRoute";
+import AdminPanel from "./components/Admin/Adminpanel";
 
 const appRouter = createBrowserRouter([
   {
@@ -51,7 +53,15 @@ const appRouter = createBrowserRouter([
       { path: "/employer/jobs/create", element: <PostJob /> },
       { path: "/employer/jobs/:id/applicants", element: <Applicants /> },
       { path: "/employer/jobs/:id", element: <JobSetup /> },
-      {path: "/employer/dashboard", element:<EmployerDashboard/>}
+      {path: "/employer/dashboard", element:<EmployerDashboard/>},
+  {
+  path:"/admin/panel" ,
+  element:
+    <AdminProtectedRoute>
+      <AdminPanel />
+    </AdminProtectedRoute>
+  }
+
     ],
   },
 ]);
