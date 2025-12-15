@@ -30,17 +30,28 @@ const EmployerLogin = () => {
 
     try {
       dispatch(setLoading(true));
-      const res = await axios.post(`${USER_API_END_POINT}/login`, 
-        { ...input, role: "employer" }, // ✅ Fix: Always employer role
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
+      const res = await axios.post(
+  `${USER_API_END_POINT}/login`,
+  input,
+  {
+    headers: { "Content-Type": "application/json" },
+    withCredentials: true,
+  }
+);
 
-      if (res.data.success) {
-        dispatch(setUser(res.data.user));
-        navigate('/employer/dashboard'); // redirect home or employer dashboard
+if (res.data.success) {
+
+  // 🚫 agar admin hai to employer dashboard allow mat karo
+  if (res.data.user.role !== "employer") {
+    toast.error("You are not an employer");
+    return;
+  }
+
+  dispatch(setUser(res.data.user));
+  toast.success(res.data.message);
+  navigate("/employer/dashboard");
+
+ // redirect home or employer dashboard
         toast.success(res.data.message);
       }
     } catch (error) {

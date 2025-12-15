@@ -2,7 +2,7 @@ export const checkRole = (...allowedRoles) => {
   return (req, res, next) => {
     try {
       const userRole = req.userRole || req.user?.role || req.role || req.body.role; // ✅ req.userRole added
-        //   console.log("User role in checkRole middleware:", userRole);
+          // console.log("User role in checkRole middleware:", userRole);
       if (!allowedRoles.includes(userRole)) {
         return res.status(403).json({
           message: "Access denied: insufficient permissions",

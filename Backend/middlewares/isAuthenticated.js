@@ -33,6 +33,7 @@ const isAuthenticated = async (req, res, next) => {
     }
 
     // 4️⃣ Attach user details to req
+    req.user = user;
     req.id = user._id;
     req.userRole = user.role;
 

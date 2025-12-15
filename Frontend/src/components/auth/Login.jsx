@@ -42,7 +42,7 @@ const Login = () => {
       if (res.data.success) {
 
         // Save token
-        localStorage.setItem("token", res.data.token);
+        // localStorage.setItem("token", res.data.token);
 
         // Save user in Redux
         dispatch(setUser(res.data.user));

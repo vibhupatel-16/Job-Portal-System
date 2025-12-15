@@ -53,7 +53,7 @@ const EmployerSignup = () => {
       });
 
       if (res.data.success) {
-        navigate('/employer/login'); // ✅ Employer login page par jaayega
+        navigate('/employer-login'); // ✅ Employer login page par jaayega
         toast.success(res.data.message);
       }
     } catch (error) {

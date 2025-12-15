@@ -6,13 +6,13 @@ const axiosInstance = axios.create({
 });
 
 // ---------- Add token automatically ----------
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// axiosInstance.interceptors.request.use((config) => {
+//   const token = localStorage.getItem("token");
+//   if (token) {
+//     config.headers.Authorization = `Bearer ${token}`;
+//   }
+//   return config;
+// });
 
 // ---------- Auto logout if token expired ----------
 axiosInstance.interceptors.response.use(
