@@ -26,6 +26,10 @@ import ErrorPage from "./pages/ErrorPage";
 import EmployerDashboard from "./components/Employer/EmployerDashboard";
 import AdminProtectedRoute from "./components/Admin/AdminProtectedRoute";
 import AdminPanel from "./components/Admin/Adminpanel";
+import ManageUsers from "./components/Admin/ManageUsers";
+import ManageJobs from "./components/Admin/ManageJobs";
+import ManageCompanies from "./components/Admin/ManageCompanies";
+import ManageApplications from "./components/Admin/ManageApplications";
 
 const appRouter = createBrowserRouter([
   {
@@ -60,7 +64,15 @@ const appRouter = createBrowserRouter([
     <AdminProtectedRoute>
       <AdminPanel />
     </AdminProtectedRoute>
-  }
+  },
+  { path:"/admin/users", element:<ManageUsers /> },
+  {path:"/admin/jobs", element:<ManageJobs /> },
+  {path:"/admin/companies", element:<ManageCompanies/>},
+  {path:"/admin/applications", element:<ManageApplications />}
+
+
+
+
 
     ],
   },
