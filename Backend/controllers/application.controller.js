@@ -1,5 +1,6 @@
 import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
+import sendEmail from "../utils/sendEmail.js";
 export const applyJob = async (req, res)=>{
     try{
         const userId = req.id;
@@ -107,36 +108,66 @@ export const getApplicants = async (req, res)=>{
     }
 }
 
-export const updateStatus = async(req,res)=>{
-    try{
-        const {status} = req.body;
-        const applicationId = req.params.id;
+export const updateStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const applicationId = req.params.id;
 
-        if(!status){
-            return res.status(400).json({
-                message: "status is required",
-                success: false
-            })
-        };
-        //find the application by applicant id
-        const application = await Application.findOne({_id:applicationId})
-        if(!application){
-            return res.status(404).json({
-                message: "Application not found",
-                success: false
-            })
-        };
-
-        // update the status
-        application.status = status.toLowerCase();
-        await application.save();
-
-        return res.status(200).json({
-            message:"status updated successfully",
-            success: true
-        })
-
-    }catch(error){
-        console.log(error);
+    if (!status) {
+      return res.status(400).json({
+        message: "status is required",
+        success: false
+      });
     }
-}
+
+    // 🔍 Find application + populate applicant & job
+    const application = await Application.findOne({ _id: applicationId })
+      .populate("applicant")
+      .populate("job");
+
+    if (!application) {
+      return res.status(404).json({
+        message: "Application not found",
+        success: false
+      });
+    }
+
+    // ✅ Update status
+    application.status = status.toLowerCase();
+    await application.save();
+
+    //  Send attractive email to applicant
+    await sendEmail({
+      email: application.applicant.email,
+      subject: "Your Job Application Status Has Been Updated",
+      message: `
+Hello ${application.applicant.fullname},
+
+We would like to inform you that the status of your job application has been updated.
+
+Job Title: ${application.job.title}
+Current Status: ${status}
+
+Our team is reviewing your profile. If your application moves forward,
+we will contact you with the next steps.
+
+Thank you for applying and best of luck!
+
+Regards,
+Job Portal Team
+      `
+    });
+
+    return res.status(200).json({
+      message: "Status updated successfully and email sent",
+      success: true
+    });
+
+  } catch (error) {
+    console.log("Update status error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false
+    });
+  }
+};

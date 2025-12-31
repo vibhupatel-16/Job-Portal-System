@@ -1,13 +1,20 @@
 import express from "express";
 import isAuthenticated from "../middlewares/isAuthenticated.js";
 import { checkRole } from "../middlewares/checkRole.js";
+ import { upload } from "../middlewares/multer.js";
 
 import { getAdminStats } from "../controllers/admin.controller.js";
 import { getAllUsers, deleteUser } from "../controllers/adminUser.controller.js";
 import {
   getAllCompaniesAdmin,
-  deleteCompanyAdmin
+  deleteCompanyAdmin,
+  createCompanyAdmin,
+  updateCompanyAdmin,
+  getAllEmployers,
+  getCompanyByIdAdmin
 } from "../controllers/adminCompany.controller.js";
+
+
 
 // 🆕 JOB CONTROLLERS
 import {
@@ -20,6 +27,8 @@ import {
   deleteApplicationAdmin
 } from "../controllers/adminApplication.controller.js";
 import { updateApplicationStatus } from "../controllers/adminApplication.controller.js";
+
+import { postJob, updateJob } from "../controllers/job.controller.js";
 
 
 const router = express.Router();
@@ -62,7 +71,24 @@ router.delete(
   deleteJobByAdmin
 );
 
-// MANAGE COMPANIES
+// ADMIN → POST JOB
+router.post(
+  "/jobs/post",
+  isAuthenticated,
+  checkRole("admin"),
+  postJob
+);
+
+// ADMIN → UPDATE JOB
+router.put(
+  "/jobs/update/:id",
+  isAuthenticated,
+  checkRole("admin"),
+  updateJob
+);
+
+
+// GET ALL COMPANIES
 router.get(
   "/companies",
   isAuthenticated,
@@ -70,12 +96,48 @@ router.get(
   getAllCompaniesAdmin
 );
 
+// CREATE COMPANY
+router.post(
+  "/companies",
+  isAuthenticated,
+  checkRole("admin"),
+  upload,              // ✅ SAME AS company.route.js
+  createCompanyAdmin
+);
+
+// UPDATE COMPANY
+router.put(
+  "/companies/:id",
+  isAuthenticated,
+  checkRole("admin"),
+  upload,              // ✅ SAME AS company.route.js
+  updateCompanyAdmin
+);
+
+// DELETE COMPANY
 router.delete(
   "/companies/:id",
   isAuthenticated,
   checkRole("admin"),
   deleteCompanyAdmin
 );
+
+// GET ALL EMPLOYERS (for dropdown)
+router.get(
+  "/employers",
+  isAuthenticated,
+  checkRole("admin"),
+  getAllEmployers
+);
+
+router.get(
+  "/companies/:id",
+  isAuthenticated,
+  checkRole("admin"),
+  getCompanyByIdAdmin
+);
+
+
 
 // MANAGE APPLICATIONS
 router.get(
@@ -97,6 +159,13 @@ router.put(
   isAuthenticated,
   checkRole("admin"),
   updateApplicationStatus
+);
+
+router.get(
+  "/employers",
+  isAuthenticated,
+  checkRole("admin"),
+  getAllEmployers
 );
 
 

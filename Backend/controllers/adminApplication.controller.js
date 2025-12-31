@@ -1,4 +1,5 @@
 import { Application } from "../models/application.model.js";
+import sendEmail from "../utils/sendEmail.js";
 
 // GET ALL APPLICATIONS (ADMIN)
 export const getAllApplicationsAdmin = async (req, res) => {
@@ -36,6 +37,7 @@ export const deleteApplicationAdmin = async (req, res) => {
   }
 };
 
+
 export const updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -47,11 +49,10 @@ export const updateApplicationStatus = async (req, res) => {
       });
     }
 
-    const application = await Application.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    // 🔍 STEP 1: Find application with applicant & job
+    const application = await Application.findById(req.params.id)
+      .populate("applicant")
+      .populate("job");
 
     if (!application) {
       return res.status(404).json({
@@ -60,6 +61,30 @@ export const updateApplicationStatus = async (req, res) => {
       });
     }
 
+    // ✅ STEP 2: Update status
+    application.status = status;
+    await application.save();
+
+    // 📧 STEP 3: Send email to applicant
+    await sendEmail({
+      email: application.applicant.email,
+      subject: "Application Status Updated",
+      message: `
+Hello ${application.applicant.fullname},
+
+Your job application status has been updated by the admin.
+
+Job Title: ${application.job.title}
+Current Status: ${status.toUpperCase()}
+
+Thank you for applying.
+We wish you all the best!
+
+Regards,
+Job Portal Team
+      `
+    });
+
     res.status(200).json({
       success: true,
       message: `Application ${status} successfully`,
@@ -67,6 +92,7 @@ export const updateApplicationStatus = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("ADMIN STATUS UPDATE ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update status",

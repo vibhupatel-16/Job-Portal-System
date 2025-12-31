@@ -1,41 +1,99 @@
 import {Job} from "../models/job.model.js";
+import { User } from "../models/user.model.js";
+import sendEmail from "../utils/sendEmail.js";
 //admin post job
-export const postJob = async(req, res)=>{
-    try{
+export const postJob = async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      requirements,
+      salary,
+      location,
+      jobType,
+      experience,
+      position,
+      companyId
+    } = req.body;
 
-        const {title, description, requirements, salary, location, jobType, experience, position, companyId} = req.body;
-        const userId = req.id;
+    const userId = req.id;
 
-        if(!title || !description || !requirements || !salary || !location || !jobType || !experience || !position || !companyId){
-            return res.status(400).json({
-                message:"Something is missing",
-                success: false
-            })
-        };
-
-        const job = await Job.create({
-            title,
-            description, 
-            requirements: requirements.split(","),
-            salary:Number(salary),
-            location,
-            jobType,
-            experienceLevel: experience,
-            position,
-            company:companyId,
-            created_by:userId
-        });
-
-        return res.status(201).json({
-            message:"Job status created successfully",
-            job,
-            success:true
-        });
-
-    }catch(error){
-        console.log(error);
+    // 🔐 Validation
+    if (
+      !title ||
+      !description ||
+      !requirements ||
+      !salary ||
+      !location ||
+      !jobType ||
+      !experience ||
+      !position ||
+      !companyId
+    ) {
+      return res.status(400).json({
+        message: "Something is missing",
+        success: false
+      });
     }
-}
+
+    // ✅ Create Job
+    const job = await Job.create({
+      title,
+      description,
+      requirements: requirements.split(","),
+      salary: Number(salary),
+      location,
+      jobType,
+      experienceLevel: experience,
+      position,
+      company: companyId,
+      created_by: userId
+    });
+
+    // 📩 FIND ALL JOB SEEKERS
+    const users = await User.find({ role: "jobseeker" });
+
+    // 📧 SEND EMAIL TO JOB SEEKERS
+    for (const user of users) {
+      await sendEmail({
+        email: user.email,
+        subject: "🚀 New Job Opportunity Posted on Job Portal",
+        message: `
+Hello ${user.fullname},
+
+Good news! 🎉 A new job opportunity has just been posted on Job Portal.
+
+📌 Job Details:
+• Position: ${title}
+• Location: ${location}
+• Job Type: ${jobType}
+• Experience Required: ${experience} years
+
+If this role matches your skills and interests, don’t miss the chance to apply.
+Login to your account to view full details and submit your application.
+
+We wish you the very best in your job search!
+
+Warm regards,
+Job Portal Team
+        `
+      });
+    }
+
+    return res.status(201).json({
+      message: "Job posted successfully and users notified via email",
+      job,
+      success: true
+    });
+
+  } catch (error) {
+    console.log("POST JOB ERROR:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false
+    });
+  }
+};
 //job seeker 
 // export const getAllJobs = async (req,res)=>{
 //     try{

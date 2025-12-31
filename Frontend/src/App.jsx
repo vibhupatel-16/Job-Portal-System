@@ -30,6 +30,8 @@ import ManageUsers from "./components/Admin/ManageUsers";
 import ManageJobs from "./components/Admin/ManageJobs";
 import ManageCompanies from "./components/Admin/ManageCompanies";
 import ManageApplications from "./components/Admin/ManageApplications";
+import AdminCompanyCreate from "./components/Admin/AdminCompanyCreate";
+import AdminCompanyUpdate from "./components/Admin/AdminCompanyUpdate";
 
 const appRouter = createBrowserRouter([
   {
@@ -67,7 +69,11 @@ const appRouter = createBrowserRouter([
   },
   { path:"/admin/users", element:<ManageUsers /> },
   {path:"/admin/jobs", element:<ManageJobs /> },
+  {path:"/admin/jobs/create", element:<PostJob/>},
+  {path:"/admin/jobs/update/:id", element:<JobSetup/>},
   {path:"/admin/companies", element:<ManageCompanies/>},
+  {path:"/admin/companies/create", element:<AdminCompanyCreate/>},
+  {path:"/admin/companies/update/:id", element:<AdminCompanyUpdate/>},
   {path:"/admin/applications", element:<ManageApplications />}
 
 
