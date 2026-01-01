@@ -1,26 +1,57 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axiosInstance";
-import { Trash2, CheckCircle, XCircle, FileText } from "lucide-react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Dialog, DialogContent } from "../ui/dialog";
 import { toast } from "sonner";
 
 const ManageApplications = () => {
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [companies, setCompanies] = useState([]);
 
-  // 🔹 Fetch all applications (Admin)
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("");
+
+  const [selectedApp, setSelectedApp] = useState(null);
+
+  // ================= FETCH APPLICATIONS =================
   const fetchApplications = async () => {
     try {
-      setLoading(true);
-      const res = await axiosInstance.get("/admin/applications");
+      const res = await axiosInstance.get("/admin/applications", {
+        params: {
+          status: statusFilter || undefined,
+          companyId: companyFilter || undefined,
+        },
+      });
+
       setApplications(res.data.applications || []);
-    } catch (err) {
+    } catch (error) {
       toast.error("Failed to load applications");
-    } finally {
-      setLoading(false);
     }
   };
 
-  // 🔹 Update application status
+  // ================= FETCH COMPANIES =================
+  const fetchCompanies = async () => {
+    try {
+      const res = await axiosInstance.get("/admin/companies");
+      setCompanies(res.data.companies || []);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // 🔥 FIX: reset search + refetch on filter change
+  useEffect(() => {
+    setSearch("");
+    fetchApplications();
+  }, [statusFilter, companyFilter]);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  // ================= STATUS UPDATE =================
   const updateStatus = async (id, status) => {
     try {
       await axiosInstance.put(`/admin/applications/${id}/status`, { status });
@@ -31,126 +62,180 @@ const ManageApplications = () => {
     }
   };
 
-  // 🔹 Delete application
+  // ================= DELETE =================
   const deleteApplication = async (id) => {
-    if (!confirm("Are you sure you want to delete this application?")) return;
+    if (!confirm("Delete this application?")) return;
 
     try {
       await axiosInstance.delete(`/admin/applications/${id}`);
-      toast.success("Application deleted successfully");
+      toast.success("Application deleted");
       fetchApplications();
     } catch {
-      toast.error("Failed to delete application");
+      toast.error("Delete failed");
     }
   };
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
+  // ================= SEARCH FILTER =================
+  const filteredApplications = applications.filter(
+    (app) =>
+      app.applicant?.fullname?.toLowerCase().includes(search.toLowerCase()) ||
+      app.applicant?.email?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-purple-100 rounded-xl">
-          <FileText className="text-purple-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold">Manage Applications</h1>
-          <p className="text-gray-500 text-sm">Review and manage job applications</p>
-        </div>
+
+      {/* ================= HEADER ================= */}
+      <h1 className="text-2xl font-bold mb-6">Manage Applications</h1>
+
+      {/* ================= FILTER BAR ================= */}
+      <div className="bg-white p-6 rounded-2xl shadow mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+
+        <Input
+          placeholder="Search applicant..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="rounded-xl"
+        />
+
+        {/* 🔥 FIX: value binding */}
+        <select
+          className="border rounded-xl p-3"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="accepted">Accepted</option>
+          <option value="rejected">Rejected</option>
+        </select>
+
+        {/* 🔥 FIX: value binding */}
+        <select
+          className="border rounded-xl p-3"
+          value={companyFilter}
+          onChange={(e) => setCompanyFilter(e.target.value)}
+        >
+          <option value="">All Companies</option>
+          {companies.map((c) => (
+            <option key={c._id} value={c._id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <Button onClick={fetchApplications}>Refresh</Button>
       </div>
 
-      {/* Card */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-x-auto">
-        {loading ? (
-          <p className="text-center py-10 text-gray-500">Loading applications...</p>
-        ) : applications.length === 0 ? (
-          <p className="text-center py-10 text-gray-500">No applications found</p>
-        ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 text-sm text-gray-600">
-              <tr>
-                <th className="p-4 text-left">Job</th>
-                <th className="p-4 text-left">Applicant</th>
-                <th className="p-4 text-left">Status</th>
-                <th className="p-4 text-left">Applied On</th>
-                <th className="p-4 text-center">Actions</th>
+      {/* ================= TABLE ================= */}
+      <div className="bg-white rounded-2xl shadow overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50 text-gray-600 text-sm">
+            <tr>
+              <th className="p-4 text-left">Applicant</th>
+              <th className="p-4 text-left">Job</th>
+              <th className="p-4 text-left">Company</th>
+              <th className="p-4 text-left">Status</th>
+              <th className="p-4 text-center">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filteredApplications.map((app) => (
+              <tr key={app._id} className="border-t hover:bg-gray-50">
+
+                <td className="p-4">
+                  <p className="font-medium">{app.applicant?.fullname}</p>
+                  <p className="text-sm text-gray-500">
+                    {app.applicant?.email}
+                  </p>
+                </td>
+
+                <td className="p-4">
+                  {app.job?.title || "-"}
+                </td>
+
+                <td className="p-4">
+                  {app.job?.company?.name || "-"}
+                </td>
+
+                <td className="p-4">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold
+                      ${app.status === "pending" && "bg-yellow-100 text-yellow-700"}
+                      ${app.status === "accepted" && "bg-green-100 text-green-700"}
+                      ${app.status === "rejected" && "bg-red-100 text-red-700"}
+                    `}
+                  >
+                    {app.status}
+                  </span>
+                </td>
+
+                <td className="p-4 text-center space-x-2">
+                  <Button size="sm" variant="outline" onClick={() => setSelectedApp(app)}>
+                    View
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    onClick={() => updateStatus(app._id, "accepted")}
+                  >
+                    Accept
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => updateStatus(app._id, "rejected")}
+                  >
+                    Reject
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => deleteApplication(app._id)}
+                  >
+                    🗑
+                  </Button>
+                </td>
+
               </tr>
-            </thead>
+            ))}
+          </tbody>
+        </table>
 
-            <tbody>
-              {applications.map((app) => (
-                <tr
-                  key={app._id}
-                  className="border-t hover:bg-gray-50 transition"
-                >
-                  <td className="p-4 font-medium">
-                    {app.job?.title || "-"}
-                  </td>
-
-                  <td className="p-4 text-gray-700">
-                    {app.applicant?.fullname || "-"}
-                  </td>
-
-                  {/* STATUS BADGE */}
-                  <td className="p-4">
-                    {app.status === "accepted" && (
-                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
-                        Accepted
-                      </span>
-                    )}
-                    {app.status === "rejected" && (
-                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
-                        Rejected
-                      </span>
-                    )}
-                    {app.status === "pending" && (
-                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">
-                        Pending
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="p-4 text-gray-600">
-                    {new Date(app.createdAt).toLocaleDateString()}
-                  </td>
-
-                  {/* ACTIONS */}
-                  <td className="p-4">
-                    <div className="flex justify-center items-center gap-3">
-                      {app.status === "pending" && (
-                        <>
-                          <button
-                            onClick={() => updateStatus(app._id, "accepted")}
-                            className="flex items-center gap-1 px-3 py-1 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
-                          >
-                            <CheckCircle size={16} /> Accept
-                          </button>
-
-                          <button
-                            onClick={() => updateStatus(app._id, "rejected")}
-                            className="flex items-center gap-1 px-3 py-1 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100"
-                          >
-                            <XCircle size={16} /> Reject
-                          </button>
-                        </>
-                      )}
-
-                      <button
-                        onClick={() => deleteApplication(app._id)}
-                        className="flex items-center gap-1 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-red-100 hover:text-red-700"
-                      >
-                        <Trash2 size={16} /> Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {filteredApplications.length === 0 && (
+          <p className="text-center py-10 text-gray-500">
+            No applications found
+          </p>
         )}
       </div>
+
+      {/* ================= DETAILS MODAL ================= */}
+      {selectedApp && (
+        <Dialog open onOpenChange={() => setSelectedApp(null)}>
+          <DialogContent>
+            <h2 className="text-xl font-bold mb-4">Application Details</h2>
+
+            <p><b>Name:</b> {selectedApp.applicant?.fullname}</p>
+            <p><b>Email:</b> {selectedApp.applicant?.email}</p>
+            <p><b>Job:</b> {selectedApp.job?.title}</p>
+            <p><b>Company:</b> {selectedApp.job?.company?.name}</p>
+
+            {selectedApp.applicant?.profile?.resume && (
+              <a
+                href={selectedApp.applicant.profile.resume}
+                target="_blank"
+                className="text-blue-600 underline mt-2 inline-block"
+              >
+                View Resume
+              </a>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+
     </div>
   );
 };

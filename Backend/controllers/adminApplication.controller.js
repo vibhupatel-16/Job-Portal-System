@@ -1,84 +1,97 @@
 import { Application } from "../models/application.model.js";
 import sendEmail from "../utils/sendEmail.js";
 
-// GET ALL APPLICATIONS (ADMIN)
+// ================= GET ALL APPLICATIONS (ADMIN) =================
 export const getAllApplicationsAdmin = async (req, res) => {
   try {
-    const applications = await Application.find()
-      .populate("job", "title")
-      .populate("applicant", "fullname email");
+    const { status, companyId } = req.query;
+
+    let matchQuery = {};
+
+    // ✅ STATUS FILTER
+    if (status) {
+      matchQuery.status = status;
+    }
+
+    let applications = await Application.find(matchQuery)
+      .populate({
+        path: "job",
+        populate: {
+          path: "company",
+          select: "name"
+        }
+      })
+      .populate("applicant", "fullname email profile")
+      .sort({ createdAt: -1 });
+
+    // ✅ COMPANY FILTER (FIXED & SAFE)
+    if (companyId) {
+      applications = applications.filter(
+        (app) =>
+          app.job &&
+          app.job.company &&
+          app.job.company._id.toString() === companyId
+      );
+    }
 
     res.status(200).json({
       success: true,
-      applications,
+      applications
     });
+
   } catch (error) {
+    console.log("ADMIN APPLICATION ERROR 👉", error);
     res.status(500).json({
       success: false,
-      message: "Failed to load applications",
+      message: "Failed to fetch applications"
     });
   }
 };
 
-// DELETE APPLICATION (ADMIN)
+// ================= DELETE APPLICATION =================
 export const deleteApplicationAdmin = async (req, res) => {
   try {
     await Application.findByIdAndDelete(req.params.id);
-
     res.status(200).json({
       success: true,
-      message: "Application deleted successfully",
+      message: "Application deleted successfully"
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       success: false,
-      message: "Failed to delete application",
+      message: "Failed to delete application"
     });
   }
 };
 
-
+// ================= UPDATE STATUS + EMAIL =================
 export const updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
     if (!["accepted", "rejected"].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status",
-      });
+      return res.status(400).json({ success: false });
     }
 
-    // 🔍 STEP 1: Find application with applicant & job
     const application = await Application.findById(req.params.id)
       .populate("applicant")
       .populate("job");
 
     if (!application) {
-      return res.status(404).json({
-        success: false,
-        message: "Application not found",
-      });
+      return res.status(404).json({ success: false });
     }
 
-    // ✅ STEP 2: Update status
     application.status = status;
     await application.save();
 
-    // 📧 STEP 3: Send email to applicant
+    // ✅ EMAIL
     await sendEmail({
       email: application.applicant.email,
       subject: "Application Status Updated",
       message: `
 Hello ${application.applicant.fullname},
 
-Your job application status has been updated by the admin.
-
-Job Title: ${application.job.title}
-Current Status: ${status.toUpperCase()}
-
-Thank you for applying.
-We wish you all the best!
+Your application for "${application.job.title}" has been ${status.toUpperCase()}.
 
 Regards,
 Job Portal Team
@@ -87,15 +100,11 @@ Job Portal Team
 
     res.status(200).json({
       success: true,
-      message: `Application ${status} successfully`,
-      application,
+      application
     });
 
   } catch (error) {
-    console.log("ADMIN STATUS UPDATE ERROR:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update status",
-    });
+    console.log(error);
+    res.status(500).json({ success: false });
   }
 };

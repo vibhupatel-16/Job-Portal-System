@@ -1,43 +1,66 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axiosInstance";
-import { Building2, Trash2, Pencil, Plus } from "lucide-react";
+import { Building2, Trash2, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const ManageCompanies = () => {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // 🔍 filters
+  const [searchCompany, setSearchCompany] = useState("");
+  const [searchEmployer, setSearchEmployer] = useState("");
+  const [searchLocation, setSearchLocation] = useState("");
+
   const navigate = useNavigate();
 
-  // 🔹 Fetch all companies (ADMIN)
+  // FETCH
   const fetchCompanies = async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get("/admin/companies");
       setCompanies(res.data.companies || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load companies");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Delete company
+  // DELETE
   const deleteCompany = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this company?")) return;
+    if (!confirm("Delete this company?")) return;
 
     try {
       await axiosInstance.delete(`/admin/companies/${id}`);
-      toast.success("Company deleted successfully");
+      toast.success("Company deleted");
       fetchCompanies();
-    } catch (error) {
-      toast.error("Failed to delete company");
+    } catch {
+      toast.error("Delete failed");
     }
   };
 
   useEffect(() => {
     fetchCompanies();
   }, []);
+
+  // 🔍 FILTER LOGIC
+  const filteredCompanies = companies.filter((c) => {
+    const companyMatch = c.name
+      ?.toLowerCase()
+      .includes(searchCompany.toLowerCase());
+
+    const employerMatch = c.userId?.fullname
+      ?.toLowerCase()
+      .includes(searchEmployer.toLowerCase());
+
+    const locationMatch = c.location
+      ?.toLowerCase()
+      .includes(searchLocation.toLowerCase());
+
+    return companyMatch && employerMatch && locationMatch;
+  });
 
   return (
     <div className="p-6">
@@ -55,7 +78,6 @@ const ManageCompanies = () => {
           </div>
         </div>
 
-        {/* ➕ ADD COMPANY */}
         <button
           onClick={() => navigate("/admin/companies/create")}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
@@ -64,11 +86,35 @@ const ManageCompanies = () => {
         </button>
       </div>
 
+      {/* 🔍 FILTER BAR */}
+      <div className="bg-white rounded-2xl shadow p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="relative">
+          <Search className="absolute top-3 left-3 text-gray-400" size={18} />
+          <input
+            placeholder="Search company name"
+            className="w-full pl-10 pr-4 py-2 border rounded-xl"
+            onChange={(e) => setSearchCompany(e.target.value)}
+          />
+        </div>
+
+        <input
+          placeholder="Filter by employer name"
+          className="w-full px-4 py-2 border rounded-xl"
+          onChange={(e) => setSearchEmployer(e.target.value)}
+        />
+
+        <input
+          placeholder="Filter by location"
+          className="w-full px-4 py-2 border rounded-xl"
+          onChange={(e) => setSearchLocation(e.target.value)}
+        />
+      </div>
+
       {/* TABLE */}
       <div className="bg-white rounded-2xl shadow-lg overflow-x-auto">
         {loading ? (
-          <p className="text-center py-10 text-gray-500">Loading companies...</p>
-        ) : companies.length === 0 ? (
+          <p className="text-center py-10 text-gray-500">Loading...</p>
+        ) : filteredCompanies.length === 0 ? (
           <p className="text-center py-10 text-gray-500">
             No companies found
           </p>
@@ -85,23 +131,16 @@ const ManageCompanies = () => {
             </thead>
 
             <tbody>
-              {companies.map((c) => (
-                <tr
-                  key={c._id}
-                  className="border-t hover:bg-gray-50 transition"
-                >
+              {filteredCompanies.map((c) => (
+                <tr key={c._id} className="border-t hover:bg-gray-50">
                   <td className="p-4 font-medium">{c.name}</td>
+                  <td className="p-4">{c.location || "-"}</td>
 
-                  <td className="p-4 text-gray-700">
-                    {c.location || "-"}
-                  </td>
-
-                  <td className="p-4 text-gray-700">
+                  <td className="p-4">
                     {c.website ? (
                       <a
                         href={c.website}
                         target="_blank"
-                        rel="noreferrer"
                         className="text-blue-600 underline"
                       >
                         Visit
@@ -111,26 +150,23 @@ const ManageCompanies = () => {
                     )}
                   </td>
 
-                  <td className="p-4 text-gray-700">
+                  <td className="p-4">
                     {c.userId?.fullname || "-"}
                   </td>
 
-                  {/* ACTIONS */}
                   <td className="p-4 flex justify-center gap-2">
-                    {/* ✏️ UPDATE */}
                     <button
                       onClick={() =>
                         navigate(`/admin/companies/update/${c._id}`)
                       }
-                      className="flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                      className="flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg"
                     >
                       <Pencil size={16} /> Edit
                     </button>
 
-                    {/* 🗑 DELETE */}
                     <button
                       onClick={() => deleteCompany(c._id)}
-                      className="flex items-center gap-1 px-3 py-1 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100"
+                      className="flex items-center gap-1 px-3 py-1 bg-red-50 text-red-700 rounded-lg"
                     >
                       <Trash2 size={16} /> Delete
                     </button>
