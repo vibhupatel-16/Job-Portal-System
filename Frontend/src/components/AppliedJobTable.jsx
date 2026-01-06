@@ -3,13 +3,26 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Badge } from './ui/badge'
 import { useSelector } from 'react-redux'
 
+import { Link } from "react-router-dom"; 
+import { ListChecks } from "lucide-react";
+
 const AppliedJobTable = () => {
   const { allAppliedJobs } = useSelector(store => store.job);
 
   return (
     <div>
+      <Link 
+          to="/jobseeker/interviews" 
+          className="flex items-center gap-2 mt-5 mb-3 bg-purple-500 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all shadow-md"
+        >
+          <ListChecks size={20} />
+          <span className="font-medium">My Interviews</span>
+        </Link>
       <Table>
+        
+ 
         <TableCaption>
+          
           A List Of Applied Jobs
         </TableCaption>
 

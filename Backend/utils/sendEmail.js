@@ -14,7 +14,8 @@ const sendEmail = async (options) => {
     from: `"Job Portal Support" <${process.env.SMTP_USER}>`,
     to: options.email,
     subject: options.subject,
-    text: options.message
+    text: options.message, // Fallback for simple email clients
+    html: options.html    // ✅ Yeh line clickable links ke liye zaroori hai
   };
 
   await transporter.sendMail(mailOptions);

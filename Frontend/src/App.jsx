@@ -1,6 +1,11 @@
+import { useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Layout from "./components/Layout";
+import { useDispatch, useSelector } from "react-redux";
+import { io } from "socket.io-client";
+import { toast } from "sonner";
 
+// Components & Layout
+import Layout from "./components/Layout";
 import Home from "./components/Home";
 import Login from "./components/auth/Login";
 import Signup from "./components/auth/Signup";
@@ -20,6 +25,7 @@ import PostJob from "./components/Employer/PostJob";
 import Applicants from "./components/Employer/Applicants";
 import JobSetup from "./components/Employer/JobSetup";
 
+// Pages & Admin
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ErrorPage from "./pages/ErrorPage";
@@ -33,10 +39,23 @@ import ManageApplications from "./components/Admin/ManageApplications";
 import AdminCompanyCreate from "./components/Admin/AdminCompanyCreate";
 import AdminCompanyUpdate from "./components/Admin/AdminCompanyUpdate";
 
+// Interviews
+
+import ScheduledInterviews from "./components/Employer/ScheduleInterviews";
+import AdminInterviewList from "./components/Admin/AdminInterviewList";
+import JobseekerInterviews from "./components/JobseekerInterviews";
+
+
+// Global Socket Instance (Export if needed in other components)
+export const socket = io("http://localhost:8000", {
+  withCredentials: true,
+  autoConnect: false, // Login ke baad connect karenge
+});
+
 const appRouter = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,     // ⭐ WRAP ALL ROUTES INSIDE LAYOUT
+    element: <Layout />,
     errorElement: <ErrorPage />,
     children: [
       { path: "/", element: <Home /> },
@@ -59,32 +78,69 @@ const appRouter = createBrowserRouter([
       { path: "/employer/jobs/create", element: <PostJob /> },
       { path: "/employer/jobs/:id/applicants", element: <Applicants /> },
       { path: "/employer/jobs/:id", element: <JobSetup /> },
-      {path: "/employer/dashboard", element:<EmployerDashboard/>},
-  {
-  path:"/admin/panel" ,
-  element:
-    <AdminProtectedRoute>
-      <AdminPanel />
-    </AdminProtectedRoute>
-  },
-  { path:"/admin/users", element:<ManageUsers /> },
-  {path:"/admin/jobs", element:<ManageJobs /> },
-  {path:"/admin/jobs/create", element:<PostJob/>},
-  {path:"/admin/jobs/update/:id", element:<JobSetup/>},
-  {path:"/admin/companies", element:<ManageCompanies/>},
-  {path:"/admin/companies/create", element:<AdminCompanyCreate/>},
-  {path:"/admin/companies/update/:id", element:<AdminCompanyUpdate/>},
-  {path:"/admin/applications", element:<ManageApplications />}
+      { path: "/employer/dashboard", element: <EmployerDashboard /> },
 
+      // Admin Routes
+      {
+        path: "/admin/panel",
+        element: (
+          <AdminProtectedRoute>
+            <AdminPanel />
+          </AdminProtectedRoute>
+        ),
+      },
+      { path: "/admin/users", element: <ManageUsers /> },
+      { path: "/admin/jobs", element: <ManageJobs /> },
+      { path: "/admin/jobs/create", element: <PostJob /> },
+      { path: "/admin/jobs/update/:id", element: <JobSetup /> },
+      { path: "/admin/companies", element: <ManageCompanies /> },
+      { path: "/admin/companies/create", element: <AdminCompanyCreate /> },
+      { path: "/admin/companies/update/:id", element: <AdminCompanyUpdate /> },
+      { path: "/admin/applications", element: <ManageApplications /> },
 
-
-
-
+      // Interview Routes
+      
+      { path: "/employer/interview-list", element: <ScheduledInterviews/> },
+      {path:"/admin/interview-list", element:<AdminInterviewList/>},
+      {path:"/jobseeker/interviews", element:<JobseekerInterviews/>}
+      
+      
     ],
   },
 ]);
 
 function App() {
+  const { user } = useSelector((store) => store.auth);
+
+  useEffect(() => {
+    if (user) {
+      // 1. Socket Connect karein
+      socket.connect();
+
+      // 2. User ko private room mein join karwayein (for direct notifications)
+      socket.emit("join", user._id);
+
+      // 3. Listen for global or private notifications
+      socket.on("notification", (data) => {
+        toast.success(data.message, {
+          duration: 4000,
+          position: "bottom-right",
+        });
+      });
+
+      // 4. New Job notification (agar postJob mein emit kiya hai)
+      socket.on("newJob", (data) => {
+        toast.info(`New Job Posted: ${data.title}`);
+      });
+    }
+
+    return () => {
+      socket.disconnect(); // Cleanup on Logout/Unmount
+      socket.off("notification");
+      socket.off("newJob");
+    };
+  }, [user]);
+
   return <RouterProvider router={appRouter} />;
 }
 

@@ -1,10 +1,12 @@
 import express from "express";
 import isAuthenticated from "../middlewares/isAuthenticated.js";
 import { checkRole } from "../middlewares/checkRole.js";
- import { upload } from "../middlewares/multer.js";
+import { upload } from "../middlewares/multer.js";
 
+// ================= CONTROLLERS =================
 import { getAdminStats } from "../controllers/admin.controller.js";
 import { getAllUsers, deleteUser } from "../controllers/adminUser.controller.js";
+
 import {
   getAllCompaniesAdmin,
   deleteCompanyAdmin,
@@ -14,22 +16,23 @@ import {
   getCompanyByIdAdmin
 } from "../controllers/adminCompany.controller.js";
 
-
-
-// 🆕 JOB CONTROLLERS
+// JOB CONTROLLERS
 import {
   getAllJobsForAdmin,
   deleteJobByAdmin
 } from "../controllers/adminJob.controller.js";
 
+// APPLICATION CONTROLLERS
 import {
   getAllApplicationsAdmin,
-  deleteApplicationAdmin
+  deleteApplicationAdmin,
+  updateApplicationStatus
 } from "../controllers/adminApplication.controller.js";
-import { updateApplicationStatus } from "../controllers/adminApplication.controller.js";
 
 import { postJob, updateJob } from "../controllers/job.controller.js";
 
+// ✅ INTERVIEW CONTROLLER (ADDED)
+import { scheduleInterview } from "../controllers/interview.controller.js";
 
 const router = express.Router();
 
@@ -41,7 +44,7 @@ router.get(
   getAdminStats
 );
 
-// ================= MANAGE USERS ====================
+// ================= MANAGE USERS =================
 router.get(
   "/users",
   isAuthenticated,
@@ -56,7 +59,7 @@ router.delete(
   deleteUser
 );
 
-// ================= MANAGE JOBS =====================
+// ================= MANAGE JOBS =================
 router.get(
   "/jobs",
   isAuthenticated,
@@ -87,8 +90,7 @@ router.put(
   updateJob
 );
 
-
-// GET ALL COMPANIES
+// ================= MANAGE COMPANIES =================
 router.get(
   "/companies",
   isAuthenticated,
@@ -101,7 +103,7 @@ router.post(
   "/companies",
   isAuthenticated,
   checkRole("admin"),
-  upload,              // ✅ SAME AS company.route.js
+  upload,
   createCompanyAdmin
 );
 
@@ -110,7 +112,7 @@ router.put(
   "/companies/:id",
   isAuthenticated,
   checkRole("admin"),
-  upload,              // ✅ SAME AS company.route.js
+  upload,
   updateCompanyAdmin
 );
 
@@ -122,14 +124,7 @@ router.delete(
   deleteCompanyAdmin
 );
 
-// GET ALL EMPLOYERS (for dropdown)
-router.get(
-  "/employers",
-  isAuthenticated,
-  checkRole("admin"),
-  getAllEmployers
-);
-
+// GET COMPANY BY ID
 router.get(
   "/companies/:id",
   isAuthenticated,
@@ -137,9 +132,15 @@ router.get(
   getCompanyByIdAdmin
 );
 
+// GET ALL EMPLOYERS (dropdown use)
+router.get(
+  "/employers",
+  isAuthenticated,
+  checkRole("admin"),
+  getAllEmployers
+);
 
-
-// MANAGE APPLICATIONS
+// ================= MANAGE APPLICATIONS =================
 router.get(
   "/applications",
   isAuthenticated,
@@ -161,12 +162,12 @@ router.put(
   updateApplicationStatus
 );
 
-router.get(
-  "/employers",
+// ================= INTERVIEW SCHEDULING (✅ ADDED) =================
+router.post(
+  "/interviews",
   isAuthenticated,
-  checkRole("admin"),
-  getAllEmployers
+  checkRole("admin", "employer"),
+  scheduleInterview
 );
-
 
 export default router;

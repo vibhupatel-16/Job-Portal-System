@@ -136,29 +136,65 @@ export const updateStatus = async (req, res) => {
     application.status = status.toLowerCase();
     await application.save();
 
-    //  Send attractive email to applicant
-    await sendEmail({
-      email: application.applicant.email,
-      subject: "Your Job Application Status Has Been Updated",
-      message: `
-Hello ${application.applicant.fullname},
+   // 🎨 Status color
+const statusColor = status === "accepted" ? "#22c55e" : "#ef4444";
 
-We would like to inform you that the status of your job application has been updated.
+await sendEmail({
+  email: application.applicant.email,
+  subject: `Application Update: ${application.job.title}`,
+  message: `Your application status has been updated to ${status}.`, // fallback
+  html: `
+  <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: auto; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb;">
+    
+    <!-- Header -->
+    <div style="background: ${statusColor}; padding: 22px; text-align: center;">
+      <h2 style="color: #ffffff; margin: 0;">Application Status Update</h2>
+    </div>
 
-Job Title: ${application.job.title}
-Current Status: ${status}
+    <!-- Body -->
+    <div style="padding: 28px; background-color: #ffffff;">
+      <p style="font-size: 17px; color: #111827;">
+        Hello <strong>${application.applicant.fullname}</strong>,
+      </p>
 
-Our team is reviewing your profile. If your application moves forward,
-we will contact you with the next steps.
+      <p style="font-size: 15px; color: #374151; line-height: 1.6;">
+        We wanted to inform you that the status of your application has been updated after reviewing your profile.
+      </p>
 
-Thank you for applying and best of luck!
+      <!-- Job Info -->
+      <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; margin: 20px 0;">
+        <p style="margin: 0; font-size: 14px; color: #6b7280;">Job Title</p>
+        <h3 style="margin: 4px 0 12px 0; color: #111827;">${application.job.title}</h3>
 
-Regards,
-Job Portal Team
-      `
-    });
+        <p style="margin: 0; font-size: 14px; color: #6b7280;">Current Status</p>
+        <h2 style="margin: 6px 0; color: ${statusColor}; text-transform: capitalize;">
+          ${status}
+        </h2>
+      </div>
 
-    return res.status(200).json({
+      ${
+        status === "accepted"
+          ? `<p style="color: #374151;">
+              🎉 Congratulations! Our team will contact you soon regarding the next steps, including interview scheduling.
+            </p>`
+          : `<p style="color: #374151;">
+              We appreciate your interest. Although you were not selected this time, we encourage you to apply again in the future.
+            </p>`
+      }
+
+      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 28px 0;" />
+
+      <p style="font-size: 13px; color: #9ca3af; text-align: center;">
+        © ${new Date().getFullYear()} Job Portal Team<br/>
+        This is an automated message, please do not reply.
+      </p>
+    </div>
+  </div>
+  `,
+});
+
+
+return res.status(200).json({
       message: "Status updated successfully and email sent",
       success: true
     });
