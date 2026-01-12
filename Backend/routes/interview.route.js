@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllInterviewsForAdmin, scheduleInterview } from "../controllers/interview.controller.js";
+import { deleteNotification, getAllInterviewsForAdmin, getNotifications, markAsRead, scheduleInterview } from "../controllers/interview.controller.js";
 import { getJobseekerInterviews, getScheduledInterviewsByCreator } from "../controllers/interview.controller.js";
 import isAuthenticated from "../middlewares/isAuthenticated.js"; // Default import
 import { checkRole } from "../middlewares/checkRole.js"; // Role check import
@@ -20,5 +20,9 @@ router.get("/scheduled-list", isAuthenticated, checkRole("admin", "employer"), g
 router.get("/admin/all-interviews", isAuthenticated, checkRole("admin"), getAllInterviewsForAdmin);
 
 router.get("/my-interviews", isAuthenticated, getJobseekerInterviews);
+
+router.get("/notifications", isAuthenticated, getNotifications);
+router.put("/notifications/mark-read", isAuthenticated, markAsRead);
+router.delete("/notifications/:id", isAuthenticated, deleteNotification);
 
 export default router;

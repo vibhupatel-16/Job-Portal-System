@@ -44,6 +44,7 @@ import AdminCompanyUpdate from "./components/Admin/AdminCompanyUpdate";
 import ScheduledInterviews from "./components/Employer/ScheduleInterviews";
 import AdminInterviewList from "./components/Admin/AdminInterviewList";
 import JobseekerInterviews from "./components/JobseekerInterviews";
+import SavedJobs from "./components/SavedJobs";
 
 
 // Global Socket Instance (Export if needed in other components)
@@ -69,6 +70,9 @@ const appRouter = createBrowserRouter([
       { path: "/description/:id", element: <JobDescription /> },
       { path: "/browse", element: <Browse /> },
       { path: "/profile", element: <Profile /> },
+
+      {path:"/saved-jobs", element:<SavedJobs/> },
+
 
       // Employer Routes
       { path: "/employer/companies", element: <Companies /> },

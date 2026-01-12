@@ -2,12 +2,13 @@ import { Interview } from "../models/interview.model.js";
 import { Application } from "../models/application.model.js";
 import sendEmail from "../utils/sendEmail.js";
 
+import { Notification } from "../models/notification.model.js"; 
+
 export const scheduleInterview = async (req, res) => {
   try {
     const { applicationId, date, time, mode, meetingLink } = req.body;
 
-    // 🔹 Role detect
-    const scheduledByRole = req.user.role; // admin / employer
+    const scheduledByRole = req.user.role; 
     const scheduledById = req.id;
 
     const application = await Application.findById(applicationId)
@@ -18,26 +19,18 @@ export const scheduleInterview = async (req, res) => {
       .populate("applicant");
 
     if (!application) {
-      return res.status(404).json({
-        message: "Application not found",
+      return res.status(404).json({ message: "Application not found", success: false });
+    }
+
+    if (
+      scheduledByRole === "employer" &&
+      application.job.created_by.toString() !== scheduledById.toString()
+    ) {
+      return res.status(403).json({
+        message: "You are not allowed to schedule interview for this job",
         success: false
       });
     }
-    // interview.controller.js mein line 26 ke baad add karein
-// console.log("Job Created By ID:", application.job.created_by.toString());
-// console.log("Logged-in User ID:", scheduledById);
-    // 🔐 Employer safety check
-  // interview.controller.js mein safety check ko aise update karein:
-
-if (
-  scheduledByRole === "employer" &&
-  application.job.created_by.toString() !== scheduledById.toString() // ✅ Dono ko string banayein
-) {
-  return res.status(403).json({
-    message: "You are not allowed to schedule interview for this job",
-    success: false
-  });
-}
 
     const interview = await Interview.create({
       application: application._id,
@@ -48,45 +41,43 @@ if (
       time,
       mode,
       meetingLink,
-
-      // ⭐ NEW (optional but important)
       scheduledBy: scheduledById,
       scheduledByRole
     });
 
-    /* ================= 🚀 SOCKET.IO REAL-TIME NOTIFICATION ================= */
+    /* ================= 🔔 2. SAVE NOTIFICATION TO DATABASE ================= */
+    const notification = await Notification.create({
+      recipient: application.applicant._id,
+      sender: scheduledById,
+      type: "INTERVIEW_SCHEDULED",
+      title: "New Interview Scheduled!",
+      message: `Your interview for ${application.job.title} at ${application.job.company.name} is fixed for ${date} at ${time}.`,
+      link: "/jobseeker/interviews" // Frontend link jahan user click karke ja sake
+    });
+
+    /* ================= 🚀 SOCKET.IO (Modified to use notification data) ================= */
     if (req.io) {
       const notificationData = {
-        type: "INTERVIEW_SCHEDULED",
-        title: "New Interview Scheduled!",
-        message: `Your interview for ${application.job.title} at ${application.job.company.name} is fixed for ${date} at ${time}.`,
-        interviewId: interview._id,
+        id: notification._id, // Saved notification ki ID
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
         details: { date, time, mode, meetingLink }
       };
 
-      // Specific applicant ko socket ke through message bhejna
       req.io.to(application.applicant._id.toString()).emit("notification", notificationData);
     }
 
-    /* ================= EMAIL (UNCHANGED) ================= */
+    /* ================= EMAIL LOGIC (SAME) ================= */
     const emailHtml = `
       <div style="font-family: Arial; max-width: 600px;">
         <h2 style="color:#2563eb">Interview Scheduled</h2>
         <p>Hi <b>${application.applicant.fullname}</b>,</p>
-        <p>
-          Your interview for <b>${application.job.title}</b> at
-          <b>${application.job.company.name}</b> has been scheduled.
-        </p>
-        <p><b>Date:</b> ${date}</p>
-        <p><b>Time:</b> ${time}</p>
+        <p>Your interview for <b>${application.job.title}</b> at <b>${application.job.company.name}</b> has been scheduled.</p>
+        <p><b>Date:</b> ${date} | <b>Time:</b> ${time}</p>
         <p><b>Mode:</b> ${mode.toUpperCase()}</p>
-
-        ${mode === "online" && meetingLink ? `
-          <a href="${meetingLink}">Join Interview</a>
-        ` : ""}
-
-        <p>Regards,<br/>
-        ${application.job.company.name} Recruitment Team</p>
+        ${mode === "online" && meetingLink ? `<a href="${meetingLink}">Join Interview</a>` : ""}
+        <p>Regards,<br/>${application.job.company.name} Recruitment Team</p>
       </div>
     `;
 
@@ -99,16 +90,13 @@ if (
 
     return res.status(201).json({
       success: true,
-      message: "Interview scheduled successfully",
+      message: "Interview scheduled and notification saved!",
       interview
     });
 
   } catch (error) {
     console.error("Scheduling Error:", error);
-    res.status(500).json({
-      message: "Interview scheduling failed",
-      success: false
-    });
+    res.status(500).json({ message: "Interview scheduling failed", success: false });
   }
 };
 
@@ -186,3 +174,60 @@ export const getAllInterviewsForAdmin = async (req, res) => {
         res.status(500).json({ message: "Server error", success: false });
     }
 }
+
+
+
+
+// 1. Saari notifications fetch karna (For Bell Icon List)
+export const getNotifications = async (req, res) => {
+    try {
+        const userId = req.id; // Logged-in user ID
+
+        const notifications = await Notification.find({ recipient: userId })
+            .sort({ createdAt: -1 }) // Latest notifications upar
+            .limit(20); // Last 20 notifications dikhayenge
+
+        return res.status(200).json({
+            success: true,
+            notifications
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Internal server error", success: false });
+    }
+};
+
+// 2. Notification ko "Read" mark karna (Jab user bell icon click kare)
+export const markAsRead = async (req, res) => {
+    try {
+        const userId = req.id;
+        
+        // Saari unread notifications ko read mark kar dena
+        await Notification.updateMany(
+            { recipient: userId, isRead: false },
+            { $set: { isRead: true } }
+        );
+
+        return res.status(200).json({
+            message: "Notifications marked as read",
+            success: true
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Internal server error", success: false });
+    }
+};
+
+// 3. Single notification delete karna (Optional)
+export const deleteNotification = async (req, res) => {
+    try {
+        const notificationId = req.params.id;
+        await Notification.findByIdAndDelete(notificationId);
+        return res.status(200).json({
+            message: "Notification deleted",
+            success: true
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting notification" });
+    }
+};

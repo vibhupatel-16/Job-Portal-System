@@ -258,6 +258,93 @@ const ManageApplications = () => {
         </div>
       </div>
 
+      {/* ================= VIEW APPLICATION MODAL ================= */}
+{showViewModal && selectedApp && (
+  <Dialog open onOpenChange={() => setShowViewModal(false)}>
+    <DialogContent className="rounded-3xl max-w-lg">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold">
+          👤 Applicant Details
+        </DialogTitle>
+      </DialogHeader>
+
+      <div className="space-y-4 text-sm">
+        <div>
+          <p className="font-semibold">Name</p>
+          <p>{selectedApp.applicant?.fullname}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Email</p>
+          <p>{selectedApp.applicant?.email}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Job Title</p>
+          <p>{selectedApp.job?.title}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Company</p>
+          <p>{selectedApp.job?.company?.name}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Status</p>
+          <p className="uppercase font-bold">
+            {selectedApp.status}
+          </p>
+        </div>
+
+        {/* ================= RESUME SECTION ================= */}
+{selectedApp?.applicant?.profile?.resume ? (
+  <div className="space-y-2">
+    <p className="font-semibold">Resume</p>
+
+    {/* PDF PREVIEW */}
+    {selectedApp.applicant.profile.resume.endsWith(".pdf") ? (
+      <iframe
+        src={selectedApp.applicant.profile.resume}
+        title="Resume Preview"
+        className="w-full h-96 border rounded-xl"
+      />
+    ) : selectedApp.applicant.profile.resume.match(/\.(jpg|jpeg|png)$/i) ? (
+      /* IMAGE PREVIEW */
+      <img
+        src={selectedApp.applicant.profile.resume}
+        alt="Resume"
+        className="w-full max-h-96 object-contain border rounded-xl"
+      />
+    ) : (
+      /* FALLBACK */
+      <a
+        href={selectedApp.applicant.profile.resume}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-2 text-blue-600 font-semibold"
+      >
+        <FileText size={18} />
+        Open Resume
+      </a>
+    )}
+  </div>
+) : (
+  <p className="text-gray-400">No resume uploaded</p>
+)}
+
+
+        <Button
+          variant="outline"
+          onClick={() => setShowViewModal(false)}
+        >
+          Close
+        </Button>
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
+
+
       {/* ================= INTERVIEW MODAL (UNCHANGED UI) ================= */}
       {showInterviewModal && (
         <Dialog open onOpenChange={() => setShowInterviewModal(false)}>

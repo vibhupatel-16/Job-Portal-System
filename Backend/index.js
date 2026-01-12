@@ -15,6 +15,7 @@ import applicationRoute from "./routes/application.route.js";
 import adminRoute from "./routes/admin.route.js";
 
 import interviewRoute from "./routes/interview.route.js"
+import savedJobRoute from './routes/savedJob.route.js'
 
 dotenv.config({});
 const app = express();
@@ -68,6 +69,7 @@ app.use("/api/v1/admin", adminRoute);
 
 
 app.use("/api/v1", interviewRoute);
+app.use("/api/v1/user", savedJobRoute);
 
 
 app.use("/uploads", express.static("uploads"));
