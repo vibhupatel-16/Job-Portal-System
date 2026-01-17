@@ -41,8 +41,8 @@ export const scheduleInterview = async (req, res) => {
       time,
       mode,
       meetingLink,
-      scheduledBy: scheduledById,
-      scheduledByRole
+      scheduledBy: req.id, // Login user ki ID (Admin ya Employer)
+      scheduledByRole: req.user.role // User ka role
     });
 
     /* ================= 🔔 2. SAVE NOTIFICATION TO DATABASE ================= */
@@ -52,38 +52,74 @@ export const scheduleInterview = async (req, res) => {
       type: "INTERVIEW_SCHEDULED",
       title: "New Interview Scheduled!",
       message: `Your interview for ${application.job.title} at ${application.job.company.name} is fixed for ${date} at ${time}.`,
-      link: "/jobseeker/interviews" // Frontend link jahan user click karke ja sake
+      link: "/jobseeker/interviews" 
     });
 
-    /* ================= 🚀 SOCKET.IO (Modified to use notification data) ================= */
+    /* ================= 🚀 SOCKET.IO ================= */
     if (req.io) {
       const notificationData = {
-        id: notification._id, // Saved notification ki ID
+        id: notification._id, 
         type: notification.type,
         title: notification.title,
         message: notification.message,
         details: { date, time, mode, meetingLink }
       };
-
       req.io.to(application.applicant._id.toString()).emit("notification", notificationData);
     }
 
-    /* ================= EMAIL LOGIC (SAME) ================= */
+    /* ================= 📅 GOOGLE CALENDAR LINK LOGIC (NEW) ================= */
+    // Format: YYYYMMDDTHHmmSSZ
+    const startDateTime = new Date(`${date}T${time}:00`).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const endDateTime = new Date(new Date(`${date}T${time}:00`).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, ""); // 1 Hour Duration
+    
+    const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Interview: ${application.job.title} at ${application.job.company.name}`)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(`Meeting Link: ${meetingLink || 'N/A'}`)}&location=${encodeURIComponent(meetingLink || 'Office')}`;
+
+    /* ================= 📧 ATTRACTIVE EMAIL TEMPLATE (UPDATED) ================= */
     const emailHtml = `
-      <div style="font-family: Arial; max-width: 600px;">
-        <h2 style="color:#2563eb">Interview Scheduled</h2>
-        <p>Hi <b>${application.applicant.fullname}</b>,</p>
-        <p>Your interview for <b>${application.job.title}</b> at <b>${application.job.company.name}</b> has been scheduled.</p>
-        <p><b>Date:</b> ${date} | <b>Time:</b> ${time}</p>
-        <p><b>Mode:</b> ${mode.toUpperCase()}</p>
-        ${mode === "online" && meetingLink ? `<a href="${meetingLink}">Join Interview</a>` : ""}
-        <p>Regards,<br/>${application.job.company.name} Recruitment Team</p>
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+        <div style="background-color: #6A38C2; padding: 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Interview Invitation</h1>
+        </div>
+        
+        <div style="padding: 30px; background-color: #ffffff;">
+          <p style="font-size: 16px; color: #333;">Hi <b>${application.applicant.fullname}</b>,</p>
+          <p style="font-size: 15px; color: #555; line-height: 1.6;">
+            Great news! Your application for the <b>${application.job.title}</b> position at <b>${application.job.company.name}</b> has moved to the interview stage.
+          </p>
+          
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #6A38C2;">
+            <p style="margin: 5px 0; color: #333;">📅 <b>Date:</b> ${date}</p>
+            <p style="margin: 5px 0; color: #333;">⏰ <b>Time:</b> ${time}</p>
+            <p style="margin: 5px 0; color: #333;">📍 <b>Mode:</b> ${mode.toUpperCase()}</p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px;">
+            ${mode === "online" && meetingLink ? `
+              <a href="${meetingLink}" style="background-color: #6A38C2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 15px;">
+                Join Interview (Meeting Link)
+              </a>
+            ` : ""}
+            <br/>
+            <a href="${googleCalendarUrl}" style="color: #4285F4; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid #4285F4; padding: 8px 20px; border-radius: 6px; display: inline-block;">
+               🗓️ Add to Google Calendar
+            </a>
+          </div>
+
+          <p style="font-size: 14px; color: #888; margin-top: 40px; text-align: center; line-height: 1.5;">
+            If you have any questions, please feel free to reply to this email.<br/>
+            Best of luck with your interview!
+          </p>
+        </div>
+
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #aaa;">
+          Sent by <b>${application.job.company.name}</b> Recruitment Team via JobPortal
+        </div>
       </div>
     `;
 
     await sendEmail({
       email: application.applicant.email,
-      subject: `Interview: ${application.job.title}`,
+      subject: `Interview Invitation: ${application.job.title} at ${application.job.company.name}`,
       message: `Interview scheduled on ${date} at ${time}`,
       html: emailHtml
     });
@@ -105,6 +141,7 @@ export const getJobseekerInterviews = async (req, res) => {
     const userId = req.id; // isAuthenticated middleware se mil raha hai
 
     const interviews = await Interview.find({ jobseeker: userId })
+    .populate('company')
       .populate({
         path: "job",
         populate: { path: "company" }
@@ -124,22 +161,23 @@ export const getJobseekerInterviews = async (req, res) => {
 
 export const getScheduledInterviewsByCreator = async (req, res) => {
     try {
-        const userId = req.id; // Logged-in user ki ID
+        const userId = req.id; 
 
-        // Hum un interviews ko dhoondhenge jahan "application" ke andar job ka "created_by" wahi user ho
-        // Ya fir simple rasta: Agar aapne Interview model mein 'company' save ki hai:
         const interviews = await Interview.find()
             .populate({
                 path: 'application',
-                populate: { path: 'applicant', select: 'fullname email phoneNumber' }
+                populate: { 
+                    path: 'applicant', 
+                    select: 'fullname email phoneNumber' 
+                }
             })
+            .populate('jobseeker', 'fullname email') // ⭐ Seedha jobseeker ko populate karein
             .populate({
                 path: 'job',
-                match: { created_by: userId } // Sirf wahi jobs jo is user ne banayi hain
+                match: { created_by: userId } 
             })
             .populate('company');
 
-        // Filter karein taaki sirf wahi interviews dikhein jo is employer ke jobs ke hain
         const myScheduledInterviews = interviews.filter(item => item.job !== null);
 
         return res.status(200).json({
@@ -161,6 +199,7 @@ export const getAllInterviewsForAdmin = async (req, res) => {
                 path: 'application',
                 populate: { path: 'applicant', select: 'fullname email' }
             })
+            .populate('jobseeker', 'fullname email')
             .populate('job', 'title')
             .populate('company', 'name')
             .sort({ createdAt: -1 }); // Naye interviews upar dikhenge
@@ -229,5 +268,131 @@ export const deleteNotification = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ message: "Error deleting notification" });
+    }
+};
+
+export const requestReschedule = async (req, res) => {
+    try {
+        const { interviewId, reason, preferredTime } = req.body;
+        const [newDate, newTime] = preferredTime.split('T');
+
+        const interview = await Interview.findByIdAndUpdate(interviewId, {
+            status: 'reschedule_requested',
+            suggestedDate: newDate,
+            suggestedTime: newTime,
+            rescheduleReason: reason
+        }, { new: true });
+
+        // ⭐ Fix: Notification ab 'scheduledBy' wale user ko jayegi
+        // Chahe wo Admin ho ya Employer
+        await Notification.create({
+            recipient: interview.scheduledBy, // Ye wahi insaan hai jisne interview schedule kiya tha
+            sender: req.id, // Jobseeker ki ID
+            type: "STATUS_UPDATED",
+            title: "Reschedule Request Received",
+            message: `Candidate has requested a new time for the interview.`,
+            link: interview.scheduledByRole === 'admin' ? "/admin/interviews" : "/employer/interviews"
+        });
+
+        return res.status(200).json({ message: "Request sent successfully", success: true });
+    } catch (error) {
+        res.status(500).json({ success: false });
+    }
+};
+export const approveReschedule = async (req, res) => {
+    try {
+        const { interviewId, newDate, newTime } = req.body;
+
+        // 1. Interview update (suggested ko main date/time mein convert karna)
+        const interview = await Interview.findByIdAndUpdate(
+            interviewId, 
+            { 
+                date: newDate, 
+                time: newTime, 
+                status: 'scheduled', // Status wapas normal karein
+                $unset: { suggestedDate: 1, suggestedTime: 1, rescheduleReason: 1 } // Temp fields hatayein
+            }, 
+            { new: true }
+        ).populate('jobseeker job');
+
+        if (!interview) return res.status(404).json({ message: "Interview not found", success: false });
+
+        // 2. Jobseeker ko Notification (Aapka existing logic)
+        const notification = await Notification.create({
+            recipient: interview.jobseeker._id,
+            sender: req.id,
+            type: "STATUS_UPDATED",
+            title: "Reschedule Approved!",
+            message: `Your interview for ${interview.job.title} has been rescheduled to ${newDate} at ${newTime}.`,
+            link: "/jobseeker/interviews"
+        });
+
+        // 3. Socket Logic (Aapka existing logic)
+        if (req.io) {
+            req.io.to(interview.jobseeker._id.toString()).emit("notification", {
+                id: notification._id,
+                type: notification.type,
+                title: notification.title,
+                message: notification.message
+            });
+        }
+
+        return res.status(200).json({
+            message: "Interview rescheduled successfully!",
+            success: true,
+            interview
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to update interview", success: false });
+    }
+};
+
+// interview.controller.js mein niche add karein
+
+export const deleteInterview = async (req, res) => {
+    try {
+        const interviewId = req.params.id;
+        const userId = req.id; 
+        const userRole = req.user.role; 
+
+        // Interview fetch karein
+        const interview = await Interview.findById(interviewId);
+
+        if (!interview) {
+            return res.status(404).json({ message: "Interview not found", success: false });
+        }
+
+        // ⭐ SECURITY LOGIC UPDATE:
+        // 1. Agar user Admin hai toh delete kar sakta hai.
+        // 2. Agar user Employer hai, toh wo TABHI delete kar sakta hai jab usne khud schedule kiya ho.
+        const isOwner = interview.scheduledBy.toString() === userId.toString();
+
+        if (userRole !== 'admin' && !isOwner) {
+            return res.status(403).json({
+                message: "You can only delete interviews that you have scheduled.",
+                success: false
+            });
+        }
+
+        await Interview.findByIdAndDelete(interviewId);
+
+        // Jobseeker ko cancelation notification
+        await Notification.create({
+            recipient: interview.jobseeker,
+            sender: userId,
+            type: "STATUS_UPDATED",
+            title: "Interview Cancelled",
+            message: `Your scheduled interview has been cancelled by the ${userRole}.`,
+            link: "/jobseeker/interviews"
+        });
+
+        return res.status(200).json({
+            message: "Interview cancelled successfully",
+            success: true
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error", success: false });
     }
 };

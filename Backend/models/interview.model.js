@@ -38,10 +38,31 @@ const interviewSchema = new mongoose.Schema(
     meetingLink: {
       type: String,
     },
-    status: {
+    scheduledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true // Ye store karega ki interview kisne fix kiya
+},
+scheduledByRole: {
+    type: String,
+    enum: ['admin', 'employer'],
+    required: true
+},
+ status: {
       type: String,
-      enum: ["scheduled", "completed", "cancelled"],
+      enum: ["scheduled", "completed", "cancelled", "reschedule_requested"], // "reschedule_requested" add kiya
       default: "scheduled",
+    },
+
+    // 2. Reschedule ke liye ye 3 nayi fields add karein
+    suggestedDate: { 
+      type: String // Jobseeker jo nayi date maang raha hai
+    },
+    suggestedTime: { 
+      type: String // Jobseeker jo naya time maang raha hai
+    },
+    rescheduleReason: { 
+      type: String // Jobseeker ne kyu reschedule kiya
     },
   },
   { timestamps: true }

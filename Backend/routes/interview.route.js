@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteNotification, getAllInterviewsForAdmin, getNotifications, markAsRead, scheduleInterview } from "../controllers/interview.controller.js";
+import { deleteNotification, getAllInterviewsForAdmin, getNotifications, markAsRead, scheduleInterview, requestReschedule, approveReschedule, deleteInterview } from "../controllers/interview.controller.js";
 import { getJobseekerInterviews, getScheduledInterviewsByCreator } from "../controllers/interview.controller.js";
 import isAuthenticated from "../middlewares/isAuthenticated.js"; // Default import
 import { checkRole } from "../middlewares/checkRole.js"; // Role check import
@@ -24,5 +24,13 @@ router.get("/my-interviews", isAuthenticated, getJobseekerInterviews);
 router.get("/notifications", isAuthenticated, getNotifications);
 router.put("/notifications/mark-read", isAuthenticated, markAsRead);
 router.delete("/notifications/:id", isAuthenticated, deleteNotification);
+
+// Is line ko routes mein add karein
+router.post("/reschedule-request", isAuthenticated, requestReschedule);
+
+router.post("/approve-reschedule", isAuthenticated, checkRole("admin", "employer"), approveReschedule);
+
+// interview.route.js mein add karein
+router.route("/interview/:id").delete(isAuthenticated, deleteInterview);
 
 export default router;

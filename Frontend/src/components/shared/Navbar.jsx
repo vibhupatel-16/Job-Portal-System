@@ -65,6 +65,30 @@ function Navbar() {
         }
     };
 
+    const handleNotificationClick = async (notifId) => {
+    try {
+        // 1. Backend se delete karo taaki next time na dikhe
+        const res = await axios.delete(`${INTERVIEW_API_END_POINT}/notifications/${notifId}`, { withCredentials: true });
+        
+        if (res.data.success) {
+            // 2. Local state se hatao (UI refresh bina reload ke)
+            setNotifications(notifications.filter(n => n._id !== notifId));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+            
+            // 3. Deep Linking: Interview page par bhejo
+            if (user.role === 'jobseeker') {
+                navigate("/jobseeker/interviews");
+            } else {
+                navigate("/employer/interview-list");
+            }
+        }
+    } catch (error) {
+        console.log("Error in notification click:", error);
+        // Fail hone par bhi navigate karwa dete hain safety ke liye
+        navigate(user.role === 'jobseeker' ? "/jobseeker/interviews" : "/employer/interview-list");
+    }
+};
+
     const logoutHandler = async () => {
         try {
             const res = await axios.get(`${USER_API_END_POINT}/logout`, { withCredentials: true });
@@ -151,20 +175,22 @@ function Navbar() {
                                         <p className="p-10 text-center text-gray-400 text-sm">No notifications yet</p>
                                     ) : (
                                         notifications.map((notif) => (
-                                            <div key={notif._id} className={`p-4 border-b hover:bg-gray-50 transition cursor-default ${!notif.isRead ? 'bg-blue-50/50' : ''}`}>
-                                                <div className="flex gap-3">
-                                                    <div className="bg-blue-100 text-blue-600 p-2 rounded-full h-fit">
-                                                        <Calendar size={16} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-gray-800">{notif.title}</p>
-                                                        <p className="text-xs text-gray-600 leading-relaxed">{notif.message}</p>
-                                                        <p className="text-[10px] text-gray-400 mt-1">
-                                                            {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <div 
+        key={notif._id} 
+        onClick={() => handleNotificationClick(notif._id)} // <-- Ye function call add kiya
+        className={`p-4 border-b hover:bg-gray-100 transition cursor-pointer ${!notif.isRead ? 'bg-blue-50/50' : ''}`}
+    >
+        <div className="flex gap-3">
+            <div className="bg-blue-100 text-blue-600 p-2 rounded-full h-fit">
+                <Calendar size={16} />
+            </div>
+            <div>
+                <p className="text-sm font-semibold text-gray-800">{notif.title}</p>
+                <p className="text-xs text-gray-600 leading-relaxed">{notif.message}</p>
+                {/* ... baki code same ... */}
+            </div>
+        </div>
+    </div>
                                         ))
                                     )}
                                 </div>

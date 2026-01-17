@@ -88,7 +88,7 @@ const SavedJobs = () => {
                       : "bg-[#6A38C2] hover:bg-[#5b30a6] text-white"
                   }`}
                 >
-                  {isApplied ? "Already Applied" : "Quick Apply"}
+                  {isApplied ? "Already Applied" : "Apply"}
                 </button>
 
                 <button
