@@ -78,8 +78,10 @@ function Navbar() {
             // 3. Deep Linking: Interview page par bhejo
             if (user.role === 'jobseeker') {
                 navigate("/jobseeker/interviews");
-            } else {
+            } else if (user.role === 'employer') {
                 navigate("/employer/interview-list");
+            } else{
+                navigate('/admin/interview-list"')
             }
         }
     } catch (error) {

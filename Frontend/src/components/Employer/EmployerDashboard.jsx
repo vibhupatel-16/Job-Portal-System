@@ -6,7 +6,8 @@ import {
   ChevronRight,
   CheckCircle,
   XCircle,
-  Calendar
+  Calendar, 
+  Video
 } from "lucide-react";
 import axios from "axios";
 import {
@@ -44,6 +45,9 @@ const EmployerDashboard = () => {
     mode: "online",
     meetingLink: ""
   });
+
+  
+
 
   /* ================= FETCH DASHBOARD DATA ================= */
   useEffect(() => {
@@ -124,11 +128,8 @@ const EmployerDashboard = () => {
           date: interviewData.date,
           time: interviewData.time,
           mode: interviewData.mode,
-          meetingLink:
-            interviewData.mode === "online"
-              ? interviewData.meetingLink
-              : ""
-        },
+      meetingLink: interviewData.mode === "online" ? "" : interviewData.meetingLink
+      },
         { withCredentials: true }
       );
 
@@ -151,7 +152,18 @@ const EmployerDashboard = () => {
   return (
     <div className="bg-gray-100 min-h-screen px-6 py-10">
       <h1 className="text-3xl font-bold mb-8">Employer Dashboard</h1>
-
+      <div className="flex gap-3">
+      {/* ⭐ ADD THIS BUTTON */}
+      <button 
+        onClick={async () => {
+          const res = await axios.get(`${INTERVIEW_API_END_POINT}/google/auth`, { withCredentials: true });
+          if(res.data.url) window.location.href = res.data.url;
+        }}
+        className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-100 transition"
+      >
+        <Video size={18} /> Connect Google Meet
+      </button>
+      </div>
       <Link 
           to="/employer/interview-list" 
           className="flex items-center gap-2 mb-8 bg-purple-400 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all shadow-md"
@@ -255,31 +267,31 @@ const EmployerDashboard = () => {
               />
             </div>
 
-            <select
-              className="border p-2 rounded-lg w-full mt-3"
-              value={interviewData.mode}
-              onChange={e =>
-                setInterviewData({ ...interviewData, mode: e.target.value })
-              }
-            >
-              <option value="online">Online</option>
-              <option value="offline">Offline</option>
-            </select>
+            {/* EmployerDashboard.jsx modal ke andar niche wala change karein */}
 
-            {interviewData.mode === "online" && (
-              <input
-                type="text"
-                placeholder="Meeting link"
-                className="border p-2 rounded-lg w-full mt-3"
-                value={interviewData.meetingLink}
-                onChange={e =>
-                  setInterviewData({
-                    ...interviewData,
-                    meetingLink: e.target.value
-                  })
-                }
-              />
-            )}
+<select
+  className="border p-2 rounded-lg w-full mt-3"
+  value={interviewData.mode}
+  onChange={e => setInterviewData({ ...interviewData, mode: e.target.value })}
+>
+  <option value="online">Online (Google Meet)</option>
+  <option value="offline">Offline</option>
+</select>
+
+{/* Agar Mode ONLINE hai, toh manual link chhupa dein kyunki wo backend khud banayega */}
+{interviewData.mode === "online" ? (
+  <div className="mt-3 p-3 bg-purple-50 text-purple-700 rounded-lg text-xs italic border border-purple-100">
+    ✨ Google Meet link will be generated automatically and sent to Candidate's Bell Icon.
+  </div>
+) : (
+  <input
+    type="text"
+    placeholder="Enter Office Address"
+    className="border p-2 rounded-lg w-full mt-3"
+    value={interviewData.meetingLink}
+    onChange={e => setInterviewData({ ...interviewData, meetingLink: e.target.value })}
+  />
+)}
 
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={() => setOpenInterview(false)}>Cancel</button>

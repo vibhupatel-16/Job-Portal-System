@@ -1,6 +1,7 @@
 import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
 import sendEmail from "../utils/sendEmail.js";
+import { Notification } from "../models/notification.model.js";
 export const applyJob = async (req, res)=>{
     try{
         const userId = req.id;
@@ -138,7 +139,14 @@ export const updateStatus = async (req, res) => {
 
    // 🎨 Status color
 const statusColor = status === "accepted" ? "#22c55e" : "#ef4444";
-
+await Notification.create({
+    recipient: application.applicant._id,
+    sender: req.id, // Employer ID
+    type: "STATUS_UPDATED",
+    title: `Application ${status.toUpperCase()}`,
+    message: `Your application for ${application.job.title} has been ${status}.`,
+    link: "/profile"
+});
 await sendEmail({
   email: application.applicant.email,
   subject: `Application Update: ${application.job.title}`,

@@ -1,6 +1,7 @@
 import express from "express";
 import { deleteNotification, getAllInterviewsForAdmin, getNotifications, markAsRead, scheduleInterview, requestReschedule, approveReschedule, deleteInterview } from "../controllers/interview.controller.js";
 import { getJobseekerInterviews, getScheduledInterviewsByCreator } from "../controllers/interview.controller.js";
+import { getGoogleAuthUrl, googleCallback } from "../controllers/interview.controller.js";
 import isAuthenticated from "../middlewares/isAuthenticated.js"; // Default import
 import { checkRole } from "../middlewares/checkRole.js"; // Role check import
 
@@ -32,5 +33,8 @@ router.post("/approve-reschedule", isAuthenticated, checkRole("admin", "employer
 
 // interview.route.js mein add karein
 router.route("/interview/:id").delete(isAuthenticated, deleteInterview);
+// ⭐ NEW GOOGLE AUTH ROUTES
+router.get("/google/auth", isAuthenticated, checkRole("admin", "employer"), getGoogleAuthUrl);
+router.get("/google/callback", googleCallback); // Ye public rahega redirection ke liye
 
 export default router;

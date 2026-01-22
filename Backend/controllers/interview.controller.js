@@ -1,8 +1,46 @@
+import { google } from "googleapis"
 import { Interview } from "../models/interview.model.js";
 import { Application } from "../models/application.model.js";
 import sendEmail from "../utils/sendEmail.js";
 
 import { Notification } from "../models/notification.model.js"; 
+
+// Google OAuth Setup
+const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+);
+
+// ⭐ 1. Google Auth URL Generator
+export const getGoogleAuthUrl = (req, res) => {
+    const url = oauth2Client.generateAuthUrl({
+        access_type: "offline",
+        prompt: "consent",
+        scope: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    return res.status(200).json({ url, success: true });
+};
+
+export const googleCallback = async (req, res) => {
+    const { code } = req.query;
+    try {
+        const { tokens } = await oauth2Client.getToken(code);
+        
+        // ⭐ YAHAN DEKHO: Ye line VS Code ke terminal mein token print karegi
+        console.log("👉 YOUR_REFRESH_TOKEN:", tokens.refresh_token); 
+        
+        // Agar refresh_token mil gaya hai, toh browser mein success message dikhega
+        if (tokens.refresh_token) {
+            res.send("<h1>Connected!</h1><p>Token terminal mein aa gaya hai. Use copy karke .env mein daalein.</p>");
+        } else {
+            res.send("<h1>Connected!</h1><p>Token nahi mila. Shayad aapne pehle hi connect kar liya hai. Google settings se access hatakar dobara try karein.</p>");
+        }
+    } catch (error) {
+        console.error("Token Error:", error);
+        res.status(500).send("Authentication failed");
+    }
+};
 
 export const scheduleInterview = async (req, res) => {
   try {
@@ -21,17 +59,51 @@ export const scheduleInterview = async (req, res) => {
     if (!application) {
       return res.status(404).json({ message: "Application not found", success: false });
     }
-
-    if (
-      scheduledByRole === "employer" &&
-      application.job.created_by.toString() !== scheduledById.toString()
-    ) {
+// ⭐ STEP 1: Pehle Security/Role Check karein
+    if (scheduledByRole === "employer" && application.job.created_by.toString() !== scheduledById.toString()) {
       return res.status(403).json({
         message: "You are not allowed to schedule interview for this job",
         success: false
       });
     }
 
+    // ⭐ STEP 2: Variable declare karein
+    let finalMeetingLink = meetingLink || ""; 
+
+    // ⭐ STEP 3: Automatic Google Meet generation (After security check)
+    if (mode === "online") {
+        try {
+            // Check karein ki token hai ya nahi
+            if (!process.env.GOOGLE_REFRESH_TOKEN) {
+                console.error("Missing GOOGLE_REFRESH_TOKEN in .env");
+            } else {
+                oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+                const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+                const event = {
+                    summary: `Interview: ${application.job.title}`,
+                    description: `Candidate: ${application.applicant.fullname} | Company: ${application.job.company.name}`,
+                    start: { dateTime: new Date(`${date}T${time}:00`).toISOString(), timeZone: "Asia/Kolkata" },
+                    end: { dateTime: new Date(new Date(`${date}T${time}:00`).getTime() + 3600000).toISOString(), timeZone: "Asia/Kolkata" },
+                    conferenceData: {
+                        createRequest: { requestId: `req-${Date.now()}`, conferenceSolutionKey: { type: "hangoutsMeet" } }
+                    },
+                };
+
+                const response = await calendar.events.insert({
+                    calendarId: "primary",
+                    resource: event,
+                    conferenceDataVersion: 1,
+                });
+                finalMeetingLink = response.data.hangoutLink; 
+                console.log("Generated Link:", finalMeetingLink);
+            }
+        } catch (err) {
+            console.error("Google Meet API Error:", err.message);
+        }
+    }
+
+    // ⭐ STEP 4: Create Interview with finalMeetingLink
     const interview = await Interview.create({
       application: application._id,
       job: application.job._id,
@@ -40,9 +112,9 @@ export const scheduleInterview = async (req, res) => {
       date,
       time,
       mode,
-      meetingLink,
-      scheduledBy: req.id, // Login user ki ID (Admin ya Employer)
-      scheduledByRole: req.user.role // User ka role
+      meetingLink: finalMeetingLink, // Ab sahi link save hogi
+      scheduledBy: scheduledById,
+      scheduledByRole: scheduledByRole
     });
 
     /* ================= 🔔 2. SAVE NOTIFICATION TO DATABASE ================= */
@@ -72,7 +144,7 @@ export const scheduleInterview = async (req, res) => {
     const startDateTime = new Date(`${date}T${time}:00`).toISOString().replace(/-|:|\.\d\d\d/g, "");
     const endDateTime = new Date(new Date(`${date}T${time}:00`).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, ""); // 1 Hour Duration
     
-    const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Interview: ${application.job.title} at ${application.job.company.name}`)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(`Meeting Link: ${meetingLink || 'N/A'}`)}&location=${encodeURIComponent(meetingLink || 'Office')}`;
+    const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Interview: ${application.job.title} at ${application.job.company.name}`)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(`Meeting Link: ${finalMeetingLink || 'N/A'}`)}&location=${encodeURIComponent(finalMeetingLink || 'Office')}`;
 
     /* ================= 📧 ATTRACTIVE EMAIL TEMPLATE (UPDATED) ================= */
     const emailHtml = `
@@ -94,8 +166,8 @@ export const scheduleInterview = async (req, res) => {
           </div>
 
           <div style="text-align: center; margin-top: 30px;">
-            ${mode === "online" && meetingLink ? `
-              <a href="${meetingLink}" style="background-color: #6A38C2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 15px;">
+            ${mode === "online" && finalMeetingLink ? `
+              <a href="${finalMeetingLink}" style="background-color: #6A38C2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 15px;">
                 Join Interview (Meeting Link)
               </a>
             ` : ""}
