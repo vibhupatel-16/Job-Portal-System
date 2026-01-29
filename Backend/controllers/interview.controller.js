@@ -22,23 +22,25 @@ export const getGoogleAuthUrl = (req, res) => {
     return res.status(200).json({ url, success: true });
 };
 
+// interview.controller.js
 export const googleCallback = async (req, res) => {
     const { code } = req.query;
     try {
         const { tokens } = await oauth2Client.getToken(code);
         
-        // ⭐ YAHAN DEKHO: Ye line VS Code ke terminal mein token print karegi
         console.log("👉 YOUR_REFRESH_TOKEN:", tokens.refresh_token); 
-        
-        // Agar refresh_token mil gaya hai, toh browser mein success message dikhega
+
         if (tokens.refresh_token) {
-            res.send("<h1>Connected!</h1><p>Token terminal mein aa gaya hai. Use copy karke .env mein daalein.</p>");
+            // Success hone par seedha Employer Dashboard par redirect karein
+            // Taaki URL se '?code=...' hat jaye aur refresh karne par error na aaye
+            return res.redirect(`http://localhost:5173/employer/dashboard?auth=success`);
         } else {
-            res.send("<h1>Connected!</h1><p>Token nahi mila. Shayad aapne pehle hi connect kar liya hai. Google settings se access hatakar dobara try karein.</p>");
+            return res.status(400).send("Failed to get refresh token. Please try again.");
         }
     } catch (error) {
-        console.error("Token Error:", error);
-        res.status(500).send("Authentication failed");
+        console.error("Token Error:", error.message);
+        // Error hone par bhi dashboard par bhej dein error message ke sath
+        return res.redirect(`http://localhost:5173/employer/dashboard?auth=failed`);
     }
 };
 

@@ -19,7 +19,8 @@ import {
 // JOB CONTROLLERS
 import {
   getAllJobsForAdmin,
-  deleteJobByAdmin
+  deleteJobByAdmin,
+  updateJobStatus
 } from "../controllers/adminJob.controller.js";
 
 // APPLICATION CONTROLLERS
@@ -169,5 +170,13 @@ router.post(
   checkRole("admin", "employer"),
   scheduleInterview
 );
+router.put(
+  "/jobs/:id/status",
+  isAuthenticated,
+  checkRole("admin"),
+  updateJobStatus
+);
+
+
 
 export default router;

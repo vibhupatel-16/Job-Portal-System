@@ -1,4 +1,6 @@
 import { Job } from "../models/job.model.js";
+import sendEmail from "../utils/sendEmail.js";
+import { User } from "../models/user.model.js";
 
 export const getAllJobsForAdmin = async (req, res) => {
   try {
@@ -85,4 +87,34 @@ export const deleteJobByAdmin = async (req, res) => {
       message: "Failed"
     });
   }
+};
+
+// adminJob.controller.js mein
+
+export const updateJobStatus = async (req, res) => {
+  try {
+    const { status } = req.body; // 'approved' or 'rejected'
+    const jobId = req.params.id;
+
+    const job = await Job.findByIdAndUpdate(jobId, { status }, { new: true });
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    // ✅ SIRF APPROVE HONE PAR EMAIL BHEJEIN
+    if (status === "approved") {
+      const users = await User.find({ role: "jobseeker" });
+      for (const user of users) {
+        await sendEmail({
+          email: user.email,
+          subject: `New Opening: ${job.title}`,
+          message: `A new job is now live!`,
+          html: `<h1>${job.title} is now available!</h1>` // Aapka purana HTML template yahan use karein
+        });
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Job ${status} and users notified if approved`,
+    });
+  } catch (error) {  }
 };

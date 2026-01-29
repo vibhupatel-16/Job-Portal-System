@@ -38,6 +38,12 @@ const jobSchema = new mongoose.Schema({
         ref: 'Company',
         required: true
     },
+    // job.model.js mein add karein
+status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+},
     created_by:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'User',

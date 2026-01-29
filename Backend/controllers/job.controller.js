@@ -115,7 +115,7 @@ for (const user of users) {
     }
 
     return res.status(201).json({
-      message: "Job posted successfully and users notified via email",
+      message: "Job created successfully ",
       job,
       success: true
     });
@@ -170,7 +170,7 @@ export const getAllJobs = async (req, res) => {
     const skip = (page - 1) * limit;
 
     //  FIXED BASE QUERY (keyword optional)
-    const query = {};
+   const query = { status: "approved" };
 
    if (keyword) {
   query.$or = [

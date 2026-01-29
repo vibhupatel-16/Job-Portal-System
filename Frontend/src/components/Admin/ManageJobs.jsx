@@ -50,6 +50,16 @@ const ManageJobs = () => {
     }
   };
 
+  const handleStatusUpdate = async (id, newStatus) => {
+  try {
+    await axiosInstance.put(`/admin/jobs/${id}/status`, { status: newStatus });
+    toast.success(`Job ${newStatus}`);
+    fetchJobs(); // Table refresh karne ke liye
+  } catch (error) {
+    toast.error("Failed to update status");
+  }
+};
+
   return (
     <div className="p-6">
 
@@ -107,40 +117,76 @@ const ManageJobs = () => {
               <th className="p-4 text-left">Company</th>
               <th className="p-4 text-left">Location</th>
               <th className="p-4 text-left">Posted By</th>
+              <th className="p-4 text-center">Status</th>
               <th className="p-4 text-center">Actions</th>
             </tr>
           </thead>
 
-          <tbody>
-            {jobs.map((job) => (
-              <tr key={job._id} className="border-t hover:bg-gray-50">
-                <td className="p-4 font-medium">{job.title}</td>
-                <td className="p-4">{job.company?.name || "-"}</td>
-                <td className="p-4">{job.location || "-"}</td>
-                <td className="p-4">{job.created_by?.fullname || "-"}</td>
+<tbody>
+  {jobs.map((job) => (
+    <tr key={job._id} className="border-t hover:bg-gray-50">
+      <td className="p-4 font-medium">{job.title}</td>
+      <td className="p-4">{job.company?.name || "-"}</td>
+      <td className="p-4">{job.location || "-"}</td>
+      <td className="p-4">{job.created_by?.fullname || "-"}</td>
 
-                <td className="p-4 text-center space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      navigate(`/admin/jobs/update/${job._id}`)
-                    }
-                  >
-                    <Pencil size={14} />
-                  </Button>
+      {/* ✅ Status Cell */}
+      <td className="p-4 text-center">
+        <span className={`px-2 py-1 rounded-full text-[10px] font-semibold uppercase ${
+          job.status === 'approved' ? 'bg-green-100 text-green-700' : 
+          job.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+        }`}>
+          {job.status || 'pending'}
+        </span>
+      </td>
 
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => deleteJob(job._id)}
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+      {/* ✅ Combined Actions Cell */}
+      <td className="p-4 text-center">
+        <div className="flex items-center justify-center gap-2">
+          {/* Admin Approval Buttons */}
+          {job.status === 'pending' && (
+            <>
+              <Button 
+                size="sm" 
+                className="h-8 bg-green-600 hover:bg-green-700 text-xs"
+                onClick={() => handleStatusUpdate(job._id, 'approved')}
+              >
+                Approve
+              </Button>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                className="h-8 text-xs"
+                onClick={() => handleStatusUpdate(job._id, 'rejected')}
+              >
+                Reject
+              </Button>
+            </>
+          )}
+
+          {/* Standard Edit/Delete Buttons */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={() => navigate(`/admin/jobs/update/${job._id}`)}
+          >
+            <Pencil size={14} />
+          </Button>
+
+          <Button
+            size="sm"
+            variant="destructive"
+            className="h-8 w-8 p-0"
+            onClick={() => deleteJob(job._id)}
+          >
+            <Trash2 size={14} />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
 
         {jobs.length === 0 && (
