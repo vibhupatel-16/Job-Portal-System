@@ -5,7 +5,7 @@ import { upload } from "../middlewares/multer.js";
 
 // ================= CONTROLLERS =================
 import { getAdminStats } from "../controllers/admin.controller.js";
-import { getAllUsers, deleteUser } from "../controllers/adminUser.controller.js";
+import { getAllUsers, deleteUser, toggleUserStatus } from "../controllers/adminUser.controller.js";
 
 import {
   getAllCompaniesAdmin,
@@ -90,6 +90,8 @@ router.put(
   checkRole("admin"),
   updateJob
 );
+
+router.put("/users/:id/toggle-status", isAuthenticated, checkRole("admin"), toggleUserStatus);
 
 // ================= MANAGE COMPANIES =================
 router.get(

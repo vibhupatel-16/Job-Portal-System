@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     default:"jobseeker"
   },
+
+isBlocked: {
+    type: Boolean,
+    default: false
+},
   savedJobs: [
   {
     type: mongoose.Schema.Types.ObjectId,

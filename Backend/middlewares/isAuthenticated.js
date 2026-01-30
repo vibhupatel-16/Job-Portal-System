@@ -32,6 +32,13 @@ const isAuthenticated = async (req, res, next) => {
       });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({
+        message: "Aapka account admin dwara block kar diya gaya hai.",
+        success: false
+      });
+    }
+
     // 4️⃣ Attach user details to req
     req.user = user;
     req.id = user._id;

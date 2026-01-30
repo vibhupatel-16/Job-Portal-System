@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axiosInstance";
-import { Trash2, Users } from "lucide-react";
+import { Trash2, Users, ShieldAlert, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -31,6 +31,16 @@ const ManageUsers = () => {
       toast.error("Delete failed");
     }
   };
+
+  const toggleStatus = async (id) => {
+  try {
+    const res = await axiosInstance.put(`/admin/users/${id}/toggle-status`);
+    toast.success(res.data.message);
+    fetchUsers(); // Refresh list
+  } catch (err) {
+    toast.error("Operation failed");
+  }
+};
 
   useEffect(() => {
     fetchUsers();
@@ -70,7 +80,7 @@ const ManageUsers = () => {
                 <th className="p-4 text-left">Name</th>
                 <th className="p-4 text-left">Email</th>
                 <th className="p-4 text-left">Role</th>
-                <th className="p-4 text-center">Action</th>
+                <th className="p-4 text-center">Status Action</th>
               </tr>
             </thead>
             <tbody>
@@ -92,19 +102,31 @@ const ManageUsers = () => {
                       {u.role}
                     </span>
                   </td>
-                  <td className="p-4 text-center">
+                  <td className="p-4 text-center flex items-center justify-center gap-4">
                     {u.role !== "admin" ? (
-                      <button
-                        onClick={() => deleteUser(u._id)}
-                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 size={16} />
-                        <span className="text-sm">Delete</span>
-                      </button>
+                      <>
+                        {/* 🛑 Block/Unblock Toggle Button */}
+                        <button
+                          onClick={() => toggleStatus(u._id)}
+                          className={`flex items-center gap-1 text-sm font-semibold transition ${u.isBlocked ? "text-green-600 hover:text-green-800" : "text-orange-600 hover:text-orange-800"}`}
+                        >
+                          {u.isBlocked ? (
+                            <><ShieldCheck size={16} /> Unblock</>
+                          ) : (
+                            <><ShieldAlert size={16} /> Block</>
+                          )}
+                        </button>
+
+                        <button onClick={() => deleteUser(u._id)} className="text-red-600 hover:text-red-800 flex items-center gap-1">
+                          <Trash2 size={16} />
+                          <span className="text-sm">Delete</span>
+                        </button>
+                      </>
                     ) : (
-                      <span className="text-gray-400 text-sm">Protected</span>
+                      <span className="text-gray-400 text-sm italic">Protected</span>
                     )}
                   </td>
+              
                 </tr>
               ))}
             </tbody>
