@@ -51,7 +51,7 @@ const ScheduledInterviews = () => {
                 fetchList();
             }
         } catch (error) {
-            toast.error("Error cancelling interview");
+            toast.error("Error cancelling interview", error);
         }
     };
 
@@ -93,16 +93,20 @@ const ScheduledInterviews = () => {
                                     </div>
                                 </TableCell>
 
-                                <TableCell>
-                                    <div className="flex flex-col text-sm">
-                                        <span className="font-medium text-gray-700 flex items-center gap-1">
-                                            <Calendar size={13}/> {item.date}
-                                        </span>
-                                        <span className="text-gray-500 flex items-center gap-1">
-                                            <Clock size={13}/> {item.time}
-                                        </span>
-                                    </div>
-                                </TableCell>
+                              <TableCell>
+    <div className="flex flex-col text-sm">
+        <span className="font-medium text-gray-700 flex items-center gap-1">
+            <Calendar size={13}/> 
+            {/* Date format: 30 Jan 2026 */}
+            {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+        </span>
+        <span className="text-gray-500 flex items-center gap-1">
+            <Clock size={13}/> 
+            {/* Time format: 11:30 AM */}
+            {new Date(`2000-01-01T${item.time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+        </span>
+    </div>
+</TableCell>
 
                                 <TableCell>
                                     <Badge className={item.mode === 'online' ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}>
@@ -111,24 +115,47 @@ const ScheduledInterviews = () => {
                                 </TableCell>
 
                                 {/* Action Column mein jahan Approve button hai */}
+                                {/* --- Naya Meeting Link Column --- */}
+<TableCell>
+    {item.mode === "online" && item.meetingLink ? (
+        <a 
+            href={item.meetingLink} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-blue-500 hover:underline flex items-center gap-1 font-medium text-sm"
+        >
+            <Video size={16} /> Join Meeting
+        </a>
+    ) : (
+        <span className="text-gray-500 flex items-center gap-1 text-sm">
+            <MapPin size={16} /> {item.mode === 'online' ? 'Link Pending' : 'In-Person'}
+        </span>
+    )}
+</TableCell>
 <TableCell className="text-center">
     <div className="flex items-center justify-center gap-2">
         
         {/* ⭐ FIX: Status ke saath yeh bhi check karein ki kya login user hi scheduler hai? */}
-        {(item.status === 'reschedule_requested' && item.scheduledByRole === 'employer') ? (
-            <button 
-                onClick={() => handleApproveReschedule(item._id, item.suggestedDate, item.suggestedTime)}
-                className="flex items-center gap-1 p-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-all shadow-sm"
-            >
-                <CheckCircle2 size={18} />
-                <span className="text-[10px] font-bold">APPROVE</span>
-            </button>
-        ) : item.status === 'reschedule_requested' ? (
-            // Agar Admin ne schedule kiya hai, toh Employer ko sirf Badge dikhega
-            <Badge className="bg-orange-100 text-orange-600 border-none text-[10px]">
-                WAITING FOR ADMIN
-            </Badge>
-        ) : null}
+      
+{(item.status === 'reschedule_requested' && item.scheduledByRole === 'employer') ? (
+    <div className="flex flex-col gap-2 p-2 bg-orange-50 rounded-xl border border-orange-100">
+        <div className="text-left mb-1">
+            <p className="text-[9px] font-bold text-orange-600 uppercase">New Requested Slot:</p>
+            <p className="text-[10px] font-bold text-gray-700">
+                📅 {new Date(item.suggestedDate).toLocaleDateString('en-GB')} 
+                <br/>
+                ⏰ {new Date(`2000-01-01T${item.suggestedTime}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+            </p>
+        </div>
+        <button 
+            onClick={() => handleApproveReschedule(item._id, item.suggestedDate, item.suggestedTime)}
+            className="flex items-center justify-center gap-1 p-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-all shadow-sm"
+        >
+            <CheckCircle2 size={16} />
+            <span className="text-[10px] font-bold">APPROVE & UPDATE LINK</span>
+        </button>
+    </div>
+) : null }
 
         {/* Delete button hamesha rahega agar aap chahein */}
         {/* ⭐ NEW: Delete Button logic */}

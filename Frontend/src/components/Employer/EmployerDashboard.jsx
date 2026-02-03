@@ -10,7 +10,8 @@ import {
   Video,
   Eye,
   FileText,
-  ListChecks
+  ListChecks,
+  Clock
 } from "lucide-react";
 import axios from "axios";
 import {
@@ -82,7 +83,7 @@ const EmployerDashboard = () => {
         setApplications(prev => prev.map(app => app._id === appId ? { ...app, status } : app));
       }
     } catch (error) {
-      toast.error("Status update failed");
+      toast.error("Status update failed", error);
     }
   };
 
@@ -241,54 +242,90 @@ const EmployerDashboard = () => {
         </Dialog>
       )}
 
-      {/* INTERVIEW MODAL (AS PER YOUR ORIGINAL LOGIC) */}
-      {openInterview && selectedApp && (
-        <Dialog open onOpenChange={() => setOpenInterview(false)}>
-          <DialogContent className="rounded-[2rem] border-none shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                <Calendar size={20} className="text-purple-600" /> Schedule Interview
-              </DialogTitle>
-              <p className="text-xs text-gray-400">Scheduling for: {selectedApp.applicant?.fullname}</p>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Date</label>
-                  <input type="date" className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none" onChange={e => setInterviewData({...interviewData, date: e.target.value})} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Time</label>
-                  <input type="time" className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none" onChange={e => setInterviewData({...interviewData, time: e.target.value})} />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Mode</label>
-                <select className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none" value={interviewData.mode} onChange={e => setInterviewData({...interviewData, mode: e.target.value})}>
-                  <option value="online">Online (Google Meet)</option>
-                  <option value="offline">Offline (In-Person)</option>
-                </select>
-              </div>
+{/* INTERVIEW MODAL */}
+{openInterview && selectedApp && (
+  <Dialog open onOpenChange={() => setOpenInterview(false)}>
+    <DialogContent className="rounded-[2rem] border-none shadow-2xl bg-white">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+          <Calendar size={20} className="text-purple-600" /> Schedule Interview
+        </DialogTitle>
+        <p className="text-xs text-gray-400">Scheduling for: {selectedApp.applicant?.fullname}</p>
+      </DialogHeader>
 
-              {interviewData.mode === "online" ? (
-                <div className="bg-purple-50 p-4 rounded-2xl text-[11px] text-purple-700 border border-purple-100 leading-relaxed italic">
-                  ✨ Google Meet link will be generated automatically and sent to the candidate's notification bell.
-                </div>
-              ) : (
-                <div className="space-y-1">
-                   <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Office Address</label>
-                   <textarea placeholder="Enter full address..." className="border border-gray-200 p-3 rounded-2xl w-full h-24 focus:ring-2 focus:ring-purple-200 outline-none" onChange={e => setInterviewData({...interviewData, meetingLink: e.target.value})} />
-                </div>
-              )}
-              
-              <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1 rounded-2xl h-12 border-gray-200" onClick={() => setOpenInterview(false)}>Cancel</Button>
-                <Button className="flex-1 rounded-2xl h-12 bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200" onClick={scheduleInterview}>Schedule Now</Button>
-              </div>
+      <div className="space-y-4 pt-4">
+        {/* Date and Time Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Date</label>
+            <input 
+              type="date" 
+              className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none text-sm" 
+              onChange={e => setInterviewData({...interviewData, date: e.target.value})} 
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Time (AM/PM)</label>
+            <input 
+              type="time" 
+              className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none text-sm" 
+              onChange={e => setInterviewData({...interviewData, time: e.target.value})} 
+            />
+          </div>
+        </div>
+
+        {/* AM/PM Preview Badge */}
+        {interviewData.time && (
+          <div className="flex items-center gap-2 mt-1">
+            <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1">
+               <Clock size={12} />
+               Selected: {new Date(`2000-01-01T${interviewData.time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+          </div>
+        )}
+
+        {/* Mode Selection */}
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Mode</label>
+          <select 
+            className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none text-sm" 
+            value={interviewData.mode} 
+            onChange={e => setInterviewData({...interviewData, mode: e.target.value})}
+          >
+            <option value="online">Online (Google Meet)</option>
+            <option value="offline">Offline (In-Person)</option>
+          </select>
+        </div>
+
+        {/* Dynamic Content based on Mode */}
+        {interviewData.mode === "online" ? (
+          <div className="bg-purple-50 p-4 rounded-2xl text-[11px] text-purple-700 border border-purple-100 italic">
+            ✨ Google Meet link will be generated automatically.
+          </div>
+        ) : (
+          <div className="space-y-1">
+             <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Office Address</label>
+             <textarea 
+               placeholder="Enter full address..." 
+               className="border border-gray-200 p-3 rounded-2xl w-full h-20 focus:ring-2 focus:ring-purple-200 outline-none text-sm" 
+               onChange={e => setInterviewData({...interviewData, meetingLink: e.target.value})} 
+             />
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-2">
+          <Button variant="outline" className="flex-1 rounded-2xl h-12 border-gray-200" onClick={() => setOpenInterview(false)}>
+            Cancel
+          </Button>
+          <Button className="flex-1 rounded-2xl h-12 bg-purple-600 hover:bg-purple-700 shadow-lg" onClick={scheduleInterview}>
+            Schedule Now
+          </Button>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
     </div>
   );
 };

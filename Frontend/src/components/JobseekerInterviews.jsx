@@ -62,6 +62,24 @@ const JobseekerInterviews = () => {
         }
     };
 
+    // Component ke andar (return se pehle) ise add karein:
+const formatDisplayDateTime = (dateTimeStr) => {
+    if (!dateTimeStr) return "";
+    const dateObj = new Date(dateTimeStr);
+    
+    // Date format: DD-MM-YYYY
+    const date = dateObj.toLocaleDateString('en-GB').replace(/\//g, '-');
+    
+    // Time format: hh:mm AM/PM
+    const time = dateObj.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: true 
+    });
+    
+    return `${date} | ${time}`;
+};
+
     return (
         <div className='max-w-5xl mx-auto my-10 px-4'>
             <h1 className='font-bold text-2xl mb-6 text-gray-800'>My Scheduled Interviews</h1>
@@ -82,15 +100,27 @@ const JobseekerInterviews = () => {
                                 <TableCell className="font-medium text-gray-900">{item.company.name}</TableCell>
                                 <TableCell>{item.job.title}</TableCell>
                                 <TableCell>
-                                    <div className="flex flex-col text-sm">
-                                        <span className="flex items-center gap-1 text-gray-700 font-medium">
-                                            <Calendar size={14} className="text-gray-400" /> {item.date}
-                                        </span>
-                                        <span className="flex items-center gap-1 text-gray-500">
-                                            <Clock size={14} className="text-gray-400" /> {item.time}
-                                        </span>
-                                    </div>
-                                </TableCell>
+    <div className="flex flex-col text-sm">
+        <span className="font-medium text-gray-700 flex items-center gap-1">
+            <Calendar size={13} className="text-orange-500"/> 
+            {/* Date Format: 30 Jan 2026 */}
+            {new Date(item.date).toLocaleDateString('en-GB', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric' 
+            })}
+        </span>
+        <span className="text-gray-500 flex items-center gap-1">
+            <Clock size={13} className="text-orange-400"/> 
+            {/* Time Format: 11:30 AM */}
+            {new Date(`2000-01-01T${item.time}`).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: true 
+            })}
+        </span>
+    </div>
+</TableCell>
                                 <TableCell>
                                     <Badge className={item.mode === 'online' ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}>
                                         {item.mode.toUpperCase()}
@@ -144,12 +174,21 @@ const JobseekerInterviews = () => {
                                 className="border rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-100 outline-none h-24 resize-none border-gray-200"
                                 onChange={(e) => setRescheduleData({...rescheduleData, reason: e.target.value})}
                             />
-                            <label className="text-sm font-medium text-gray-700">Preferred New Time</label>
-                            <input 
-                                type="datetime-local"
-                                className="border border-gray-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-orange-100"
-                                onChange={(e) => setRescheduleData({...rescheduleData, preferredTime: e.target.value})}
-                            />
+                           <label className="text-sm font-medium text-gray-700">Preferred New Time</label>
+<div className="relative">
+    <input 
+        type="datetime-local"
+        className="border border-gray-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-orange-100 w-full"
+        onChange={(e) => setRescheduleData({...rescheduleData, preferredTime: e.target.value})}
+    />
+    
+    {/* ⭐ Yeh line select kiya hua time proper format (AM/PM) mein dikhayegi */}
+    {rescheduleData.preferredTime && (
+        <p className="mt-2 text-xs font-bold text-orange-600 bg-orange-50 p-2 rounded-md border border-orange-100">
+            Selected: {formatDisplayDateTime(rescheduleData.preferredTime)}
+        </p>
+    )}
+</div>
                         </div>
 
                         <div className="flex justify-end gap-3 mt-8">

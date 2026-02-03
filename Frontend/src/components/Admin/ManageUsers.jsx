@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axiosInstance";
 import { Trash2, Users, ShieldAlert, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion";
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -14,7 +14,7 @@ const ManageUsers = () => {
       const res = await axiosInstance.get("/admin/users");
       setUsers(res.data.users || []);
     } catch (err) {
-      toast.error("Failed to load users");
+      toast.error("Failed to load users", err);
     } finally {
       setLoading(false);
     }
@@ -38,7 +38,7 @@ const ManageUsers = () => {
     toast.success(res.data.message);
     fetchUsers(); // Refresh list
   } catch (err) {
-    toast.error("Operation failed");
+    toast.error("Operation failed", err);
   }
 };
 

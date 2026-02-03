@@ -51,6 +51,15 @@ export const scheduleInterview = async (req, res) => {
     const scheduledByRole = req.user.role; 
     const scheduledById = req.id;
 
+    const formattedDate = new Date(date).toLocaleDateString('en-GB').replace(/\//g, '-');
+
+    // Time Format: 02:30 PM
+    const formattedTime = new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+
     const application = await Application.findById(applicationId)
       .populate({
         path: "job",
@@ -125,7 +134,7 @@ export const scheduleInterview = async (req, res) => {
       sender: scheduledById,
       type: "INTERVIEW_SCHEDULED",
       title: "New Interview Scheduled!",
-      message: `Your interview for ${application.job.title} at ${application.job.company.name} is fixed for ${date} at ${time}.`,
+      message: `Your interview for ${application.job.title} at ${application.job.company.name} is fixed for ${formattedDate} at ${formattedTime}.`,
       link: "/jobseeker/interviews" 
     });
 
@@ -149,6 +158,7 @@ export const scheduleInterview = async (req, res) => {
     const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Interview: ${application.job.title} at ${application.job.company.name}`)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(`Meeting Link: ${finalMeetingLink || 'N/A'}`)}&location=${encodeURIComponent(finalMeetingLink || 'Office')}`;
 
     /* ================= 📧 ATTRACTIVE EMAIL TEMPLATE (UPDATED) ================= */
+
     const emailHtml = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
         <div style="background-color: #6A38C2; padding: 30px; text-align: center;">
@@ -162,8 +172,8 @@ export const scheduleInterview = async (req, res) => {
           </p>
           
           <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #6A38C2;">
-            <p style="margin: 5px 0; color: #333;">📅 <b>Date:</b> ${date}</p>
-            <p style="margin: 5px 0; color: #333;">⏰ <b>Time:</b> ${time}</p>
+            <p style="margin: 5px 0; color: #333;">📅 <b>Date:</b> ${formattedDate}</p>
+            <p style="margin: 5px 0; color: #333;">⏰ <b>Time:</b> ${formattedTime}</p>
             <p style="margin: 5px 0; color: #333;">📍 <b>Mode:</b> ${mode.toUpperCase()}</p>
           </div>
 
@@ -376,53 +386,118 @@ export const requestReschedule = async (req, res) => {
 export const approveReschedule = async (req, res) => {
     try {
         const { interviewId, newDate, newTime } = req.body;
+        const userId = req.id; 
 
-        // 1. Interview update (suggested ko main date/time mein convert karna)
-        const interview = await Interview.findByIdAndUpdate(
-            interviewId, 
-            { 
-                date: newDate, 
-                time: newTime, 
-                status: 'scheduled', // Status wapas normal karein
-                $unset: { suggestedDate: 1, suggestedTime: 1, rescheduleReason: 1 } // Temp fields hatayein
-            }, 
-            { new: true }
-        ).populate('jobseeker job');
+        // ⭐ FIX 1: Populate use karein taaki 'jobseeker' aur 'job' ka data mil sake
+        const interview = await Interview.findById(interviewId)
+            .populate("jobseeker") // Isse email aur fullname milega
+            .populate("job");      // Isse job title milega
 
         if (!interview) return res.status(404).json({ message: "Interview not found", success: false });
 
-        // 2. Jobseeker ko Notification (Aapka existing logic)
-        const notification = await Notification.create({
+        // Formatting logic
+        const formattedDate = new Date(newDate).toLocaleDateString('en-GB').replace(/\//g, '-');
+        const formattedTime = new Date(`2000-01-01T${newTime}`).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        // 2. Google OAuth Setup
+        if (!process.env.GOOGLE_REFRESH_TOKEN) {
+            return res.status(500).json({ message: "Google Calendar not configured", success: false });
+        }
+
+        oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+        const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+        const startDateTime = new Date(`${newDate}T${newTime}:00`);
+        const endDateTime = new Date(startDateTime.getTime() + 30 * 60000); 
+
+        const event = {
+            summary: `Rescheduled: ${interview.job?.title || "Interview"}`, // Safe access with ?.
+            description: `Interview rescheduled by Employer.`,
+            start: { dateTime: startDateTime.toISOString(), timeZone: "Asia/Kolkata" },
+            end: { dateTime: endDateTime.toISOString(), timeZone: "Asia/Kolkata" },
+            conferenceData: {
+                createRequest: { 
+                    requestId: `resched-${Date.now()}`, 
+                    conferenceSolutionKey: { type: "hangoutsMeet" } 
+                },
+            },
+        };
+
+        const response = await calendar.events.insert({
+            calendarId: "primary",
+            resource: event,
+            conferenceDataVersion: 1,
+        });
+
+        const newMeetingLink = response.data.hangoutLink;
+
+        // 5. Database Update
+        interview.date = newDate;
+        interview.time = newTime;
+        interview.meetingLink = newMeetingLink;
+        interview.status = 'scheduled'; 
+        interview.rescheduleRequest = undefined; 
+        await interview.save();
+
+        // 6. Notification save
+        await Notification.create({
             recipient: interview.jobseeker._id,
-            sender: req.id,
+            sender: userId,
             type: "STATUS_UPDATED",
-            title: "Reschedule Approved!",
-            message: `Your interview for ${interview.job.title} has been rescheduled to ${newDate} at ${newTime}.`,
+            title: "Reschedule Approved ✅",
+            message: `Your interview for ${interview.job?.title} is approved for ${formattedDate} at ${formattedTime}.`,
             link: "/jobseeker/interviews"
         });
 
-        // 3. Socket Logic (Aapka existing logic)
-        if (req.io) {
-            req.io.to(interview.jobseeker._id.toString()).emit("notification", {
-                id: notification._id,
-                type: notification.type,
-                title: notification.title,
-                message: notification.message
-            });
-        }
+        /* ================= 📧 EMAIL TEMPLATE ================= */
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+            <div style="background-color: #22c55e; padding: 20px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Reschedule Approved</h1>
+            </div>
+            <div style="padding: 30px; background-color: #ffffff;">
+              <p>Hi <b>${interview.jobseeker?.fullname || "Candidate"}</b>,</p>
+              <p>Your request to reschedule the interview for <b>${interview.job?.title || "your applied job"}</b> has been <b>approved</b>.</p>
+              
+              <div style="background-color: #f0fdf4; border-radius: 8px; padding: 15px; margin: 20px 0; border-left: 4px solid #22c55e;">
+                <p style="margin: 5px 0;">📅 <b>New Date:</b> ${formattedDate}</p>
+                <p style="margin: 5px 0;">⏰ <b>New Time:</b> ${formattedTime}</p>
+              </div>
 
-        return res.status(200).json({
-            message: "Interview rescheduled successfully!",
-            success: true,
-            interview
+              <div style="text-align: center; margin-top: 25px;">
+                <a href="${newMeetingLink}" style="background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  Join Rescheduled Interview
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // ⭐ FIX 2: Ensure email is sent to the populated email field
+        await sendEmail({
+            email: interview.jobseeker.email, // Ab yeh available hoga populate ki wajah se
+            subject: `Reschedule Approved: ${interview.job?.title || "Interview"}`,
+            message: `Your interview is rescheduled for ${formattedDate} at ${formattedTime}`,
+            html: emailHtml
         });
+
+        return res.status(200).json({ 
+            message: "Approved! New link generated and email sent.", 
+            success: true 
+        });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Failed to update interview", success: false });
+        console.error("Detailed Error:", error);
+        res.status(500).json({ 
+            message: "Internal Server Error. Please check logs.", 
+            success: false 
+        });
     }
 };
-
-// interview.controller.js mein niche add karein
 
 export const deleteInterview = async (req, res) => {
     try {

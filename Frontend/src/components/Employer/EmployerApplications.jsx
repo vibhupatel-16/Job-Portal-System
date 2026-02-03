@@ -27,7 +27,7 @@ const EmployerApplications = () => {
       });
       setApplications(res.data.applications || []);
     } catch (err) {
-      toast.error("Failed to load applications");
+      toast.error("Failed to load applications", err);
     }
   };
 
@@ -47,7 +47,7 @@ const EmployerApplications = () => {
       setShowInterviewModal(false);
       setInterviewData({ date: "", time: "", mode: "online", meetingLink: "" });
     } catch (err) {
-      toast.error("Interview scheduling failed");
+      toast.error("Interview scheduling failed", err);
     }
   };
 
