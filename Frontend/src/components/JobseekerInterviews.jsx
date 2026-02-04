@@ -80,6 +80,53 @@ const formatDisplayDateTime = (dateTimeStr) => {
     return `${date} | ${time}`;
 };
 
+const CountdownTimer = ({ targetDate, targetTime }) => {
+    const [status, setStatus] = useState("");
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+            const destination = new Date(`${targetDate}T${targetTime}:00`);
+            const distance = destination.getTime() - now.getTime();
+
+            // Status Logic
+            if (distance < 0) {
+                const isPastDate = new Date(targetDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+                
+                // Agar date purani hai toh "Expired", agar aaj ki hai toh "Started"
+                if (isPastDate) {
+                    setStatus("Expired");
+                } else {
+                    setStatus("Started");
+                }
+                clearInterval(interval);
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            let display = days > 0 ? `${days}d ` : "";
+            display += `${hours}h ${minutes}m ${seconds}s`;
+            setStatus(display);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [targetDate, targetTime]);
+
+    return (
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ml-2 ${
+            status === "Expired" ? "bg-red-100 text-red-600 border border-red-200" : 
+            status === "Started" ? "bg-green-100 text-green-600 border border-green-200" : 
+            "bg-orange-100 text-orange-700 border border-orange-200"
+        }`}>
+            {status === "Expired" || status === "Started" ? status : `Starts in: ${status}`}
+        </span>
+    );
+};
+
     return (
         <div className='max-w-5xl mx-auto my-10 px-4'>
             <h1 className='font-bold text-2xl mb-6 text-gray-800'>My Scheduled Interviews</h1>
@@ -151,6 +198,22 @@ const formatDisplayDateTime = (dateTimeStr) => {
                                         </button>
                                     </div>
                                 </TableCell>
+                                <TableCell>
+    <div className="flex flex-col text-sm">
+        <span className="font-medium text-gray-700 flex items-center gap-1">
+            <Calendar size={13} className="text-orange-500"/> 
+            {/* Formatting date for display */}
+            {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+            
+            {/* Countdown Component Yahan Rahega */}
+            <CountdownTimer targetDate={item.date} targetTime={item.time} />
+        </span>
+        <span className="text-gray-500 flex items-center gap-1 mt-1">
+            <Clock size={13} className="text-orange-400"/> 
+            {new Date(`2000-01-01T${item.time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+        </span>
+    </div>
+</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

@@ -16,6 +16,7 @@ import adminRoute from "./routes/admin.route.js";
 
 import interviewRoute from "./routes/interview.route.js"
 import savedJobRoute from './routes/savedJob.route.js'
+import './utils/cronJobs.js'
 
 dotenv.config({});
 const app = express();

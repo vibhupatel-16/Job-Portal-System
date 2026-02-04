@@ -64,6 +64,9 @@ scheduledByRole: {
     rescheduleReason: { 
       type: String // Jobseeker ne kyu reschedule kiya
     },
+    // models/interview.model.js mein add karein
+reminderSent24h: { type: Boolean, default: false },
+reminderSent1h: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
