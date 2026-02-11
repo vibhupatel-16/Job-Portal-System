@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axiosInstance";
 import { Trash2, Users, ShieldAlert, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-// import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);

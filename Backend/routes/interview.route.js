@@ -4,6 +4,7 @@ import { getJobseekerInterviews, getScheduledInterviewsByCreator } from "../cont
 import { getGoogleAuthUrl, googleCallback } from "../controllers/interview.controller.js";
 import isAuthenticated from "../middlewares/isAuthenticated.js"; // Default import
 import { checkRole } from "../middlewares/checkRole.js"; // Role check import
+import { submitFeedback, getFeedbackByInterviewId } from "../controllers/interview.controller.js";
 
 const router = express.Router();
 
@@ -36,5 +37,10 @@ router.route("/interview/:id").delete(isAuthenticated, deleteInterview);
 // ⭐ NEW GOOGLE AUTH ROUTES
 router.get("/google/auth", isAuthenticated, checkRole("admin", "employer"), getGoogleAuthUrl);
 router.get("/google/callback", googleCallback); // Ye public rahega redirection ke liye
+
+router.route("/:interviewId/feedback").post(isAuthenticated, submitFeedback);
+
+// interview.route.js mein ye line add karein
+router.route("/feedback/:interviewId").get(isAuthenticated, getFeedbackByInterviewId);
 
 export default router;

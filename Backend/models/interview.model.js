@@ -41,7 +41,7 @@ const interviewSchema = new mongoose.Schema(
     scheduledBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true // Ye store karega ki interview kisne fix kiya
+    required: true 
 },
 scheduledByRole: {
     type: String,
@@ -54,17 +54,17 @@ scheduledByRole: {
       default: "scheduled",
     },
 
-    // 2. Reschedule ke liye ye 3 nayi fields add karein
+
     suggestedDate: { 
-      type: String // Jobseeker jo nayi date maang raha hai
+      type: String 
     },
     suggestedTime: { 
-      type: String // Jobseeker jo naya time maang raha hai
+      type: String 
     },
     rescheduleReason: { 
-      type: String // Jobseeker ne kyu reschedule kiya
+      type: String
     },
-    // models/interview.model.js mein add karein
+  
 reminderSent24h: { type: Boolean, default: false },
 reminderSent1h: { type: Boolean, default: false },
   },

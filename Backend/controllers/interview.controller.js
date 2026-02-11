@@ -1,4 +1,5 @@
 import { google } from "googleapis"
+import { Feedback } from "../models/feedback.model.js";
 import { Interview } from "../models/interview.model.js";
 import { Application } from "../models/application.model.js";
 import sendEmail from "../utils/sendEmail.js";
@@ -543,5 +544,83 @@ export const deleteInterview = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ message: "Internal server error", success: false });
+    }
+};
+
+export const submitFeedback = async (req, res) => {
+    try {
+        const { interviewId } = req.params; // Backend route :id use kar raha hai
+        const { ratings, comment, recommendation } = req.body;
+        const interviewerId = req.id; 
+
+        const interview = await Interview.findById(interviewId);
+        if (!interview) {
+            return res.status(404).json({ message: "Interview not found", success: false });
+        }
+
+        const overallRating = (ratings.technical + ratings.communication + ratings.cultureFit) / 3;
+
+        const feedback = await Feedback.create({
+            interviewId,
+            interviewerId,
+            jobseekerId: interview.jobseeker,
+            ratings,
+            overallRating: overallRating.toFixed(1),
+            comment,
+            recommendation
+        });
+
+        // 🟢 FIX: Ensure this value exists in your Interview Model's Enum
+        interview.status = "completed"; 
+        await interview.save();
+
+        /* ================= 🔔 SAVE NOTIFICATION ================= */
+        const notification = await Notification.create({
+            recipient: interview.jobseeker,
+            sender: interviewerId,
+            type: "STATUS_UPDATED",
+            title: "Interview Evaluated",
+            message: `Feedback has been submitted for your interview. Result: ${recommendation}`,
+            link: "/jobseeker/interviews"
+        });
+
+        /* ================= 🚀 REAL-TIME SOCKET (Optional) ================= */
+        if (req.io) {
+            req.io.to(interview.jobseeker.toString()).emit("notification", notification);
+        }
+
+        return res.status(201).json({
+            message: "Feedback submitted successfully",
+            feedback,
+            success: true
+        });
+
+    } catch (error) {
+        console.log(error); // Ab aapko console mein validation error nahi dikhegi
+        res.status(500).json({ message: "Error submitting feedback", success: false });
+    }
+};
+
+// interview.controller.js mein niche add karein
+export const getFeedbackByInterviewId = async (req, res) => {
+    try {
+        const { interviewId } = req.params; // Route se interviewId le rahe hain
+
+        const feedback = await Feedback.findOne({ interviewId }).populate('interviewerId', 'fullname');
+
+        if (!feedback) {
+            return res.status(404).json({
+                message: "No feedback found for this interview.",
+                success: false
+            });
+        }
+
+        return res.status(200).json({
+            feedback,
+            success: true
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Server error", success: false });
     }
 };

@@ -1,13 +1,57 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { INTERVIEW_API_END_POINT } from '@/utils/constant';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, User, Briefcase, Trash2, CheckCircle2 } from "lucide-react";
+import { Calendar, Clock, Video, User, Briefcase, MapPin, Trash2, CheckCircle2, Timer  } from "lucide-react";
 import { toast } from "sonner";
+import FeedbackModal from './FeedbackModel';
 
+// ⭐ 1. Countdown Timer Component
+const CountdownTimer = ({ targetDate, targetTime }) => {
+    const [timeLeft, setTimeLeft] = useState("");
+   
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            // Date aur Time ko combine karke target banayein
+            const interviewDateTime = new Date(`${targetDate.split('T')[0]}T${targetTime}`).getTime();
+            const distance = interviewDateTime - now;
+
+          if (distance < 0) {
+    
+    setTimeLeft("Meeting Finished?"); 
+    clearInterval(timer);
+    return;
+}
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            let timeString = "";
+            if (days > 0) timeString += `${days}d `;
+            timeString += `${hours}h ${minutes}m ${seconds}s`;
+            setTimeLeft(timeString);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [targetDate, targetTime]);
+
+    return (
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-md border border-orange-100 mt-1">
+            <Timer size={12} className="animate-pulse" />
+            <span>Starts in: {timeLeft}</span>
+        </div>
+    );
+};
 const ScheduledInterviews = () => {
     const [interviews, setInterviews] = useState([]);
+
+    const [openFeedback, setOpenFeedback] = useState(false);
+    const [selectedInterviewId, setSelectedInterviewId] = useState(null);
 
     // 1. Fetch List function (Isse humne refresh ke liye bahar nikala hai)
     const fetchList = async () => {
@@ -105,8 +149,12 @@ const ScheduledInterviews = () => {
             {/* Time format: 11:30 AM */}
             {new Date(`2000-01-01T${item.time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
         </span>
+        {item.status !== "Completed" && item.status !== "Rejected" && (
+                                            <CountdownTimer targetDate={item.date} targetTime={item.time} />
+                                        )}
     </div>
 </TableCell>
+
 
                                 <TableCell>
                                     <Badge className={item.mode === 'online' ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}>
@@ -134,6 +182,18 @@ const ScheduledInterviews = () => {
 </TableCell>
 <TableCell className="text-center">
     <div className="flex items-center justify-center gap-2">
+        {new Date(`${item.date.split('T')[0]}T${item.time}`).getTime() < new Date().getTime() && item.status !== "Completed" ? (
+            <button 
+                onClick={() => {
+                    setSelectedInterviewId(item._id);
+                    setOpenFeedback(true);
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white hover:bg-purple-700 rounded-full shadow-md transition-all animate-pulse"
+            >
+                <CheckCircle2 size={14} />
+                <span className="text-[10px] font-bold">GIVE FEEDBACK</span>
+            </button>
+        ) : null}
         
         {/* ⭐ FIX: Status ke saath yeh bhi check karein ki kya login user hi scheduler hai? */}
       
@@ -183,6 +243,12 @@ const ScheduledInterviews = () => {
                     </div>
                 )}
             </div>
+            <FeedbackModal 
+                open={openFeedback} 
+                setOpen={setOpenFeedback} 
+                interviewId={selectedInterviewId}
+                onFeedbackSubmit={() => fetchList()} 
+            />
         </div>
     );
 };

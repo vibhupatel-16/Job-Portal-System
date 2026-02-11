@@ -5,6 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Video, MapPin, Calendar, Clock } from "lucide-react";
 import { toast } from 'sonner'; // Notification ke liye
+import ViewFeedbackModal from './ViewFeedbackModal';
+
 
 const JobseekerInterviews = () => {
     const [interviews, setInterviews] = useState([]);
@@ -13,6 +15,9 @@ const JobseekerInterviews = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedInterview, setSelectedInterview] = useState(null);
     const [rescheduleData, setRescheduleData] = useState({ reason: '', preferredTime: '' });
+
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
+const [selectedFeedback, setSelectedFeedback] = useState(null);
 
     useEffect(() => {
         const fetchMyInterviews = async () => {
@@ -47,6 +52,7 @@ const JobseekerInterviews = () => {
             toast.error(error.response?.data?.message || "Failed to send request");
         }
     };
+
 
     const getGoogleCalendarLink = (item) => {
         const baseUrl = "https://www.google.com/calendar/render?action=TEMPLATE";
@@ -127,6 +133,20 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
     );
 };
 
+const handleViewFeedback = async (interviewId) => {
+    try {
+        // Employer side ki tarah hum interviewId route mein bhej rahe hain
+        const res = await axios.get(`${INTERVIEW_API_END_POINT}/feedback/${interviewId}`, { withCredentials: true });
+        
+        if (res.data.success) {
+            setSelectedFeedback(res.data.feedback);
+            setFeedbackOpen(true);
+        }
+    } catch (error) {
+        toast.error(error.response?.data?.message || "Feedback results pending");
+    }
+};
+
     return (
         <div className='max-w-5xl mx-auto my-10 px-4'>
             <h1 className='font-bold text-2xl mb-6 text-gray-800'>My Scheduled Interviews</h1>
@@ -168,11 +188,45 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
         </span>
     </div>
 </TableCell>
-                                <TableCell>
-                                    <Badge className={item.mode === 'online' ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}>
-                                        {item.mode.toUpperCase()}
-                                    </Badge>
-                                </TableCell>
+                               <TableCell>
+    {/* 1. Pehle check karein ki kya interview complete ho gaya hai */}
+    {item.status === "completed" ? (
+        // ✅ Wrap multiple elements in a fragment <> or div
+        <>
+            <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px] uppercase tracking-widest">
+                Interview Evaluated
+            </Badge>
+
+            <div className="mt-1 flex flex-col">
+                <button 
+                    onClick={() => handleViewFeedback(item._id)}
+                    className="text-[10px] text-purple-600 font-bold hover:underline text-left pl-1"
+                >
+                    View Feedback
+                </button>
+            </div>
+        </>
+    ) : 
+    /* 2. Agar complete nahi hai, toh check karein ki kya time nikal gaya hai */
+    new Date(`${item.date.split('T')[0]}T${item.time}`).getTime() < new Date().getTime() ? (
+        <div className="flex flex-col gap-1">
+            <Badge className="bg-yellow-100 text-yellow-700 border-none font-bold text-[10px] uppercase tracking-widest">
+                Evaluating...
+            </Badge>
+            <span className="text-[9px] text-gray-400 italic">Waiting for recruiter's result</span>
+        </div>
+    ) : 
+    /* 3. Agar future ka interview hai */
+    (
+        <Badge className={`${
+            item.status === 'Scheduled' ? 'bg-blue-100 text-blue-700' : 
+            'bg-orange-100 text-orange-700'
+        } border-none font-bold text-[10px] uppercase tracking-widest`}>
+            {item.status}
+        </Badge>
+    )}
+</TableCell>
+
                                 <TableCell>
                                     <div className="flex flex-col gap-2">
                                         {item.mode === "online" && item.meetingLink ? (
@@ -201,9 +255,6 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
                                 <TableCell>
     <div className="flex flex-col text-sm">
         <span className="font-medium text-gray-700 flex items-center gap-1">
-            <Calendar size={13} className="text-orange-500"/> 
-            {/* Formatting date for display */}
-            {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
             
             {/* Countdown Component Yahan Rahega */}
             <CountdownTimer targetDate={item.date} targetTime={item.time} />
@@ -263,7 +314,13 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
                     </div>
                 </div>
             )}
+            <ViewFeedbackModal 
+            open={feedbackOpen} 
+            setOpen={setFeedbackOpen} 
+            feedback={selectedFeedback} 
+        />
         </div>
+
     );
 };
 

@@ -73,6 +73,7 @@ app.use("/api/v1", interviewRoute);
 app.use("/api/v1/user", savedJobRoute);
 
 
+
 app.use("/uploads", express.static("uploads"));
 
 // ✅ SOCKET CONNECTION LOGIC
