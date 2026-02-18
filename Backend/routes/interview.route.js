@@ -5,7 +5,7 @@ import { getGoogleAuthUrl, googleCallback } from "../controllers/interview.contr
 import isAuthenticated from "../middlewares/isAuthenticated.js"; // Default import
 import { checkRole } from "../middlewares/checkRole.js"; // Role check import
 import { submitFeedback, getFeedbackByInterviewId } from "../controllers/interview.controller.js";
-
+import { getBookedSlots } from "../controllers/interview.controller.js";
 const router = express.Router();
 
 // isAdmin ki jagah isAuthenticated + checkRole('admin') use karein
@@ -43,4 +43,5 @@ router.route("/:interviewId/feedback").post(isAuthenticated, submitFeedback);
 // interview.route.js mein ye line add karein
 router.route("/feedback/:interviewId").get(isAuthenticated, getFeedbackByInterviewId);
 
+router.get("/booked-slots", isAuthenticated, checkRole("admin", "employer"), getBookedSlots);
 export default router;

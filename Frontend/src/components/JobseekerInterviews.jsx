@@ -3,7 +3,7 @@ import axios from 'axios';
 import { INTERVIEW_API_END_POINT } from '@/utils/constant';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Video, MapPin, Calendar, Clock } from "lucide-react";
+import { Video, MapPin, Calendar, Clock, Timer } from "lucide-react";
 import { toast } from 'sonner'; // Notification ke liye
 import ViewFeedbackModal from './ViewFeedbackModal';
 
@@ -87,25 +87,29 @@ const formatDisplayDateTime = (dateTimeStr) => {
 };
 
 const CountdownTimer = ({ targetDate, targetTime }) => {
-    const [status, setStatus] = useState("");
+    const [timeLeft, setTimeLeft] = useState("");
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date();
-            const destination = new Date(`${targetDate}T${targetTime}:00`);
-            const distance = destination.getTime() - now.getTime();
+        const timer = setInterval(() => {
+            if (!targetDate || !targetTime) return;
 
-            // Status Logic
-            if (distance < 0) {
-                const isPastDate = new Date(targetDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
-                
-                // Agar date purani hai toh "Expired", agar aaj ki hai toh "Started"
-                if (isPastDate) {
-                    setStatus("Expired");
-                } else {
-                    setStatus("Started");
+            const now = new Date().getTime();
+            
+            // ⭐ DD-MM-YYYY ko YYYY-MM-DD mein convert karna taaki JS read kar sake
+            let formattedDate = targetDate;
+            if (targetDate.includes('-')) {
+                const parts = targetDate.split('-');
+                if (parts[0].length === 2) { 
+                    formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
                 }
-                clearInterval(interval);
+            }
+
+            const interviewDateTime = new Date(`${formattedDate} ${targetTime}`).getTime();
+            const distance = interviewDateTime - now;
+
+            if (distance < 0 || isNaN(distance)) {
+                setTimeLeft("Started / Finished"); 
+                clearInterval(timer);
                 return;
             }
 
@@ -114,22 +118,17 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            let display = days > 0 ? `${days}d ` : "";
-            display += `${hours}h ${minutes}m ${seconds}s`;
-            setStatus(display);
+            setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
         }, 1000);
 
-        return () => clearInterval(interval);
+        return () => clearInterval(timer);
     }, [targetDate, targetTime]);
 
     return (
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ml-2 ${
-            status === "Expired" ? "bg-red-100 text-red-600 border border-red-200" : 
-            status === "Started" ? "bg-green-100 text-green-600 border border-green-200" : 
-            "bg-orange-100 text-orange-700 border border-orange-200"
-        }`}>
-            {status === "Expired" || status === "Started" ? status : `Starts in: ${status}`}
-        </span>
+        <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-md border border-orange-100 mt-1 w-fit">
+            <Timer size={12} className="animate-pulse" />
+            {timeLeft || "Calculating..."}
+        </div>
     );
 };
 
@@ -166,26 +165,25 @@ const handleViewFeedback = async (interviewId) => {
                             <TableRow key={item._id} className="hover:bg-gray-50/50 transition">
                                 <TableCell className="font-medium text-gray-900">{item.company.name}</TableCell>
                                 <TableCell>{item.job.title}</TableCell>
-                                <TableCell>
+       <TableCell>
     <div className="flex flex-col text-sm">
         <span className="font-medium text-gray-700 flex items-center gap-1">
             <Calendar size={13} className="text-orange-500"/> 
-            {/* Date Format: 30 Jan 2026 */}
-            {new Date(item.date).toLocaleDateString('en-GB', { 
-                day: '2-digit', 
-                month: 'short', 
-                year: 'numeric' 
-            })}
+            {/* ⭐ Direct DD-MM-YYYY Display without Date Object bugs */}
+            {item.date ? (() => {
+                const parts = item.date.split('-');
+                // Agar format YYYY-MM-DD hai (reschedule ke baad) toh use palat do
+                if (parts.length === 3 && parts[0].length === 4) {
+                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+                return item.date; // Agar backend se DD-MM-YYYY aa raha hai
+            })() : "N/A"}
         </span>
         <span className="text-gray-500 flex items-center gap-1">
             <Clock size={13} className="text-orange-400"/> 
-            {/* Time Format: 11:30 AM */}
-            {new Date(`2000-01-01T${item.time}`).toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: true 
-            })}
+            {item.time}
         </span>
+        <CountdownTimer targetDate={item.date} targetTime={item.time} />
     </div>
 </TableCell>
                                <TableCell>
@@ -252,19 +250,7 @@ const handleViewFeedback = async (interviewId) => {
                                         </button>
                                     </div>
                                 </TableCell>
-                                <TableCell>
-    <div className="flex flex-col text-sm">
-        <span className="font-medium text-gray-700 flex items-center gap-1">
-            
-            {/* Countdown Component Yahan Rahega */}
-            <CountdownTimer targetDate={item.date} targetTime={item.time} />
-        </span>
-        <span className="text-gray-500 flex items-center gap-1 mt-1">
-            <Clock size={13} className="text-orange-400"/> 
-            {new Date(`2000-01-01T${item.time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-        </span>
-    </div>
-</TableCell>
+                               
                             </TableRow>
                         ))}
                     </TableBody>

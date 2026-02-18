@@ -64,6 +64,11 @@ scheduledByRole: {
     rescheduleReason: { 
       type: String
     },
+    // interview.model.js mein ye field add karein
+duration: {
+    type: Number,
+    default: 45 // Maan lijiye har interview 45 mins ka hai
+},
   
 reminderSent24h: { type: Boolean, default: false },
 reminderSent1h: { type: Boolean, default: false },

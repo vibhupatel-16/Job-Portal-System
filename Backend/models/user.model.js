@@ -47,6 +47,16 @@ isBlocked: {
       default: ""
     }
   },
+  // user.model.js mein add karein
+notifications: [
+    {
+        message: { type: String, required: true },
+        type: { type: String, enum: ['job_alert', 'application_update', 'general'], default: 'job_alert' },
+        jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'Job' },
+        isRead: { type: Boolean, default: false },
+        createdAt: { type: Date, default: Date.now }
+    }
+],
   resetPasswordToken: String,
   resetPasswordExpire: Date
 

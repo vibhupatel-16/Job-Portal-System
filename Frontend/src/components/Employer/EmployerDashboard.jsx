@@ -39,12 +39,20 @@ const EmployerDashboard = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
 
+  // ⭐ Slot States
+  const [bookedSlots, setBookedSlots] = useState([]);
   const [interviewData, setInterviewData] = useState({
     date: "",
     time: "",
     mode: "online",
     meetingLink: ""
   });
+
+  const standardSlots = [
+    "10:00 AM", "11:00 AM", "12:00 PM", 
+    "02:00 PM", "03:00 PM", "04:00 PM", 
+    "05:00 PM", "06:00 PM"
+  ];
 
   useEffect(() => {
     fetchDashboardData();
@@ -87,25 +95,45 @@ const EmployerDashboard = () => {
     }
   };
 
-  const scheduleInterview = async () => {
-    try {
-      if (!interviewData.date || !interviewData.time) {
-        return toast.error("Please fill all details");
-      }
-      const res = await axios.post(`${INTERVIEW_API_END_POINT}/interviews`, {
-        applicationId: selectedApp._id,
-        ...interviewData
-      }, { withCredentials: true });
+  const handleDateChange = async (e) => {
+    const selectedDate = e.target.value;
+    setInterviewData({ ...interviewData, date: selectedDate, time: "" });
 
+    try {
+      // route.js mein path "/booked-slots" hai
+      const res = await axios.get(`${INTERVIEW_API_END_POINT}/booked-slots?date=${selectedDate}`, { withCredentials: true });
       if (res.data.success) {
-        toast.success("Interview scheduled and notification sent!");
-        setOpenInterview(false);
+        setBookedSlots(res.data.bookedTimes || []);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Scheduling failed");
+      console.error("Error fetching slots", error);
     }
   };
 
+  const scheduleInterview = async () => {
+    try {
+        // Console log karke check karein ki data mil raha hai ya nahi
+        console.log("Selected App Data:", selectedApp);
+
+        const res = await axios.post(`${INTERVIEW_API_END_POINT}/interviews`, {
+            applicationId: selectedApp?._id,
+            jobseekerId: selectedApp?.applicant?._id, // Ye ID zaroori hai
+            date: interviewData.date,
+            time: interviewData.time,
+            mode: interviewData.mode,
+            meetingLink: interviewData.mode === "offline" ? interviewData.meetingLink : ""
+        }, { withCredentials: true });
+
+        if (res.data.success) {
+            toast.success("Interview Scheduled!");
+            setOpenInterview(false);
+        }
+    } catch (error) {
+        // Agar yahan error aa rahi hai, toh backend terminal dekhein
+        console.error("Full Error Object:", error.response?.data);
+        toast.error(error.response?.data?.message || "Scheduling failed");
+    }
+};
   return (
     <div className="bg-gray-50 min-h-screen px-8 py-10">
       <div className="max-w-7xl mx-auto">
@@ -223,108 +251,166 @@ const EmployerDashboard = () => {
               <ProfileItem label="Email Address" value={selectedApp.applicant?.email} />
               <ProfileItem label="Job Position" value={selectedApp.job?.title} />
               <ProfileItem label="Current Status" value={selectedApp.status} isStatus />
-              
               <div className="pt-4 border-t border-gray-100">
-                <p className="text-[10px] uppercase font-bold text-gray-400 mb-3 tracking-widest">Resume Attachment</p>
-                {selectedApp.applicant?.profile?.resume ? (
-                  <div className="border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-inner">
-                    {selectedApp.applicant.profile.resume.endsWith(".pdf") ? (
-                      <iframe src={selectedApp.applicant.profile.resume} title="Resume" className="w-full h-[400px]" />
-                    ) : (
-                      <img src={selectedApp.applicant.profile.resume} alt="Resume" className="w-full max-h-[400px] object-contain" />
-                    )}
-                  </div>
-                ) : <p className="text-gray-400 italic bg-gray-50 p-4 rounded-2xl text-center">Candidate hasn't uploaded a resume.</p>}
-              </div>
+             <p className="text-[10px] uppercase font-bold text-gray-400 mb-3 tracking-widest">
+        Resume Attachment
+      </p>
+      
+      {selectedApp.applicant?.profile?.resume ? (
+        <div className="border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-inner">
+          {selectedApp.applicant.profile.resume.toLowerCase().endsWith(".pdf") ? (
+            <iframe 
+              src={selectedApp.applicant.profile.resume} 
+              title="Resume" 
+              className="w-full h-[400px] border-none" 
+            />
+          ) : (
+            <img 
+              src={selectedApp.applicant.profile.resume} 
+              alt="Resume" 
+              className="w-full max-h-[400px] object-contain" 
+            />
+          )}
+          
+          {/* ⭐ Added a download/view link just in case iframe is blocked by browser */}
+          <div className="p-3 bg-white border-t border-gray-100 text-center">
+            <a 
+              href={selectedApp.applicant.profile.resume} 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-purple-600 font-bold text-xs hover:underline"
+            >
+              Open Resume in New Tab
+            </a>
+          </div>
+        </div>
+      ) : (
+        <p className="text-gray-400 italic bg-gray-50 p-4 rounded-2xl text-center">
+          Candidate hasn't uploaded a resume.
+        </p>
+      )}
+    </div>
               <Button className="w-full rounded-2xl h-14 bg-gray-900 font-bold mt-4" onClick={() => setShowViewModal(false)}>Close Window</Button>
             </div>
           </DialogContent>
         </Dialog>
       )}
 
-{/* INTERVIEW MODAL */}
+{/* INTERVIEW MODAL WITH SLOTS */}
 {openInterview && selectedApp && (
   <Dialog open onOpenChange={() => setOpenInterview(false)}>
-    <DialogContent className="rounded-[2rem] border-none shadow-2xl bg-white">
+    <DialogContent className="rounded-[2rem] border-none shadow-2xl bg-white max-w-md">
       <DialogHeader>
         <DialogTitle className="text-xl font-bold flex items-center gap-2">
           <Calendar size={20} className="text-purple-600" /> Schedule Interview
         </DialogTitle>
-        <p className="text-xs text-gray-400">Scheduling for: {selectedApp.applicant?.fullname}</p>
+        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+          For: {selectedApp.applicant?.fullname}
+        </p>
       </DialogHeader>
 
-      <div className="space-y-4 pt-4">
-        {/* Date and Time Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Date</label>
-            <input 
-              type="date" 
-              className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none text-sm" 
-              onChange={e => setInterviewData({...interviewData, date: e.target.value})} 
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Time (AM/PM)</label>
-            <input 
-              type="time" 
-              className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none text-sm" 
-              onChange={e => setInterviewData({...interviewData, time: e.target.value})} 
-            />
-          </div>
+      <div className="space-y-5 pt-4">
+        {/* STEP 1: DATE PICKER */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase text-purple-600 ml-1">1. Select Date</label>
+          <input 
+            type="date" 
+            className="border-2 border-gray-50 bg-gray-50 p-3 rounded-2xl w-full focus:border-purple-200 outline-none text-sm font-bold" 
+            value={interviewData.date}
+            onChange={handleDateChange} // Humne pehle jo function banaya tha
+          />
         </div>
 
-        {/* AM/PM Preview Badge */}
-        {interviewData.time && (
-          <div className="flex items-center gap-2 mt-1">
-            <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1">
-               <Clock size={12} />
-               Selected: {new Date(`2000-01-01T${interviewData.time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+        {/* STEP 2: TIME SLOTS (Only show if date is selected) */}
+        {interviewData.date && (
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-purple-600 ml-1">2. Available Slots</label>
+            <div className="grid grid-cols-3 gap-2">
+              {standardSlots.map((slot) => {
+                const isBusy = bookedSlots.includes(slot);
+                const isSelected = interviewData.time === slot;
+                
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => setInterviewData({...interviewData, time: slot})}
+                    className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center justify-center ${
+                      isBusy 
+                        ? "bg-red-50 border-transparent text-red-200 cursor-not-allowed opacity-50" 
+                        : isSelected 
+                          ? "bg-purple-600 border-purple-600 text-white shadow-md scale-95" 
+                          : "bg-white border-gray-100 text-gray-600 hover:border-purple-100"
+                    }`}
+                  >
+                    <span className="text-[10px] font-bold">{slot}</span>
+                    <span className="text-[7px] font-black uppercase tracking-tighter">
+                      {isBusy ? "Booked" : "Free"}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Mode Selection */}
-        <div className="space-y-1">
-          <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Mode</label>
-          <select 
-            className="border border-gray-200 p-3 rounded-2xl w-full focus:ring-2 focus:ring-purple-200 outline-none text-sm" 
-            value={interviewData.mode} 
-            onChange={e => setInterviewData({...interviewData, mode: e.target.value})}
-          >
-            <option value="online">Online (Google Meet)</option>
-            <option value="offline">Offline (In-Person)</option>
-          </select>
+        {/* STEP 3: MODE SELECTION */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase text-purple-600 ml-1">3. Interview Mode</label>
+          <div className="flex gap-2">
+             <button 
+                type="button"
+                onClick={() => setInterviewData({...interviewData, mode: 'online'})}
+                className={`flex-1 p-3 rounded-2xl border-2 font-bold text-xs transition-all ${interviewData.mode === 'online' ? 'bg-purple-50 border-purple-600 text-purple-600' : 'bg-white border-gray-100 text-gray-400'}`}
+             >
+                Google Meet
+             </button>
+             <button 
+                type="button"
+                onClick={() => setInterviewData({...interviewData, mode: 'offline'})}
+                className={`flex-1 p-3 rounded-2xl border-2 font-bold text-xs transition-all ${interviewData.mode === 'offline' ? 'bg-purple-50 border-purple-600 text-purple-600' : 'bg-white border-gray-100 text-gray-400'}`}
+             >
+                In-Person
+             </button>
+          </div>
         </div>
 
-        {/* Dynamic Content based on Mode */}
+        {/* Dynamic Meeting Link / Address Area */}
         {interviewData.mode === "online" ? (
-          <div className="bg-purple-50 p-4 rounded-2xl text-[11px] text-purple-700 border border-purple-100 italic">
-            ✨ Google Meet link will be generated automatically.
+          <div className="bg-purple-50 p-4 rounded-2xl text-[11px] text-purple-700 border border-purple-100 flex items-start gap-2">
+            <span className="mt-0.5">✨</span>
+            <p className="leading-tight"><b>Smart Logic:</b> Google Meet link will be automatically generated and sent to the applicant after you schedule.</p>
           </div>
         ) : (
-          <div className="space-y-1">
-             <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Office Address</label>
+          <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+             <label className="text-[10px] font-black uppercase text-purple-600 ml-1">Office Address</label>
              <textarea 
-               placeholder="Enter full address..." 
-               className="border border-gray-200 p-3 rounded-2xl w-full h-20 focus:ring-2 focus:ring-purple-200 outline-none text-sm" 
+               placeholder="Enter interview venue address..." 
+               className="border-2 border-gray-50 bg-gray-50 p-4 rounded-2xl w-full h-20 focus:border-purple-200 outline-none text-sm font-semibold" 
+               value={interviewData.meetingLink}
                onChange={e => setInterviewData({...interviewData, meetingLink: e.target.value})} 
              />
           </div>
         )}
         
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-2">
-          <Button variant="outline" className="flex-1 rounded-2xl h-12 border-gray-200" onClick={() => setOpenInterview(false)}>
+        {/* ACTION BUTTONS */}
+        <div className="flex gap-3 pt-4 border-t border-gray-50">
+          <Button variant="ghost" className="flex-1 rounded-2xl h-14 font-bold text-gray-400" onClick={() => setOpenInterview(false)}>
             Cancel
           </Button>
-          <Button className="flex-1 rounded-2xl h-12 bg-purple-600 hover:bg-purple-700 shadow-lg" onClick={scheduleInterview}>
-            Schedule Now
+          <Button 
+            className="flex-1 rounded-2xl h-14 bg-purple-600 hover:bg-purple-700 shadow-xl font-black uppercase text-xs tracking-widest" 
+            onClick={scheduleInterview}
+            disabled={!interviewData.date || !interviewData.time}
+          >
+            Confirm Schedule
           </Button>
         </div>
       </div>
     </DialogContent>
   </Dialog>
+)}
 )}
     </div>
   );

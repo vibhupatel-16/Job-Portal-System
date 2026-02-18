@@ -1,111 +1,129 @@
 import React from "react";
 import { 
-  FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter, FaYoutube, 
-  FaPhoneAlt, FaEnvelope, FaMapMarkerAlt, FaArrowRight 
+  FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter, 
+  FaApple, FaGooglePlay 
 } from "react-icons/fa";
 
 const Footer = () => {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="bg-[#0a0f1a] text-gray-400 py-16 mt-20 border-t border-gray-800">
+    <footer className="bg-white text-[#444] py-16 mt-20 border-t border-gray-100 font-sans tracking-tight">
       <div className="max-w-7xl mx-auto px-6">
         
-        {/* Top Section: Branding & Newsletter */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pb-12 border-b border-gray-800/50">
-          <div className="space-y-4">
-            <h2 className="text-3xl font-extrabold text-white tracking-tight">
-              Job<span className="text-blue-500">Portal</span>
-            </h2>
-            <p className="max-w-xs leading-relaxed text-sm">
-              Connecting India's top talent with world-class opportunities. Your dream career is just one click away.
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 pb-12">
+          
+          {/* Brand Identity Section */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="flex items-center gap-1">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">J</span>
+              </div>
+              <h2 className="text-2xl font-bold text-[#111] tracking-tighter">
+                Job<span className="text-blue-600">Portal</span>
+              </h2>
+            </div>
+            <p className="text-sm leading-relaxed text-gray-500 max-w-sm">
+              Discover your next career move with India’s most trusted job community. 
+              We connect the right talent with the right opportunities, seamlessly.
             </p>
-          </div>
-          
-          {/* Newsletter - Industry Level Touch */}
-          <div className="lg:col-span-2 flex flex-col md:flex-row items-center gap-4 bg-[#111827] p-6 rounded-2xl border border-gray-800">
-            <div className="flex-1">
-              <h4 className="text-white font-semibold">Join our Job Alert Newsletter</h4>
-              <p className="text-xs">Get latest job updates directly in your inbox.</p>
-            </div>
-            <div className="flex w-full md:w-auto bg-gray-900 rounded-lg p-1 border border-gray-700 focus-within:border-blue-500 transition-all">
-              <input 
-                type="email" 
-                placeholder="Enter email address" 
-                className="bg-transparent px-4 py-2 outline-none text-sm w-full md:w-64 text-white"
-              />
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2">
-                Subscribe <FaArrowRight className="text-xs" />
-              </button>
+            <div className="space-y-3 pt-2">
+              <p className="text-[13px] font-bold uppercase text-gray-400 tracking-widest">Connect with us</p>
+              <div className="flex gap-3">
+                {[
+                  { icon: <FaFacebookF />, hover: "hover:bg-blue-600" },
+                  { icon: <FaTwitter />, hover: "hover:bg-sky-500" },
+                  { icon: <FaInstagram />, hover: "hover:bg-pink-600" },
+                  { icon: <FaLinkedinIn />, hover: "hover:bg-blue-800" }
+                ].map((social, index) => (
+                  <a key={index} href="#" className={`w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 transition-all duration-300 hover:text-white ${social.hover} hover:-translate-y-1 shadow-sm`}>
+                    {social.icon}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Quick Links Group */}
+          <div className="lg:col-span-5 grid grid-cols-2 md:grid-cols-3 gap-8">
+            <div className="space-y-4">
+              <h4 className="text-[13px] font-bold text-gray-900 uppercase tracking-widest">Company</h4>
+              <ul className="text-[14px] space-y-3">
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">About Us</a></li>
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Careers</a></li>
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Sitemap</a></li>
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all text-blue-600 font-medium">Contact Support</a></li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-[13px] font-bold text-gray-900 uppercase tracking-widest">Resources</h4>
+              <ul className="text-[14px] space-y-3">
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Help Center</a></li>
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Fraud Alert</a></li>
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Trust & Safety</a></li>
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Grievances</a></li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-[13px] font-bold text-gray-900 uppercase tracking-widest">Legal</h4>
+              <ul className="text-[14px] space-y-3">
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Terms & Conditions</a></li>
+                <li><a href="#" className="hover:text-blue-600 hover:pl-1 transition-all">Security</a></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Premium CTA Section */}
+          <div className="lg:col-span-3">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <h4 className="text-gray-900 font-bold text-lg leading-tight">Apply on the go</h4>
+              <p className="text-xs text-gray-500 mt-1 mb-6">Get real-time updates for new jobs</p>
+              
+              <div className="flex flex-col gap-3">
+                <button className="flex items-center gap-3 bg-[#111] text-white px-4 py-2.5 rounded-xl hover:bg-gray-800 transition-all shadow-md group">
+                  <FaGooglePlay className="text-xl" />
+                  <div className="text-left">
+                    <p className="text-[9px] uppercase leading-none opacity-70">Get it on</p>
+                    <p className="text-[13px] font-semibold leading-none">Google Play</p>
+                  </div>
+                </button>
+                
+                <button className="flex items-center gap-3 bg-white border border-gray-300 text-[#111] px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-all shadow-sm group">
+                  <FaApple className="text-2xl" />
+                  <div className="text-left">
+                    <p className="text-[9px] uppercase leading-none opacity-70">Download on the</p>
+                    <p className="text-[13px] font-semibold leading-none">App Store</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        {/* Middle Section: Links */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-10 py-12">
+        <div className="h-[1px] bg-gradient-to-r from-transparent via-gray-200 to-transparent my-4"></div>
+
+        {/* Bottom Bar: Copyright & Micro-Branding */}
+        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+            <span className="text-xl font-black text-gray-200 tracking-widest uppercase italic select-none">PORTAL.CORE</span>
+            <div className="text-[11px] text-gray-400">
+              <p>© {currentYear} JobPortal. Built for the future of recruitment.</p>
+              <p>All trademarks and logos are properties of their respective owners.</p>
+            </div>
+          </div>
           
-          {/* For Job Seekers */}
-          <div>
-            <h3 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">For Candidates</h3>
-            <ul className="space-y-4 text-sm">
-              <li><a href="/search-jobs" className="hover:text-blue-400 transition-all flex items-center group"><span className="w-0 group-hover:w-2 h-[1px] bg-blue-400 mr-0 group-hover:mr-2 transition-all"></span>Browse Jobs</a></li>
-              <li><a href="/job-alerts" className="hover:text-blue-400 transition-all">Job Alerts</a></li>
-              <li><a href="/resume-tips" className="hover:text-blue-400 transition-all">Resume Builder</a></li>
-              <li><a href="/faq" className="hover:text-blue-400 transition-all font-medium text-blue-500">Candidate FAQ</a></li>
-            </ul>
+          <div className="flex items-center gap-6 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
+             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Our Ecosystem</span>
+             <div className="flex gap-4 font-bold text-sm">
+               <span className="cursor-default">HireFlow</span>
+               <span className="cursor-default">TalentSync</span>
+               <span className="cursor-default">ResumePro</span>
+             </div>
           </div>
-
-          {/* For Employers */}
-          <div>
-            <h3 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">For Employers</h3>
-            <ul className="space-y-4 text-sm">
-              <li><a href="/post-job" className="hover:text-blue-400 transition-all flex items-center group"><span className="w-0 group-hover:w-2 h-[1px] bg-blue-400 mr-0 group-hover:mr-2 transition-all"></span>Post a Job</a></li>
-              <li><a href="/pricing" className="hover:text-blue-400 transition-all">Hiring Solutions</a></li>
-              <li><a href="/search-candidates" className="hover:text-blue-400 transition-all">Search Talent</a></li>
-              <li><a href="/faq" className="hover:text-blue-400 transition-all font-medium text-blue-500">Employer FAQ</a></li>
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h3 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">Company</h3>
-            <ul className="space-y-4 text-sm">
-              <li><a href="/about" className="hover:text-blue-400 transition-all">Our Story</a></li>
-              <li><a href="/contact" className="hover:text-blue-400 transition-all">Contact Support</a></li>
-              <li><a href="/privacy" className="hover:text-blue-400 transition-all">Privacy Policy</a></li>
-              <li><a href="/terms" className="hover:text-blue-400 transition-all">Terms of Service</a></li>
-            </ul>
-          </div>
-
-          {/* Reach Us */}
-          <div className="space-y-6">
-            <h3 className="text-white font-bold mb-6 uppercase text-xs tracking-widest">Get In Touch</h3>
-            <div className="space-y-4 text-sm">
-              <p className="flex items-start gap-3"><FaMapMarkerAlt className="text-blue-500 mt-1" /> Cyber Hub, DLF Phase 3, Gurgaon, India</p>
-              <p className="flex items-center gap-3"><FaPhoneAlt className="text-blue-500" /> 1800-123-4567</p>
-              <p className="flex items-center gap-3"><FaEnvelope className="text-blue-500" /> help@jobportal.com</p>
-            </div>
-            
-            {/* Social Icons with Tooltips effect */}
-            <div className="flex gap-4 pt-2">
-              {[
-                { icon: <FaFacebookF />, color: "hover:bg-blue-600" },
-                { icon: <FaTwitter />, color: "hover:bg-sky-500" },
-                { icon: <FaInstagram />, color: "hover:bg-pink-600" },
-                { icon: <FaLinkedinIn />, color: "hover:bg-blue-700" }
-              ].map((social, index) => (
-                <a key={index} href="#" className={`w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center text-white transition-all duration-300 ${social.color} hover:-translate-y-1`}>
-                  {social.icon}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs tracking-wide">
-          <p>© {new Date().getFullYear()} JobPortal Inc. All rights reserved.</p>
-          <p className="flex items-center gap-1 italic">
-            Built with <span className="text-red-500 text-lg">♥</span> for the future of work.
-          </p>
         </div>
       </div>
     </footer>

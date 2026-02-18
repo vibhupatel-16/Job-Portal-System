@@ -18,6 +18,8 @@ const EmployerApplications = () => {
     mode: "online",
     meetingLink: "",
   });
+  const [bookedSlots, setBookedSlots] = useState([]);
+const standardSlots = ["10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
 
   // ================= FETCH APPLICATIONS =================
   const fetchApplications = async () => {
@@ -34,6 +36,21 @@ const EmployerApplications = () => {
   useEffect(() => {
     fetchApplications();
   }, [statusFilter]);
+
+  const handleDateChange = async (e) => {
+    const selectedDate = e.target.value;
+    setInterviewData({ ...interviewData, date: selectedDate });
+
+    try {
+        // Backend se busy slots mangwayein
+        const res = await axiosInstance.get(`${INTERVIEW_API_END_POINT}/booked-slots?date=${selectedDate}`);
+        if (res.data.success) {
+            setBookedSlots(res.data.bookedTimes);
+        }
+    } catch (error) {
+        console.error("Error fetching slots", error);
+    }
+};
 
   // ================= SCHEDULE INTERVIEW =================
   const scheduleInterview = async () => {
@@ -158,40 +175,92 @@ const EmployerApplications = () => {
       )}
 
       {/* INTERVIEW MODAL */}
-      {showInterviewModal && (
-        <Dialog open onOpenChange={() => setShowInterviewModal(false)}>
-          <DialogContent>
-            <h2 className="text-xl font-bold mb-4">Schedule Interview</h2>
+    {/* INTERVIEW MODAL - Replace your old block with this */}
+{showInterviewModal && (
+    <Dialog open onOpenChange={() => setShowInterviewModal(false)}>
+        <DialogContent className="sm:max-w-[450px] rounded-[2rem] p-8 border-none shadow-2xl bg-white/95 backdrop-blur-xl">
+            <div className="flex flex-col gap-1 mb-4">
+                <h2 className="text-2xl font-black text-gray-800 tracking-tight">Schedule Interview</h2>
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Select a convenient time slot</p>
+            </div>
 
-            <Input type="date" value={interviewData.date}
-              onChange={(e) => setInterviewData({ ...interviewData, date: e.target.value })}
-            />
+            <div className="space-y-6">
+                {/* Date Picker */}
+                <div className="group">
+                    <label className="text-[10px] font-bold text-purple-600 uppercase tracking-[0.2em] ml-1 mb-2 block">1. Choose Date</label>
+                    <div className="relative">
+                        <Input 
+                            type="date" 
+                            value={interviewData.date}
+                            onChange={handleDateChange} 
+                            className="h-12 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all focus:ring-4 focus:ring-purple-100 border-none shadow-sm"
+                        />
+                    </div>
+                </div>
 
-            <Input type="time" value={interviewData.time}
-              onChange={(e) => setInterviewData({ ...interviewData, time: e.target.value })}
-            />
+                {/* Slots Grid UI */}
+                {interviewData.date ? (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <label className="text-[10px] font-bold text-purple-600 uppercase tracking-[0.2em] ml-1 mb-3 block">2. Available Slots</label>
+                        <div className="grid grid-cols-3 gap-3">
+                            {standardSlots.map((slot) => {
+                                const isBusy = bookedSlots.includes(slot);
+                                const isSelected = interviewData.time === slot;
+                                return (
+                                    <button
+                                        key={slot}
+                                        type="button"
+                                        disabled={isBusy}
+                                        onClick={() => setInterviewData({ ...interviewData, time: slot })}
+                                        className={`relative group p-3 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${
+                                            isBusy 
+                                            ? "bg-gray-50 border-transparent text-gray-300 cursor-not-allowed opacity-50" 
+                                            : isSelected 
+                                                ? "bg-purple-600 border-purple-600 text-white shadow-xl shadow-purple-200 scale-95" 
+                                                : "bg-white border-gray-50 text-gray-600 hover:border-purple-200 hover:shadow-md"
+                                        }`}
+                                    >
+                                        <span className="text-[11px] font-black">{slot}</span>
+                                        <span className={`text-[8px] font-bold uppercase tracking-tighter ${isBusy ? 'text-red-300' : isSelected ? 'text-purple-200' : 'text-green-500'}`}>
+                                            {isBusy ? "Booked" : "Free"}
+                                        </span>
+                                        {isSelected && <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-purple-600 animate-pulse" />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-8 border-2 border-dashed border-gray-100 rounded-[2rem] text-center">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Select a date to see slots</p>
+                    </div>
+                )}
 
-            <select
-              className="border rounded-xl p-3"
-              value={interviewData.mode}
-              onChange={(e) => setInterviewData({ ...interviewData, mode: e.target.value })}
-            >
-              <option value="online">Online</option>
-              <option value="offline">Offline</option>
-            </select>
+                {/* Mode & Submit */}
+                <div className="flex flex-col gap-4 pt-2">
+                    <div className="flex items-center gap-3 p-1 bg-gray-100 rounded-2xl">
+                        <button 
+                            onClick={() => setInterviewData({...interviewData, mode: 'online'})}
+                            className={`flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${interviewData.mode === 'online' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400'}`}
+                        >Online</button>
+                        <button 
+                            onClick={() => setInterviewData({...interviewData, mode: 'offline'})}
+                            className={`flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${interviewData.mode === 'offline' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400'}`}
+                        >Offline</button>
+                    </div>
 
-            {interviewData.mode === "online" && (
-              <Input
-                placeholder="Meeting Link"
-                value={interviewData.meetingLink}
-                onChange={(e) => setInterviewData({ ...interviewData, meetingLink: e.target.value })}
-              />
-            )}
-
-            <Button onClick={scheduleInterview}>Confirm Interview</Button>
-          </DialogContent>
-        </Dialog>
-      )}
+                    <Button 
+                        disabled={!interviewData.time || !interviewData.date}
+                        className="w-full h-14 rounded-[1.5rem] bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-100 font-black uppercase tracking-widest text-xs transition-all active:scale-95 disabled:bg-gray-200"
+                        onClick={scheduleInterview}
+                    >
+                        Confirm Appointment
+                    </Button>
+                </div>
+            </div>
+        </DialogContent>
+    </Dialog>
+)}
     </div>
   );
 };

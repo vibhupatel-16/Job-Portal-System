@@ -91,30 +91,53 @@ export const deleteJobByAdmin = async (req, res) => {
 
 // adminJob.controller.js mein
 
+// adminJob.controller.js
+
 export const updateJobStatus = async (req, res) => {
   try {
     const { status } = req.body; // 'approved' or 'rejected'
     const jobId = req.params.id;
 
-    const job = await Job.findByIdAndUpdate(jobId, { status }, { new: true });
+    // 1. Job status update karein
+    const job = await Job.findByIdAndUpdate(jobId, { status }, { new: true }).populate('company');
     if (!job) return res.status(404).json({ message: "Job not found" });
 
-    // ✅ SIRF APPROVE HONE PAR EMAIL BHEJEIN
     if (status === "approved") {
+      // 2. Sirf jobseekers ko dhundein
       const users = await User.find({ role: "jobseeker" });
+
+      // 3. Notification Object taiyaar karein
+      const newNotification = {
+        message: `New Job Match: ${job.title} at ${job.company?.name || 'Top Company'}`,
+        type: 'job_alert',
+        jobId: job._id,
+        isRead: false,
+        createdAt: new Date()
+      };
+
+      // 4. Sabhi users ke database mein notification save karein (Offline support ke liye)
+      // Isse unke 'Bell Icon' mein data dikhega jab wo online aayenge
+      await User.updateMany(
+        { role: "jobseeker" }, 
+        { $push: { notifications: newNotification } }
+      );
+
+      // 5. Aapka purana Email logic (as it is)
       for (const user of users) {
         await sendEmail({
           email: user.email,
           subject: `New Opening: ${job.title}`,
-          message: `A new job is now live!`,
-          html: `<h1>${job.title} is now available!</h1>` // Aapka purana HTML template yahan use karein
+          html: `<h1>${job.title} is now live!</h1>` 
         });
       }
     }
 
     return res.status(200).json({
       success: true,
-      message: `Job ${status} and users notified if approved`,
+      message: `Job ${status}, users notified and notifications saved.`,
     });
-  } catch (error) {  }
+  } catch (error) {
+    console.log("Error in updateJobStatus:", error);
+    return res.status(500).json({ success: false });
+  }
 };

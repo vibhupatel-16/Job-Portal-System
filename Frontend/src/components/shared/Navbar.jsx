@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Avatar, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { LogOut, User2, Briefcase, Bell, Calendar, Bookmark } from 'lucide-react'; // Bell icon add kiya
+import { LogOut, User2, Briefcase, Bell, Calendar, Bookmark, ChevronDown, HelpCircle } from 'lucide-react'; // Bell icon add kiya
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
@@ -117,24 +117,56 @@ function Navbar() {
 
                 {/* Middle Menu */}
                 <div className="flex items-center gap-12">
-                    <ul className="flex font-medium items-center gap-5">
-                        {user?.role !== "employer" && (
-                            <li><Link to="/" className="hover:text-red-500 transition">Home</Link></li>
-                        )}
-                        {user?.role === "employer" ? (
-                            <>
-                                <li><Link to="/employer/companies" className="hover:text-red-500 transition">Companies</Link></li>
-                                <li><Link to="/employer/jobs" className="hover:text-red-500 transition">Jobs</Link></li>
-                                <li><Link to="/employer/interview-list" className="hover:text-red-500 transition">Interviews</Link></li>
-                            </>
-                        ) : (
-                            <>
-                                <li><Link to="/jobs" className="hover:text-red-500 transition">Jobs</Link></li>
-                                <li><Link to="/browse" className="hover:text-red-500 transition">Browse</Link></li>
-                                {user && <li><Link to="/jobseeker/interviews" className="hover:text-red-500 transition">My Schedule</Link></li>}
-                            </>
-                        )}
-                    </ul>
+                    {/* Navbar.jsx: Replace current Jobs <li> with this */}
+<ul className='flex font-medium items-center gap-6'>
+    <li><Link to="/" className="hover:text-[#6A38C2] transition">Home</Link></li>
+    
+    {/* Jobs Dropdown Logic - Specific for Jobseekers */}
+    {user && user.role === 'jobseeker' ? (
+        <li className='relative group py-4'>
+            {/* Main Label */}
+            <div className='flex items-center gap-1 cursor-pointer hover:text-[#6A38C2] transition font-medium'>
+                <span>Jobs</span>
+                <ChevronDown size={14} className="group-hover:rotate-180 transition-transform duration-300" />
+            </div>
+
+            {/* Hover Dropdown Menu */}
+            <div className='absolute top-[100%] left-[-20px] w-56 bg-white shadow-2xl rounded-xl border border-gray-100 py-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50'>
+                <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Job Center</div>
+                
+                <Link to="/jobs" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 hover:text-[#6A38C2] transition-colors">
+                    <Briefcase size={16} className="text-gray-400" /> 
+                    <span className="text-sm">All Job Openings</span>
+                </Link>
+
+                <Link to="/" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 hover:text-[#6A38C2] transition-colors">
+                    <div className="relative">
+                        <Bookmark size={16} className="text-purple-500" />
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-white border-2"></span>
+                    </div>
+                    <span className="text-sm">Recommended for You</span>
+                </Link>
+
+                <Link to="/saved-jobs" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 hover:text-[#6A38C2] transition-colors">
+                    <Bookmark size={16} className="text-blue-500" />
+                    <span className="text-sm">Saved Jobs</span>
+                </Link>
+
+                <div className="my-2 border-t border-gray-100"></div>
+
+                <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 hover:text-[#6A38C2] transition-colors">
+                    <Calendar size={16} className="text-green-500" />
+                    <span className="text-sm">Application Status</span>
+                </Link>
+            </div>
+        </li>
+    ) : (
+        // Agar Employer ya Guest hai toh simple link dikhao
+        <li><Link to="/jobs" className="hover:text-[#6A38C2] transition">Jobs</Link></li>
+    )}
+
+    <li><Link to="/browse" className="hover:text-[#6A38C2] transition">Browse</Link></li>
+</ul>
                 </div>
 
                 {/* Right Section */}
@@ -228,25 +260,44 @@ function Navbar() {
                                     <AvatarImage src={user?.profile?.profilePhoto || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt={user?.fullname} />
                                 </Avatar>
                             </PopoverTrigger>
-                            <PopoverContent className="w-72">
-                                <div className="flex gap-3 mb-4 p-1">
-                                    <Avatar><AvatarImage src={user?.profile?.profilePhoto || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} /></Avatar>
-                                    <div>
-                                        <h4 className="font-semibold capitalize leading-none mb-1">{user.fullname}</h4>
-                                        <p className="text-xs text-gray-500">{user.email}</p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    {user.role === "jobseeker" && (
-                                        <Link to="/profile" className="flex items-center gap-2 px-2 py-2 hover:bg-gray-100 rounded-md transition text-sm">
-                                            <User2 size={16} /> View Profile
-                                        </Link>
-                                    )}
-                                    <button onClick={logoutHandler} className="flex items-center gap-2 px-2 py-2 text-red-600 hover:bg-red-50 rounded-md transition text-sm text-left">
-                                        <LogOut size={16} /> Logout
-                                    </button>
-                                </div>
-                            </PopoverContent>
+                            <PopoverContent className="w-80 p-0 shadow-2xl border-gray-100 overflow-hidden">
+    {/* Profile Header Background */}
+    <div className="bg-gradient-to-r from-[#6A38C2] to-[#4b288a] p-4 text-white">
+        <div className='flex items-center gap-3'>
+            <Avatar className="h-12 w-12 border-2 border-white">
+                <AvatarImage src={user?.profile?.profilePhoto || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} />
+            </Avatar>
+            <div className='overflow-hidden'>
+                <h4 className="font-bold text-lg leading-tight truncate">{user.fullname}</h4>
+                <p className="text-xs opacity-80 truncate">{user.email}</p>
+            </div>
+        </div>
+    </div>
+
+    {/* Menu Items */}
+    <div className="p-2">
+        <div className="text-[10px] font-bold text-gray-400 px-3 py-2 uppercase tracking-widest">Account</div>
+        
+        {user.role === "jobseeker" && (
+            <Link to="/profile" className="flex items-center gap-3 px-3 py-2.5 hover:bg-purple-50 hover:text-[#6A38C2] rounded-lg transition-all group">
+                <User2 size={18} className="text-gray-400 group-hover:text-[#6A38C2]" /> 
+                <span className="text-sm font-medium">My Profile</span>
+            </Link>
+        )}
+
+        <Link to="/faq" className="flex items-center gap-3 px-3 py-2.5 hover:bg-purple-50 hover:text-[#6A38C2] rounded-lg transition-all group">
+            <HelpCircle size={18} className="text-gray-400 group-hover:text-[#6A38C2]" /> 
+            <span className="text-sm font-medium">Help & FAQs</span>
+        </Link>
+
+        <div className="my-2 border-t border-gray-100"></div>
+
+        <button onClick={logoutHandler} className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all group">
+            <LogOut size={18} className="group-hover:translate-x-1 transition-transform" /> 
+            <span className="text-sm font-medium">Logout</span>
+        </button>
+    </div>
+</PopoverContent>
                         </Popover>
                     )}
                 </div>

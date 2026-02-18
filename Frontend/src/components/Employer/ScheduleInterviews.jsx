@@ -16,8 +16,17 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
         const timer = setInterval(() => {
             const now = new Date().getTime();
             // Date aur Time ko combine karke target banayein
-            const interviewDateTime = new Date(`${targetDate.split('T')[0]}T${targetTime}`).getTime();
+            let formattedDate = targetDate;
+            if (targetDate && targetDate.includes('-')) {
+                const parts = targetDate.split('-');
+                if (parts[0].length === 2) { // Agar format 15-02-2026 hai
+                    formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+            }
+            // Time fix: "02:30 PM" ko handle karne ke liye simple format check
+            const interviewDateTime = new Date(`${formattedDate} ${targetTime}`).getTime();
             const distance = interviewDateTime - now;
+            
 
           if (distance < 0) {
     
@@ -140,22 +149,24 @@ const ScheduledInterviews = () => {
                               <TableCell>
     <div className="flex flex-col text-sm">
         <span className="font-medium text-gray-700 flex items-center gap-1">
-            <Calendar size={13}/> 
-            {/* Date format: 30 Jan 2026 */}
-            {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+            <Calendar size={13} className="text-orange-500"/> 
+            {/* ⭐ DD-MM-YYYY Format Logic */}
+            {item.date ? (() => {
+                const parts = item.date.split('-');
+                if (parts.length === 3 && parts[0].length === 4) {
+                    // Agar YYYY-MM-DD hai toh use DD-MM-YYYY banao
+                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+                return item.date; // Pehle se DD-MM-YYYY hai toh waisa hi dikhao
+            })() : "N/A"}
         </span>
         <span className="text-gray-500 flex items-center gap-1">
-            <Clock size={13}/> 
-            {/* Time format: 11:30 AM */}
-            {new Date(`2000-01-01T${item.time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+            <Clock size={13} className="text-orange-400"/> 
+            {item.time}
         </span>
-        {item.status !== "Completed" && item.status !== "Rejected" && (
-                                            <CountdownTimer targetDate={item.date} targetTime={item.time} />
-                                        )}
+        <CountdownTimer targetDate={item.date} targetTime={item.time} />
     </div>
 </TableCell>
-
-
                                 <TableCell>
                                     <Badge className={item.mode === 'online' ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"}>
                                         {item.mode.toUpperCase()}
@@ -182,18 +193,28 @@ const ScheduledInterviews = () => {
 </TableCell>
 <TableCell className="text-center">
     <div className="flex items-center justify-center gap-2">
-        {new Date(`${item.date.split('T')[0]}T${item.time}`).getTime() < new Date().getTime() && item.status !== "Completed" ? (
-            <button 
-                onClick={() => {
-                    setSelectedInterviewId(item._id);
-                    setOpenFeedback(true);
-                }}
-                className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white hover:bg-purple-700 rounded-full shadow-md transition-all animate-pulse"
-            >
-                <CheckCircle2 size={14} />
-                <span className="text-[10px] font-bold">GIVE FEEDBACK</span>
-            </button>
-        ) : null}
+       {(() => {
+            const now = new Date().getTime();
+            const parts = item.date.split('-');
+            const isoDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : item.date;
+            const interviewTime = new Date(`${isoDate} ${item.time}`).getTime();
+
+            if (item.status === 'completed' || now > interviewTime) {
+                return (
+                    <button 
+                        onClick={() => {
+                            setSelectedInterviewId(item._id);
+                            setOpenFeedback(true);
+                        }}
+                        className="flex items-center gap-1 bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-100 hover:bg-green-100 transition-all shadow-sm"
+                    >
+                        <CheckCircle2 size={16} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Feedback</span>
+                    </button>
+                );
+            }
+            return null;
+        })()}
         
         {/* ⭐ FIX: Status ke saath yeh bhi check karein ki kya login user hi scheduler hai? */}
       

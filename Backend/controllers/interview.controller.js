@@ -47,56 +47,87 @@ export const googleCallback = async (req, res) => {
 
 export const scheduleInterview = async (req, res) => {
   try {
-    const { applicationId, date, time, mode, meetingLink } = req.body;
+    const { applicationId, jobseekerId, date, time, mode, meetingLink } = req.body;
 
     const scheduledByRole = req.user.role; 
     const scheduledById = req.id;
 
-    const formattedDate = new Date(date).toLocaleDateString('en-GB').replace(/\//g, '-');
+    // --- ⭐ TIME FORMAT FIX HELPER ---
+    const convertTo24Hour = (timeStr) => {
+      if (!timeStr) return "00:00";
+      if (!timeStr.includes("AM") && !timeStr.includes("PM")) {
+        return timeStr.length === 5 ? timeStr : `0${timeStr}`.slice(-5);
+      }
+      const [timePart, modifier] = timeStr.split(' ');
+      let [hours, minutes] = timePart.split(':');
+      if (hours === '12') hours = '00';
+      if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+      return `${hours.toString().padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    };
 
-    // Time Format: 02:30 PM
-    const formattedTime = new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+    const time24 = convertTo24Hour(time);
+    const startDateTimeStr = `${date}T${time24}:00`;
+    const startDateTime = new Date(startDateTimeStr);
+
+    const now = new Date();
+if (startDateTime < now) {
+    return res.status(400).json({ 
+        message: "You cannot schedule an interview for a past date or time.", 
+        success: false 
+    });
+}
+
+    // Validation Check
+    if (isNaN(startDateTime.getTime())) {
+        return res.status(400).json({ 
+            message: "Invalid Date or Time format. Please select again.", 
+            success: false 
+        });
+    }
+
+    const endDateTime = new Date(startDateTime.getTime() + 3600000); // 1 Hour later
+
+    // Display formats
+    const formattedDate = startDateTime.toLocaleDateString('en-GB').replace(/\//g, '-');
+    const formattedTime = startDateTime.toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', hour12: true
     });
 
+    /* ================= ⭐ SLOT CHECK ================= */
+    const isSlotBusy = await Interview.findOne({
+        scheduledBy: scheduledById,
+        date: formattedDate,
+        time: formattedTime,
+        status: { $ne: 'cancelled' }
+    });
+
+    if (isSlotBusy) {
+        return res.status(400).json({
+            message: `Aapka is time (${formattedTime}) par pehle se ek interview scheduled hai.`,
+            success: false
+        });
+    }
+
     const application = await Application.findById(applicationId)
-      .populate({
-        path: "job",
-        populate: { path: "company" }
-      })
+      .populate({ path: "job", populate: { path: "company" } })
       .populate("applicant");
 
-    if (!application) {
-      return res.status(404).json({ message: "Application not found", success: false });
-    }
-// ⭐ STEP 1: Pehle Security/Role Check karein
-    if (scheduledByRole === "employer" && application.job.created_by.toString() !== scheduledById.toString()) {
-      return res.status(403).json({
-        message: "You are not allowed to schedule interview for this job",
-        success: false
-      });
-    }
+    if (!application) return res.status(404).json({ message: "Application not found", success: false });
 
-    // ⭐ STEP 2: Variable declare karein
     let finalMeetingLink = meetingLink || ""; 
 
-    // ⭐ STEP 3: Automatic Google Meet generation (After security check)
+    /* ================= 📅 GOOGLE MEET GENERATION ================= */
     if (mode === "online") {
         try {
-            // Check karein ki token hai ya nahi
-            if (!process.env.GOOGLE_REFRESH_TOKEN) {
-                console.error("Missing GOOGLE_REFRESH_TOKEN in .env");
-            } else {
+            if (process.env.GOOGLE_REFRESH_TOKEN) {
                 oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
                 const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
                 const event = {
                     summary: `Interview: ${application.job.title}`,
-                    description: `Candidate: ${application.applicant.fullname} | Company: ${application.job.company.name}`,
-                    start: { dateTime: new Date(`${date}T${time}:00`).toISOString(), timeZone: "Asia/Kolkata" },
-                    end: { dateTime: new Date(new Date(`${date}T${time}:00`).getTime() + 3600000).toISOString(), timeZone: "Asia/Kolkata" },
+                    description: `Candidate: ${application.applicant.fullname}`,
+                    start: { dateTime: startDateTime.toISOString(), timeZone: "Asia/Kolkata" },
+                    end: { dateTime: endDateTime.toISOString(), timeZone: "Asia/Kolkata" },
                     conferenceData: {
                         createRequest: { requestId: `req-${Date.now()}`, conferenceSolutionKey: { type: "hangoutsMeet" } }
                     },
@@ -108,28 +139,26 @@ export const scheduleInterview = async (req, res) => {
                     conferenceDataVersion: 1,
                 });
                 finalMeetingLink = response.data.hangoutLink; 
-                console.log("Generated Link:", finalMeetingLink);
             }
         } catch (err) {
-            console.error("Google Meet API Error:", err.message);
+            console.error("Google Meet Error:", err.message);
         }
     }
 
-    // ⭐ STEP 4: Create Interview with finalMeetingLink
+    /* ================= ⭐ DB & NOTIFICATION ================= */
     const interview = await Interview.create({
       application: application._id,
       job: application.job._id,
       company: application.job.company._id,
       jobseeker: application.applicant._id,
-      date,
-      time,
+      date: formattedDate,
+      time: formattedTime,
       mode,
-      meetingLink: finalMeetingLink, // Ab sahi link save hogi
+      meetingLink: finalMeetingLink,
       scheduledBy: scheduledById,
       scheduledByRole: scheduledByRole
     });
 
-    /* ================= 🔔 2. SAVE NOTIFICATION TO DATABASE ================= */
     const notification = await Notification.create({
       recipient: application.applicant._id,
       sender: scheduledById,
@@ -139,22 +168,19 @@ export const scheduleInterview = async (req, res) => {
       link: "/jobseeker/interviews" 
     });
 
-    /* ================= 🚀 SOCKET.IO ================= */
     if (req.io) {
-      const notificationData = {
-        id: notification._id, 
-        type: notification.type,
+      req.io.to(application.applicant._id.toString()).emit("notification", {
+        id: notification._id,
         title: notification.title,
         message: notification.message,
-        details: { date, time, mode, meetingLink }
-      };
-      req.io.to(application.applicant._id.toString()).emit("notification", notificationData);
+        type: notification.type
+      });
     }
 
     /* ================= 📅 GOOGLE CALENDAR LINK LOGIC (NEW) ================= */
     // Format: YYYYMMDDTHHmmSSZ
-    const startDateTime = new Date(`${date}T${time}:00`).toISOString().replace(/-|:|\.\d\d\d/g, "");
-    const endDateTime = new Date(new Date(`${date}T${time}:00`).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, ""); // 1 Hour Duration
+    const calStart = startDateTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const calEnd = endDateTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
     
     const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Interview: ${application.job.title} at ${application.job.company.name}`)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(`Meeting Link: ${finalMeetingLink || 'N/A'}`)}&location=${encodeURIComponent(finalMeetingLink || 'Office')}`;
 
@@ -622,5 +648,30 @@ export const getFeedbackByInterviewId = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Server error", success: false });
+    }
+};
+
+// ⭐ Naya feature: Is din ke saare booked slots get karein
+export const getBookedSlots = async (req, res) => {
+    try {
+        const { date } = req.query; // Query se date lenge
+        const employerId = req.id;
+
+        const formattedDate = new Date(date).toLocaleDateString('en-GB').replace(/\//g, '-');
+
+        const bookedInterviews = await Interview.find({
+            scheduledBy: employerId,
+            date: formattedDate,
+            status: { $ne: 'cancelled' }
+        }).select('time'); // Sirf time field chahiye
+
+        const bookedTimes = bookedInterviews.map(item => item.time);
+
+        return res.status(200).json({
+            bookedTimes,
+            success: true
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching slots", success: false });
     }
 };
