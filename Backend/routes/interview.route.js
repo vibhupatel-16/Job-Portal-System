@@ -43,5 +43,5 @@ router.route("/:interviewId/feedback").post(isAuthenticated, submitFeedback);
 // interview.route.js mein ye line add karein
 router.route("/feedback/:interviewId").get(isAuthenticated, getFeedbackByInterviewId);
 
-router.get("/booked-slots", isAuthenticated, checkRole("admin", "employer"), getBookedSlots);
+router.get("/booked-slots", isAuthenticated, getBookedSlots);
 export default router;

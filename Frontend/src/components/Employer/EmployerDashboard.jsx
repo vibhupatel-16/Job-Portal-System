@@ -411,7 +411,7 @@ const EmployerDashboard = () => {
     </DialogContent>
   </Dialog>
 )}
-)}
+
     </div>
   );
 };

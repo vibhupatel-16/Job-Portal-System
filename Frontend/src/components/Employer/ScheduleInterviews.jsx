@@ -218,25 +218,21 @@ const ScheduledInterviews = () => {
         
         {/* ⭐ FIX: Status ke saath yeh bhi check karein ki kya login user hi scheduler hai? */}
       
-{(item.status === 'reschedule_requested' && item.scheduledByRole === 'employer') ? (
-    <div className="flex flex-col gap-2 p-2 bg-orange-50 rounded-xl border border-orange-100">
-        <div className="text-left mb-1">
-            <p className="text-[9px] font-bold text-orange-600 uppercase">New Requested Slot:</p>
-            <p className="text-[10px] font-bold text-gray-700">
-                📅 {new Date(item.suggestedDate).toLocaleDateString('en-GB')} 
-                <br/>
-                ⏰ {new Date(`2000-01-01T${item.suggestedTime}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-            </p>
+{item.status === 'reschedule_requested' && (
+    <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+        <div className="text-[11px] mb-2 font-semibold text-orange-800">
+            📅 New Request: {item.suggestedDate} at {item.suggestedTime}
+            <br/>
+            💬 Reason: {item.rescheduleReason}
         </div>
         <button 
             onClick={() => handleApproveReschedule(item._id, item.suggestedDate, item.suggestedTime)}
-            className="flex items-center justify-center gap-1 p-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-all shadow-sm"
+            className="w-full bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold"
         >
-            <CheckCircle2 size={16} />
-            <span className="text-[10px] font-bold">APPROVE & UPDATE LINK</span>
+            APPROVE & UPDATE
         </button>
     </div>
-) : null }
+)}
 
         {/* Delete button hamesha rahega agar aap chahein */}
         {/* ⭐ NEW: Delete Button logic */}

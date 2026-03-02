@@ -214,6 +214,9 @@ if (startDateTime < now) {
             <a href="${googleCalendarUrl}" style="color: #4285F4; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid #4285F4; padding: 8px 20px; border-radius: 6px; display: inline-block;">
                🗓️ Add to Google Calendar
             </a>
+            <br/>
+           
+           <p><b>Candidate Resume:</b> <a href="${application.applicant.profile.resume}">Download/View Resume</a></p>
           </div>
 
           <p style="font-size: 14px; color: #888; margin-top: 40px; text-align: center; line-height: 1.5;">
@@ -274,7 +277,7 @@ export const getScheduledInterviewsByCreator = async (req, res) => {
     try {
         const userId = req.id; 
 
-        const interviews = await Interview.find()
+       const interviews = await Interview.find()
             .populate({
                 path: 'application',
                 populate: { 
@@ -282,12 +285,16 @@ export const getScheduledInterviewsByCreator = async (req, res) => {
                     select: 'fullname email phoneNumber' 
                 }
             })
-            .populate('jobseeker', 'fullname email') // ⭐ Seedha jobseeker ko populate karein
+            .populate('jobseeker', 'fullname email')
             .populate({
                 path: 'job',
                 match: { created_by: userId } 
             })
-            .populate('company');
+            .populate('company')
+            // ⭐ Change: select '_id' agar aapko sirf ID chahiye, 
+            // ya poora object rehne dein par frontend par access sahi karein
+            .populate('scheduledBy', '_id fullname email') 
+            .sort({ createdAt: -1 });
 
         const myScheduledInterviews = interviews.filter(item => item.job !== null);
 
@@ -384,74 +391,83 @@ export const deleteNotification = async (req, res) => {
 
 export const requestReschedule = async (req, res) => {
     try {
-        const { interviewId, reason, preferredTime } = req.body;
-        const [newDate, newTime] = preferredTime.split('T');
+        const { interviewId, reason, suggestedDate, suggestedTime } = req.body;
+
+        if (!interviewId || !suggestedDate || !suggestedTime) {
+            return res.status(400).json({ 
+                message: "Interview ID, Date and Time are required", 
+                success: false 
+            });
+        }
 
         const interview = await Interview.findByIdAndUpdate(interviewId, {
             status: 'reschedule_requested',
-            suggestedDate: newDate,
-            suggestedTime: newTime,
+            suggestedDate: suggestedDate,
+            suggestedTime: suggestedTime,
             rescheduleReason: reason
         }, { new: true });
 
-        // ⭐ Fix: Notification ab 'scheduledBy' wale user ko jayegi
-        // Chahe wo Admin ho ya Employer
+        if (!interview) {
+            return res.status(404).json({ message: "Interview not found", success: false });
+        }
+
+        // Notification logic
         await Notification.create({
-            recipient: interview.scheduledBy, // Ye wahi insaan hai jisne interview schedule kiya tha
-            sender: req.id, // Jobseeker ki ID
+            recipient: interview.scheduledBy,
+            sender: req.id,
             type: "STATUS_UPDATED",
             title: "Reschedule Request Received",
-            message: `Candidate has requested a new time for the interview.`,
+            message: `Candidate has requested a new time: ${suggestedDate} at ${suggestedTime}`,
             link: interview.scheduledByRole === 'admin' ? "/admin/interviews" : "/employer/interviews"
         });
 
         return res.status(200).json({ message: "Request sent successfully", success: true });
     } catch (error) {
-        res.status(500).json({ success: false });
+        console.error("Reschedule Error:", error);
+        res.status(500).json({ message: "Server error", success: false });
     }
 };
 export const approveReschedule = async (req, res) => {
     try {
-        const { interviewId, newDate, newTime } = req.body;
+        const { interviewId, newDate, newTime } = req.body; 
         const userId = req.id; 
 
-        // ⭐ FIX 1: Populate use karein taaki 'jobseeker' aur 'job' ka data mil sake
-        const interview = await Interview.findById(interviewId)
-            .populate("jobseeker") // Isse email aur fullname milega
-            .populate("job");      // Isse job title milega
-
+        // 1. Data check and Populate
+        const interview = await Interview.findById(interviewId).populate("jobseeker").populate("job");
         if (!interview) return res.status(404).json({ message: "Interview not found", success: false });
 
-        // Formatting logic
-        const formattedDate = new Date(newDate).toLocaleDateString('en-GB').replace(/\//g, '-');
-        const formattedTime = new Date(`2000-01-01T${newTime}`).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
+        // ⭐ Helper: Convert "12:00 PM" to "12:00"
+        const convertTo24Hour = (timeStr) => {
+            if (!timeStr.includes(' ')) return timeStr; 
+            const [time, modifier] = timeStr.split(' ');
+            let [hours, minutes] = time.split(':');
+            if (hours === '12') hours = '00';
+            if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+            return `${hours.toString().padStart(2, '0')}:${minutes}`;
+        };
 
-        // 2. Google OAuth Setup
-        if (!process.env.GOOGLE_REFRESH_TOKEN) {
-            return res.status(500).json({ message: "Google Calendar not configured", success: false });
+        const time24 = convertTo24Hour(newTime);
+        const startDateTime = new Date(`${newDate}T${time24}:00`);
+        
+        if (isNaN(startDateTime.getTime())) {
+            return res.status(400).json({ message: "Invalid Date/Time received", success: false });
         }
 
+        const endDateTime = new Date(startDateTime.getTime() + 30 * 60000); 
+
+        // ⭐ CHANGE 1: Variable names ko theek karein (formattedDate/formattedTime create karein)
+        const formattedDate = new Date(newDate).toLocaleDateString('en-GB').replace(/\//g, '-');
+        const formattedTime = newTime; // Yeh "12:00 PM" format mein hi hai
+
+        // 2. Google OAuth & Event Update
         oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
         const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
-        const startDateTime = new Date(`${newDate}T${newTime}:00`);
-        const endDateTime = new Date(startDateTime.getTime() + 30 * 60000); 
-
         const event = {
-            summary: `Rescheduled: ${interview.job?.title || "Interview"}`, // Safe access with ?.
-            description: `Interview rescheduled by Employer.`,
+            summary: `Rescheduled: ${interview.job?.title}`,
             start: { dateTime: startDateTime.toISOString(), timeZone: "Asia/Kolkata" },
             end: { dateTime: endDateTime.toISOString(), timeZone: "Asia/Kolkata" },
-            conferenceData: {
-                createRequest: { 
-                    requestId: `resched-${Date.now()}`, 
-                    conferenceSolutionKey: { type: "hangoutsMeet" } 
-                },
-            },
+            conferenceData: { createRequest: { requestId: `res-${Date.now()}`, conferenceSolutionKey: { type: "hangoutsMeet" } } },
         };
 
         const response = await calendar.events.insert({
@@ -460,17 +476,17 @@ export const approveReschedule = async (req, res) => {
             conferenceDataVersion: 1,
         });
 
-        const newMeetingLink = response.data.hangoutLink;
+        const newMeetingLink = response.data.hangoutLink; // ⭐ CHANGE 2: Is variable ko define karein (email mein use ho raha hai)
 
-        // 5. Database Update
-        interview.date = newDate;
-        interview.time = newTime;
+        // 3. Database Update
+        interview.date = formattedDate; 
+        interview.time = formattedTime; 
         interview.meetingLink = newMeetingLink;
         interview.status = 'scheduled'; 
         interview.rescheduleRequest = undefined; 
         await interview.save();
 
-        // 6. Notification save
+        // 6. Notification save (formattedDate aur formattedTime use karein)
         await Notification.create({
             recipient: interview.jobseeker._id,
             sender: userId,
@@ -651,19 +667,26 @@ export const getFeedbackByInterviewId = async (req, res) => {
     }
 };
 
-// ⭐ Naya feature: Is din ke saare booked slots get karein
 export const getBookedSlots = async (req, res) => {
     try {
-        const { date } = req.query; // Query se date lenge
-        const employerId = req.id;
+        const { date, employerId: queryEmployerId } = req.query; 
+        
+        // ⭐ Priority logic: 
+        // 1. Agar query mein employerId hai (Jobseeker side se), toh woh use karein.
+        // 2. Agar nahi hai, toh req.id use karein (Employer side se).
+        const targetEmployerId = queryEmployerId || req.id;
+
+        if (!targetEmployerId) {
+            return res.status(400).json({ message: "Employer ID is required", success: false });
+        }
 
         const formattedDate = new Date(date).toLocaleDateString('en-GB').replace(/\//g, '-');
 
         const bookedInterviews = await Interview.find({
-            scheduledBy: employerId,
+            scheduledBy: targetEmployerId,
             date: formattedDate,
             status: { $ne: 'cancelled' }
-        }).select('time'); // Sirf time field chahiye
+        }).select('time');
 
         const bookedTimes = bookedInterviews.map(item => item.time);
 
@@ -672,6 +695,7 @@ export const getBookedSlots = async (req, res) => {
             success: true
         });
     } catch (error) {
-        res.status(500).json({ message: "Error fetching slots", success: false });
+        console.log("Error in getBookedSlots:", error);
+        return res.status(500).json({ message: "Server error", success: false });
     }
 };

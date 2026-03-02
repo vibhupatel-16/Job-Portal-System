@@ -14,12 +14,63 @@ const JobseekerInterviews = () => {
     // --- ⭐ NEW STATES FOR RESCHEDULE ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedInterview, setSelectedInterview] = useState(null);
-    const [rescheduleData, setRescheduleData] = useState({ reason: '', preferredTime: '' });
+   // JobseekerInterviews.jsx ke shuruat mein state badlein:
+const [rescheduleData, setRescheduleData] = useState({ 
+    reason: '', 
+    preferredTime: '', 
+    preferredDate: '' // ⭐ Ye line add karein
+});
 
     const [feedbackOpen, setFeedbackOpen] = useState(false);
 const [selectedFeedback, setSelectedFeedback] = useState(null);
 
-    useEffect(() => {
+const [bookedSlots, setBookedSlots] = useState([]);
+const [isSlotBusy, setIsSlotBusy] = useState(false);
+const WORKING_SLOTS = [
+    "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", 
+    "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM"
+];
+
+
+const [availableSlots, setAvailableSlots] = useState([]);
+// Time ko AM/PM mein convert karne ke liye (Validation ke liye zaroori hai)
+const formatToAmPm = (dateTimeStr) => {
+    if (!dateTimeStr) return "";
+    const date = new Date(dateTimeStr);
+    return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+};
+
+
+const handleDateChange = async (e) => {
+    const selectedDate = e.target.value;
+    setRescheduleData({ ...rescheduleData, preferredDate: selectedDate, preferredTime: '' });
+
+    if (selectedDate) {
+        try {
+            // Hum employerId nikalenge selected interview se
+            const employerId = selectedInterview?.scheduledBy?._id || selectedInterview?.scheduledBy;
+            
+            const res = await axios.get(
+                `${INTERVIEW_API_END_POINT}/booked-slots?date=${selectedDate}&employerId=${employerId}`, 
+                { withCredentials: true }
+            );
+
+            if (res.data.success) {
+                // Backend se aaye hue booked slots ko set karein
+                setBookedSlots(res.data.bookedTimes || []);
+            }
+        } catch (error) {
+            console.error("Error fetching slots:", error);
+            toast.error("Failed to fetch available slots");
+        }
+    }
+};
+  
+useEffect(() => {
         const fetchMyInterviews = async () => {
             try {
                 const res = await axios.get(`${INTERVIEW_API_END_POINT}/my-interviews`, { withCredentials: true });
@@ -33,27 +84,35 @@ const [selectedFeedback, setSelectedFeedback] = useState(null);
         fetchMyInterviews();
     }, []);
 
-    // --- ⭐ NEW HANDLER FOR RESCHEDULE ---
-    const handleRescheduleSubmit = async () => {
-        if(!rescheduleData.reason || !rescheduleData.preferredTime) {
-            return toast.error("Please fill all details");
-        }
-        try {
-            const res = await axios.post(`${INTERVIEW_API_END_POINT}/reschedule-request`, 
-                { interviewId: selectedInterview, ...rescheduleData }, 
-                { withCredentials: true }
-            );
-            if (res.data.success) {
-                toast.success("Request sent to employer!");
-                setIsModalOpen(false);
-                setRescheduleData({ reason: '', preferredTime: '' });
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to send request");
-        }
-    };
+   // --- ⭐ FIXED HANDLER FOR RESCHEDULE ---
+const handleRescheduleSubmit = async () => {
+    // Backend suggestedDate aur suggestedTime mangta hai
+    if(!rescheduleData.reason || !rescheduleData.preferredTime || !rescheduleData.preferredDate) {
+        return toast.error("Please fill all details (Date, Time and Reason)");
+    }
 
+    try {
+        const res = await axios.post(`${INTERVIEW_API_END_POINT}/reschedule-request`, 
+            { 
+                interviewId: selectedInterview?._id, 
+                suggestedDate: rescheduleData.preferredDate, // Backend key se match kiya
+                suggestedTime: rescheduleData.preferredTime, // Backend key se match kiya
+                reason: rescheduleData.reason 
+            }, 
+            { withCredentials: true }
+        );
 
+        if (res.data.success) {
+            toast.success("Request sent to employer!");
+            setIsModalOpen(false);
+            setRescheduleData({ reason: '', preferredTime: '', preferredDate: '' });
+            fetchList(); // List refresh karne ke liye
+        }
+    } catch (error) {
+        // console.error("Submit Error:", error.response?.data);
+        // toast.error(error.response?.data?.message || "Failed to send request");
+    }
+};
     const getGoogleCalendarLink = (item) => {
         const baseUrl = "https://www.google.com/calendar/render?action=TEMPLATE";
         const title = encodeURIComponent(`Interview: ${item.job.title} at ${item.company.name}`);
@@ -243,7 +302,9 @@ const handleViewFeedback = async (interviewId) => {
 
                                         {/* ⭐ NEW: RESCHEDULE BUTTON */}
                                         <button 
-                                            onClick={() => { setSelectedInterview(item._id); setIsModalOpen(true); }}
+                                            onClick={() => { console.log("Setting selected interview:", item); // Check karein 'item' kya hai
+        setSelectedInterview(item); // 👈 Pura object pass hona chahiye
+        setIsModalOpen(true); }}
                                             className="text-orange-600 hover:bg-orange-50 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md border border-orange-100 transition mt-1 w-fit"
                                         >
                                             <Clock size={13} /> Request Reschedule
@@ -260,42 +321,97 @@ const handleViewFeedback = async (interviewId) => {
                 )}
             </div>
 
-            {/* ⭐ NEW: RESCHEDULE MODAL */}
+  {/* --- ⭐ RESCHEDULE MODAL --- */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
-                        <h2 className="text-xl font-bold mb-2 text-gray-800">Request Reschedule</h2>
-                        <p className="text-sm text-gray-500 mb-5">Please let the employer know why you need to change the time.</p>
-                        
-                        <div className="flex flex-col gap-4">
-                            <label className="text-sm font-medium text-gray-700">Reason</label>
-                            <textarea 
-                                placeholder="E.g. Medical emergency, overlap with another interview..."
-                                className="border rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-100 outline-none h-24 resize-none border-gray-200"
-                                onChange={(e) => setRescheduleData({...rescheduleData, reason: e.target.value})}
-                            />
-                           <label className="text-sm font-medium text-gray-700">Preferred New Time</label>
-<div className="relative">
-    <input 
-        type="datetime-local"
-        className="border border-gray-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-orange-100 w-full"
-        onChange={(e) => setRescheduleData({...rescheduleData, preferredTime: e.target.value})}
-    />
-    
-    {/* ⭐ Yeh line select kiya hua time proper format (AM/PM) mein dikhayegi */}
-    {rescheduleData.preferredTime && (
-        <p className="mt-2 text-xs font-bold text-orange-600 bg-orange-50 p-2 rounded-md border border-orange-100">
-            Selected: {formatDisplayDateTime(rescheduleData.preferredTime)}
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-200">
+                        <div className="p-8">
+                            <h2 className="text-2xl font-black text-gray-800 mb-2 uppercase tracking-tighter">Reschedule Request</h2>
+                            <p className="text-gray-500 text-sm mb-8">Suggest a new time and date for your interview.</p>
+
+                            <div className="space-y-6">
+                                {/* 📅 DATE INPUT (Aapne yahan pucha tha) */}
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 mb-2 block uppercase tracking-widest">Select New Date</label>
+                                    <div className="relative group">
+                                        <input 
+                                            type="date"
+                                            value={rescheduleData.preferredDate}
+                                           onChange={handleDateChange}
+                                            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all appearance-none"
+                                        />
+                                        <Calendar className="absolute right-4 top-4 text-gray-400 pointer-events-none group-focus-within:text-orange-500" size={18}/>
+                                    </div>
+                                </div>
+
+                                {/* ⏰ TIME SELECT */}
+                               {/* JobseekerInterviews.jsx ke Reschedule Modal ke andar Time Slot section ko update karein */}
+<div className="space-y-2">
+    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-1">
+        Select Preferred Time Slot
+    </label>
+   {/* Modal ke andar Time Slot mapping */}
+<div className="grid grid-cols-3 gap-2">
+    {WORKING_SLOTS.map((slot) => {
+        // Check karein ki ye slot booked hai ya nahi
+        const isBooked = bookedSlots.includes(slot);
+        const isSelected = rescheduleData.preferredTime === slot;
+
+        return (
+            <button
+                key={slot}
+                type="button" // Form submit hone se rokne ke liye
+                disabled={isBooked} // Sirf booked slots disable honge
+                onClick={() => setRescheduleData({ ...rescheduleData, preferredTime: slot })}
+                className={`py-3 rounded-2xl text-[10px] font-bold transition-all border
+                    ${isBooked 
+                        ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' // Booked slot: Light color
+                        : isSelected
+                            ? 'bg-orange-600 text-white border-orange-600 shadow-lg' // Selected slot
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:bg-orange-50' // Available slot
+                    }`}
+            >
+                {slot}
+                {isBooked && <span className="block text-[8px] opacity-50">BOOKED</span>}
+            </button>
+        );
+    })}
+</div>
+    {rescheduleData.preferredDate && availableSlots.length === 0 && (
+        <p className="text-[10px] text-red-500 font-medium text-center mt-2">
+            No slots available for this date.
         </p>
     )}
 </div>
-                        </div>
 
-                        <div className="flex justify-end gap-3 mt-8">
-                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-500 text-sm font-medium hover:bg-gray-50 rounded-lg">Cancel</button>
-                            <button onClick={handleRescheduleSubmit} className="px-5 py-2 bg-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-orange-700 shadow-md">
-                                Submit Request
-                            </button>
+                                {/* 💬 REASON TEXTAREA */}
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 mb-2 block uppercase tracking-widest">Reason for Rescheduling</label>
+                                    <textarea 
+                                        rows="3"
+                                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all resize-none"
+                                        placeholder="Briefly explain why..."
+                                        value={rescheduleData.reason}
+                                        onChange={(e) => setRescheduleData({...rescheduleData, reason: e.target.value})}
+                                    />
+                                </div>
+
+                                {/* BUTTONS */}
+                                <div className="flex gap-3 pt-4">
+                                    <button 
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="flex-1 py-4 bg-gray-100 text-gray-500 text-xs font-black rounded-2xl hover:bg-gray-200 transition-all uppercase"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={handleRescheduleSubmit}
+                                        className="flex-[2] py-4 bg-orange-600 text-white text-xs font-black rounded-2xl hover:bg-orange-700 shadow-xl shadow-orange-200 transition-all uppercase"
+                                    >
+                                        Submit Request
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
