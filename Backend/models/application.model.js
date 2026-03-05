@@ -13,7 +13,7 @@ const applicationSchema = new mongooes.Schema({
 
     status:{
         type:String,
-        enum:['pending', 'accepted', 'rejected'],
+        enum:['pending','shortlisted', 'accepted', 'rejected'],
         default:'pending'
     }
 }, {timestamps:true});

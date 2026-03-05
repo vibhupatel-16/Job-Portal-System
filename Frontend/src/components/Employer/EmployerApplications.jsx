@@ -91,62 +91,88 @@ const standardSlots = ["10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM
         >
           <option value="">All Status</option>
           <option value="pending">Pending</option>
+          <option value="shortlisted">Shortlisted</option>
           <option value="accepted">Accepted</option>
           <option value="rejected">Rejected</option>
         </select>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-2xl shadow overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-4 text-left">Applicant</th>
-              <th className="p-4 text-left">Job</th>
-              <th className="p-4 text-left">Status</th>
-              <th className="p-4 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredApplications.map((app) => (
-              <tr key={app._id} className="border-t">
-                <td className="p-4">
-                  <p className="font-medium">{app.applicant?.fullname}</p>
-                  <p className="text-sm text-gray-500">{app.applicant?.email}</p>
-                </td>
-                <td className="p-4">{app.job?.title}</td>
-                <td className="p-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold
-                    ${app.status === "accepted" && "bg-green-100 text-green-700"}
-                    ${app.status === "rejected" && "bg-red-100 text-red-700"}
-                    ${app.status === "pending" && "bg-yellow-100 text-yellow-700"}`}
-                  >
-                    {app.status}
-                  </span>
-                </td>
-                <td className="p-4 text-center space-x-2">
-                  <Button size="sm" variant="outline" onClick={() => setSelectedApp(app)}>
-                    View
-                  </Button>
+     <table className="w-full">
+    <thead className="bg-gray-50">
+      <tr>
+        <th className="p-4 text-left">Applicant</th>
+        <th className="p-4 text-left">Job</th>
+        <th className="p-4 text-left">Status</th>
+        <th className="p-4 text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredApplications.map((app) => (
+        <tr key={app._id} className="border-t">
+          <td className="p-4">
+            <p className="font-medium">{app.applicant?.fullname}</p>
+            <p className="text-sm text-gray-500">{app.applicant?.email}</p>
+          </td>
+          <td className="p-4">{app.job?.title}</td>
+          <td className="p-4">
+            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
+              ${app.status === "accepted" && "bg-green-100 text-green-700"}
+              ${app.status === "shortlisted" && "bg-purple-100 text-purple-700"}
+              ${app.status === "rejected" && "bg-red-100 text-red-700"}
+              ${app.status === "pending" && "bg-yellow-100 text-yellow-700"}`}
+            >
+              {app.status}
+            </span>
+          </td>
+          <td className="p-4 text-center space-x-2">
+            <Button size="sm" variant="outline" onClick={() => setSelectedApp(app)}>
+              View
+            </Button>
 
-                  {app.status === "accepted" && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        setSelectedApp(app);
-                        setShowInterviewModal(true);
-                      }}
-                    >
-                      Schedule Interview
-                    </Button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            {/* Step 1: Agar status Pending hai, toh Shortlist ya Reject dikhao */}
+            {app.status === "pending" && (
+              <>
+                <Button 
+                  size="sm" 
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={() => updateStatus(app._id, "shortlisted")}
+                >
+                  Shortlist
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="destructive"
+                  onClick={() => updateStatus(app._id, "rejected")}
+                >
+                  Reject
+                </Button>
+              </>
+            )}
 
+            {/* Step 2: Agar status Shortlisted hai, toh Schedule Interview (Accepted) dikhao */}
+            {app.status === "shortlisted" && (
+              <Button
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => {
+                  setSelectedApp(app);
+                  setShowInterviewModal(true); 
+                  // Note: Jab modal confirm ho tabhi status 'accepted' update karna
+                }}
+              >
+                Schedule Interview
+              </Button>
+            )}
+
+            {/* Step 3: Agar already Accepted hai toh bas information dikhao */}
+            {app.status === "accepted" && (
+              <span className="text-xs font-bold text-green-600 italic">Interview Fixed</span>
+            )}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
         {filteredApplications.length === 0 && (
           <p className="text-center py-10 text-gray-500">No applications found</p>
         )}

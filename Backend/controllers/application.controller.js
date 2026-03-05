@@ -216,3 +216,29 @@ return res.status(200).json({
     });
   }
 };
+
+export const getHiringStats = async (req, res) => {
+    try {
+        const employerId = req.id;
+
+        // 1. Saare jobs dhoondo jo is employer ne banaye hain
+        const jobs = await Job.find({ created_by: employerId });
+        const jobIds = jobs.map(job => job._id);
+
+        // 2. Un jobs ke saare applications fetch karein
+        const applications = await Application.find({ job: { $in: jobIds } });
+
+        // 3. Status wise counting
+        const stats = {
+            totalApplied: applications.length,
+            shortlisted: applications.filter(app => app.status === 'shortlisted').length,
+            accepted: applications.filter(app => app.status === 'accepted').length, // Interview stage
+            rejected: applications.filter(app => app.status === 'rejected').length
+        };
+
+        return res.status(200).json({ stats, success: true });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Server error", success: false });
+    }
+};

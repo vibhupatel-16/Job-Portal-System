@@ -134,6 +134,45 @@ const EmployerDashboard = () => {
         toast.error(error.response?.data?.message || "Scheduling failed");
     }
 };
+const HiringFunnel = ({ applications }) => {
+  // Status wise data calculate karna
+  // EmployerDashboard.jsx ke andar HiringFunnel component mein:
+const total = applications.length;
+const shortlisted = applications.filter(app => app.status === 'shortlisted').length;
+const interviews = applications.filter(app => app.status === 'accepted').length;
+
+  const steps = [
+    { label: "Total Applications", value: total, color: "bg-blue-600", w: "w-full" },
+    { label: "Shortlisted", value: shortlisted, color: "bg-purple-600", w: "w-[80%]" },
+    { label: "Interviews Ready", value: interviews, color: "bg-orange-500", w: "w-[60%]" }
+  ];
+
+  return (
+    <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm mb-10">
+      <div className="mb-6 flex justify-between items-end">
+        <div>
+          <h3 className="text-xl font-black text-gray-800 tracking-tight uppercase leading-none">Hiring Funnel</h3>
+          <p className="text-[10px] text-gray-400 font-bold tracking-[0.2em] mt-1">Application Flow Analysis</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Efficiency</p>
+          <p className="text-xl font-black text-blue-600">{total > 0 ? ((interviews/total)*100).toFixed(0) : 0}%</p>
+        </div>
+      </div>
+      
+      <div className="flex flex-col items-center space-y-3">
+        {steps.map((step, idx) => (
+          <div key={idx} className={`${step.w} transition-all duration-700 ease-in-out`}>
+            <div className={`${step.color} h-12 rounded-2xl flex items-center justify-between px-6 shadow-sm hover:brightness-110 transition-all`}>
+              <span className="text-[10px] font-black text-white uppercase tracking-widest">{step.label}</span>
+              <span className="text-sm font-bold text-white bg-black/10 px-3 py-1 rounded-lg">{step.value}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
   return (
     <div className="bg-gray-50 min-h-screen px-8 py-10">
       <div className="max-w-7xl mx-auto">
@@ -163,6 +202,23 @@ const EmployerDashboard = () => {
           <StatCard title="Companies" value={stats.totalCompanies} icon={<Building2 className="text-green-500" />} />
         </div>
 
+        {/* ⭐ YAHAN ADD KAREIN: Funnel aur Table ka layout */}
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  {/* Left Side: Funnel (1 Column) */}
+  <div className="lg:col-span-1">
+    <HiringFunnel applications={applications} />
+    
+    {/* Aapka existing "Quick Profile" ya koi aur small widget yahan shift kar sakte hain */}
+  </div>
+
+  {/* Right Side: Existing Tables (2 Columns) */}
+  <div className="lg:col-span-2 space-y-10">
+     {/* Yahan aapka existing "Recent Jobs" aur "Recent Applicants" wala code aayega */}
+     {/* <Header title=\"Recent Jobs\" ... /> */}
+     {/* <Table> ... </Table> */}
+  </div>
+</div>
+
         {/* RECENTLY POSTED JOBS */}
         <div className="bg-white rounded-[2rem] p-8 shadow-sm mb-8 border border-gray-100">
           <Header title="Recently Posted Jobs" action={() => setShowAllJobs(!showAllJobs)} label={showAllJobs ? "Show Less" : "View All"} />
@@ -191,52 +247,99 @@ const EmployerDashboard = () => {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-gray-50/50 text-gray-400 uppercase text-[10px] font-bold tracking-widest">
-                <tr>
-                  <th className="px-8 py-5">Applicant</th>
-                  <th className="px-8 py-5">Applied For</th>
-                  <th className="px-8 py-5">Status</th>
-                  <th className="px-8 py-5 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {(showAllApplicants ? applications : applications.slice(0, 6)).map((app) => (
-                  <tr key={app._id} className="hover:bg-gray-50/80 transition-colors group">
-                    <td className="px-8 py-5">
-                      <div className="font-bold text-gray-800">{app.applicant?.fullname}</div>
-                      <div className="text-xs text-gray-400">{app.applicant?.email}</div>
-                    </td>
-                    <td className="px-8 py-5 text-sm font-semibold text-gray-600">{app.job?.title}</td>
-                    <td className="px-8 py-5">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                        app.status === 'accepted' ? 'bg-green-100 text-green-700' : 
-                        app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex justify-center gap-3">
-                        <Button size="icon" variant="outline" className="rounded-xl border-gray-200" onClick={() => { setSelectedApp(app); setShowViewModal(true); }}>
-                          <Eye size={16} />
-                        </Button>
-                        <Button size="icon" className="bg-green-600 hover:bg-green-700 rounded-xl" onClick={() => updateStatus(app._id, "accepted")}>
-                          <CheckCircle size={16} />
-                        </Button>
-                        <Button size="icon" variant="destructive" className="rounded-xl" onClick={() => updateStatus(app._id, "rejected")}>
-                          <XCircle size={16} />
-                        </Button>
-                        {app.status === "accepted" && (
-                          <Button size="icon" variant="secondary" className="bg-purple-100 text-purple-600 hover:bg-purple-200 rounded-xl border-none" onClick={() => { setSelectedApp(app); setOpenInterview(true); }}>
-                            <Calendar size={16} />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+  <thead className="bg-gray-50/50 text-gray-400 uppercase text-[10px] font-bold tracking-widest">
+    <tr>
+      <th className="px-8 py-5">Applicant</th>
+      <th className="px-8 py-5">Applied For</th>
+      <th className="px-8 py-5">Status</th>
+      <th className="px-8 py-5 text-center">Actions</th>
+    </tr>
+  </thead>
+  <tbody className="divide-y divide-gray-50">
+    {(showAllApplicants ? applications : applications.slice(0, 6)).map((app) => (
+      <tr key={app._id} className="hover:bg-gray-50/80 transition-colors group">
+        <td className="px-8 py-5">
+          <div className="font-bold text-gray-800">{app.applicant?.fullname}</div>
+          <div className="text-xs text-gray-400">{app.applicant?.email}</div>
+        </td>
+        <td className="px-8 py-5 text-sm font-semibold text-gray-600">{app.job?.title}</td>
+        <td className="px-8 py-5">
+          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+            app.status === 'accepted' ? 'bg-green-100 text-green-700' : 
+            app.status === 'shortlisted' ? 'bg-purple-100 text-purple-700' : // ⭐ Shortlisted color
+            app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+          }`}>
+            {app.status}
+          </span>
+        </td>
+        <td className="px-8 py-5">
+          <div className="flex justify-center gap-3">
+            {/* View Button hamesha dikhega */}
+            <Button size="icon" variant="outline" className="rounded-xl border-gray-200" onClick={() => { setSelectedApp(app); setShowViewModal(true); }}>
+              <Eye size={16} />
+            </Button>
+
+            {/* CASE 1: Agar status PENDING hai -> Shortlist aur Reject dikhao */}
+            {app.status === "pending" && (
+              <>
+                <Button 
+                  size="icon" 
+                  className="bg-purple-600 hover:bg-purple-700 rounded-xl text-white" 
+                  onClick={() => updateStatus(app._id, "shortlisted")}
+                  title="Shortlist Candidate"
+                >
+                  <ListChecks size={16} /> {/* ListChecks icon use karein */}
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant="destructive" 
+                  className="rounded-xl" 
+                  onClick={() => updateStatus(app._id, "rejected")}
+                >
+                  <XCircle size={16} />
+                </Button>
+              </>
+            )}
+
+            {/* CASE 2: Agar status SHORTLISTED hai -> Accept/Schedule dikhao */}
+            {app.status === "shortlisted" && (
+              <>
+                <Button 
+                  size="icon" 
+                  className="bg-green-600 hover:bg-green-700 rounded-xl" 
+                  onClick={() => updateStatus(app._id, "accepted")}
+                  title="Accept for Interview"
+                >
+                  <CheckCircle size={16} />
+                </Button>
+                <Button 
+                    size="icon" 
+                    variant="destructive" 
+                    className="rounded-xl" 
+                    onClick={() => updateStatus(app._id, "rejected")}
+                >
+                    <XCircle size={16} />
+                </Button>
+              </>
+            )}
+
+            {/* CASE 3: Agar status ACCEPTED hai -> Calendar dikhao Interview ke liye */}
+            {app.status === "accepted" && (
+              <Button 
+                size="icon" 
+                variant="secondary" 
+                className="bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-xl border-none" 
+                onClick={() => { setSelectedApp(app); setOpenInterview(true); }}
+              >
+                <Calendar size={16} />
+              </Button>
+            )}
+          </div>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
           </div>
         </div>
       </div>
