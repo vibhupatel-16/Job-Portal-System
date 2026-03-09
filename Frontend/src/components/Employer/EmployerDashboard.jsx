@@ -24,7 +24,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 const EmployerDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ totalJobs: 0, totalApplicants: 0, totalCompanies: 0 });
@@ -53,7 +53,8 @@ const EmployerDashboard = () => {
     "02:00 PM", "03:00 PM", "04:00 PM", 
     "05:00 PM", "06:00 PM"
   ];
-
+const [selectedIds, setSelectedIds] = useState([]); // Multiple IDs store karne ke liye
+const COLORS = ['#94a3b8', '#9333ea', '#16a34a', '#dc2626']; // Pending, Shortlisted, Accepted, Rejected
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -83,6 +84,37 @@ const EmployerDashboard = () => {
     }
   };
 
+  // Ek individual checkbox ko select karne ke liye
+const handleSelect = (id) => {
+    setSelectedIds(prev => 
+        prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+};
+
+// Sabko ek saath select karne ke liye
+const handleSelectAll = (e) => {
+    if (e.target.checked) {
+        const currentIds = (showAllApplicants ? applications : applications.slice(0, 6)).map(app => app._id);
+        setSelectedIds(currentIds);
+    } else {
+        setSelectedIds([]);
+    }
+};
+
+// API Call for Bulk Update
+const handleBulkUpdate = async (newStatus) => {
+    try {
+        const promises = selectedIds.map(id => 
+            axios.post(`${APPLICATION_API_END_POINT}/status/${id}/update`, { status: newStatus }, { withCredentials: true })
+        );
+        await Promise.all(promises);
+        toast.success(`${selectedIds.length} Candidates updated to ${newStatus}`);
+        setSelectedIds([]); // Selection clear karein
+        fetchDashboardData(); // Data refresh karein
+    } catch (error) {
+        toast.error("Bulk update failed");
+    }
+};
   const updateStatus = async (appId, status) => {
     try {
       const res = await axios.post(`${APPLICATION_API_END_POINT}/status/${appId}/update`, { status }, { withCredentials: true });
@@ -202,21 +234,85 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
           <StatCard title="Companies" value={stats.totalCompanies} icon={<Building2 className="text-green-500" />} />
         </div>
 
-        {/* ⭐ YAHAN ADD KAREIN: Funnel aur Table ka layout */}
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-  {/* Left Side: Funnel (1 Column) */}
-  <div className="lg:col-span-1">
-    <HiringFunnel applications={applications} />
+       
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 mt-10">
     
-    {/* Aapka existing "Quick Profile" ya koi aur small widget yahan shift kar sakte hain */}
-  </div>
+    {/* 📊 CHART 1: JOB PERFORMANCE (Bar Chart) */}
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col">
+        <div className="flex justify-between items-center mb-6">
+            <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Job Performance</h3>
+                <p className="text-[10px] text-gray-300 font-bold uppercase mt-1">Applications per job</p>
+            </div>
+            <div className="p-3 bg-purple-50 rounded-2xl text-purple-600">
+                <Briefcase size={20} />
+            </div>
+        </div>
+        
+        <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={jobs.map(j => ({ name: j.title.substring(0,10), count: j.applications.length }))}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        fontSize={10} 
+                        fontWeight="bold" 
+                        tick={{fill: '#94a3b8'}}
+                    />
+                    <YAxis axisLine={false} tickLine={false} fontSize={10} tick={{fill: '#94a3b8'}} />
+                    <Tooltip 
+                        cursor={{fill: '#f8faff'}} 
+                        contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} 
+                    />
+                    <Bar dataKey="count" fill="#7c3aed" radius={[10, 10, 0, 0]} barSize={35} />
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
+    </div>
 
-  {/* Right Side: Existing Tables (2 Columns) */}
-  <div className="lg:col-span-2 space-y-10">
-     {/* Yahan aapka existing "Recent Jobs" aur "Recent Applicants" wala code aayega */}
-     {/* <Header title=\"Recent Jobs\" ... /> */}
-     {/* <Table> ... </Table> */}
-  </div>
+    {/* 🍕 CHART 2: HIRING FUNNEL (Pie Chart) */}
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col">
+        <div className="flex justify-between items-center mb-6">
+            <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Hiring Pipeline</h3>
+                <p className="text-[10px] text-gray-300 font-bold uppercase mt-1">Status Distribution</p>
+            </div>
+            <div className="p-3 bg-green-50 rounded-2xl text-green-600">
+                <Users size={20} />
+            </div>
+        </div>
+
+        <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie
+                        data={[
+                            { name: 'Pending', value: applications.filter(a => a.status === 'pending').length },
+                            { name: 'Shortlisted', value: applications.filter(a => a.status === 'shortlisted').length },
+                            { name: 'Accepted', value: applications.filter(a => a.status === 'accepted').length },
+                            { name: 'Rejected', value: applications.filter(a => a.status === 'rejected').length },
+                        ]}
+                        innerRadius={70}
+                        outerRadius={90}
+                        paddingAngle={8}
+                        dataKey="value"
+                    >
+                        {COLORS.map((color, index) => (
+                            <Cell key={`cell-${index}`} fill={color} stroke="none" />
+                        ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        iconType="circle" 
+                        wrapperStyle={{fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', paddingTop: '20px'}} 
+                    />
+                </PieChart>
+            </ResponsiveContainer>
+        </div>
+    </div>
 </div>
 
         {/* RECENTLY POSTED JOBS */}
@@ -246,18 +342,51 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
             <Header title="Manage Applicants" action={() => setShowAllApplicants(!showAllApplicants)} label={showAllApplicants ? "Show Less" : "View All"} />
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-  <thead className="bg-gray-50/50 text-gray-400 uppercase text-[10px] font-bold tracking-widest">
-    <tr>
-      <th className="px-8 py-5">Applicant</th>
+            {/* 1. Bulk Action Bar (Table ke theek upar add karein) */}
+{selectedIds.length > 0 && (
+    <div className="bg-purple-50 p-4 rounded-2xl mb-4 flex justify-between items-center border border-purple-100">
+        <span className="text-xs font-black text-purple-700 uppercase tracking-widest">
+            {selectedIds.length} Selected
+        </span>
+        <div className="flex gap-2">
+            <Button size="sm" className="bg-purple-600" onClick={() => handleBulkUpdate("shortlisted")}>
+                Bulk Shortlist
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => handleBulkUpdate("rejected")}>
+                Bulk Reject
+            </Button>
+        </div>
+    </div>
+)}
+           <table className="w-full text-left">
+    <thead className="bg-gray-50/50 text-gray-400 uppercase text-[10px] font-bold tracking-widest">
+        <tr>
+            <th className="px-8 py-5">
+                <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-gray-300 accent-purple-600"
+                    onChange={handleSelectAll}
+                    checked={selectedIds.length > 0 && selectedIds.length === (showAllApplicants ? applications.length : 6)}
+                />
+            </th>
+            <th className="px-8 py-5">Applicant</th>
       <th className="px-8 py-5">Applied For</th>
       <th className="px-8 py-5">Status</th>
       <th className="px-8 py-5 text-center">Actions</th>
     </tr>
   </thead>
   <tbody className="divide-y divide-gray-50">
-    {(showAllApplicants ? applications : applications.slice(0, 6)).map((app) => (
-      <tr key={app._id} className="hover:bg-gray-50/80 transition-colors group">
+        {(showAllApplicants ? applications : applications.slice(0, 6)).map((app) => (
+            <tr key={app._id} className="hover:bg-gray-50/80 transition-colors group">
+                {/* 3. Row mein Checkbox */}
+                <td className="px-8 py-5">
+                    <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-gray-300 accent-purple-600"
+                        checked={selectedIds.includes(app._id)}
+                        onChange={() => handleSelect(app._id)}
+                    />
+                </td>
         <td className="px-8 py-5">
           <div className="font-bold text-gray-800">{app.applicant?.fullname}</div>
           <div className="text-xs text-gray-400">{app.applicant?.email}</div>

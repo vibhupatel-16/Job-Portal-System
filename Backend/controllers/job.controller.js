@@ -360,3 +360,43 @@ export const updateJob = async (req, res) => {
     });
   }
 };
+
+export const getRecommendedJobs = async (req, res) => {
+    try {
+        const userId = req.id; // Assuming middleware se user id mil rahi hai
+        const user = await User.findById(userId);
+
+        if (!user || user.role !== 'jobseeker') {
+            return res.status(404).json({ message: "User not found or not a jobseeker", success: false });
+        }
+
+        const userSkills = user.profile.skills;
+
+        // Logic: Agar user ke paas skills hain, toh match karo, 
+        // nahi toh latest jobs dikhao
+        let query = {};
+        if (userSkills && userSkills.length > 0) {
+            query = {
+                $or: [
+                    { requirements: { $in: userSkills.map(skill => new RegExp(skill, 'i')) } },
+                    { title: { $in: userSkills.map(skill => new RegExp(skill, 'i')) } }
+                ],
+                status: 'approved' // Sirf approved jobs
+            };
+        }
+
+        const recommendedJobs = await Job.find(query)
+            .populate({ path: "company" })
+            .sort({ createdAt: -1 })
+            .limit(6); // Sirf top 6 jobs dashboard ke liye
+
+        return res.status(200).json({
+            success: true,
+            recommendedJobs
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Internal server error", success: false });
+    }
+}

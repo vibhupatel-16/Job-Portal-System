@@ -136,6 +136,10 @@ export const updateStatus = async (req, res) => {
 
     // ✅ Update status
     application.status = status.toLowerCase();
+    application.statusHistory.push({
+    status: status.toLowerCase(),
+    changedAt: new Date()
+});
     await application.save();
 
    // 🎨 Status color
@@ -240,5 +244,41 @@ export const getHiringStats = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Server error", success: false });
+    }
+};
+
+// application.controller.js mein ye function add karein
+export const getAnalyticsData = async (req, res) => {
+    try {
+        const employerId = req.id;
+
+        // 1. Employer ki saare jobs dhoondo
+        const jobs = await Job.find({ created_by: employerId }).populate('applications');
+
+        // 2. Bar Chart Data (Job vs Applications)
+        const jobPerformance = jobs.map(job => ({
+            name: job.title.length > 15 ? job.title.slice(0, 15) + "..." : job.title,
+            count: job.applications.length
+        }));
+
+        // 3. Pie Chart Data (Status Distribution)
+        const jobIds = jobs.map(j => j._id);
+        const allApps = await Application.find({ job: { $in: jobIds } });
+
+        const statusData = [
+            { name: 'Pending', value: allApps.filter(a => a.status === 'pending').length },
+            { name: 'Shortlisted', value: allApps.filter(a => a.status === 'shortlisted').length },
+            { name: 'Accepted', value: allApps.filter(a => a.status === 'accepted').length },
+            { name: 'Rejected', value: allApps.filter(a => a.status === 'rejected').length },
+        ];
+
+        return res.status(200).json({
+            jobPerformance,
+            statusData,
+            success: true
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Analytics Error", success: false });
     }
 };
