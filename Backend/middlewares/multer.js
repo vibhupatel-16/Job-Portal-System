@@ -25,8 +25,27 @@ const storage = new CloudinaryStorage({
   }
 });
 
-// Allow both resume & profilePhoto
-export const upload = multer({ storage }).fields([
-  { name: "file", maxCount: 1 },               // resume
-  { name: "profilePhoto", maxCount: 1 }        // profile photo
+export const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+
+    // Resume validation
+    if (file.fieldname === "file") {
+      if (file.mimetype !== "application/pdf") {
+        return cb(new Error("Only PDF resume allowed"), false);
+      }
+    }
+
+    // Profile photo validation
+    if (file.fieldname === "profilePhoto") {
+      if (!file.mimetype.startsWith("image/")) {
+        return cb(new Error("Only image allowed for profile photo"), false);
+      }
+    }
+
+    cb(null, true);
+  }
+}).fields([
+  { name: "file", maxCount: 1 },
+  { name: "profilePhoto", maxCount: 1 }
 ]);

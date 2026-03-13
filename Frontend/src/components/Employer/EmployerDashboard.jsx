@@ -11,7 +11,9 @@ import {
   Eye,
   FileText,
   ListChecks,
-  Clock
+  Clock,
+  Sparkles,
+  MessageSquare
 } from "lucide-react";
 import axios from "axios";
 import {
@@ -165,6 +167,58 @@ const handleBulkUpdate = async (newStatus) => {
         console.error("Full Error Object:", error.response?.data);
         toast.error(error.response?.data?.message || "Scheduling failed");
     }
+};
+const handleAiScan = async (applicationId) => {
+    try {
+        console.log("Scanning Application ID:", applicationId);
+        
+        // Correct endpoint use karein
+        const res = await axios.get(`${APPLICATION_API_END_POINT}/status/${applicationId}/ai-scan`, {
+            withCredentials: true
+        });
+
+        if (res.data.success) {
+            toast.success(res.data.message);
+            fetchDashboardData(); // Correct function name
+        }
+    } catch (error) {
+        console.error("Frontend Error:", error);
+        toast.error(error.response?.data?.message || "Scan failed");
+    }
+};
+const handleGenerateQuestions = async (applicationId) => {
+  try {
+    // Button par loading state dikhane ke liye aap ek loading state bhi use kar sakte hain
+    toast.loading("AI is generating questions...");
+
+    const res = await axios.get(
+      `${APPLICATION_API_END_POINT}/${applicationId}/questions`, 
+      { withCredentials: true }
+    );
+
+    if (res.data.success) {
+      toast.success("Questions generated successfully!");
+      
+      // Local state update karein taaki UI par turant badlav dikhe
+      setApplications((prevApps) =>
+        prevApps.map((app) =>
+          app._id === applicationId 
+            ? { ...app, interviewQuestions: res.data.questions } 
+            : app
+        )
+      );
+      
+      // Optional: Questions dekhne ke liye modal automatically open kar sakte hain
+      const updatedApp = applications.find(a => a._id === applicationId);
+      if(updatedApp) setSelectedApp({...updatedApp, interviewQuestions: res.data.questions});
+    }
+  } catch (error) {
+    console.error(error);
+    const errorMsg = error.response?.data?.message || "Failed to generate questions";
+    toast.error(errorMsg);
+  } finally {
+    toast.dismiss();
+  }
 };
 const HiringFunnel = ({ applications }) => {
   // Status wise data calculate karna
@@ -402,12 +456,28 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
           </span>
         </td>
         <td className="px-8 py-5">
+          <Button 
+        size="icon" 
+        className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl border-none" 
+        onClick={() => handleAiScan(app._id)}
+        title="AI Resume Scan"
+    >
+        <Sparkles size={16} />
+    </Button>
           <div className="flex justify-center gap-3">
             {/* View Button hamesha dikhega */}
             <Button size="icon" variant="outline" className="rounded-xl border-gray-200" onClick={() => { setSelectedApp(app); setShowViewModal(true); }}>
               <Eye size={16} />
             </Button>
-
+           <Button 
+    size="icon" 
+    variant="ghost"
+    className={`rounded-xl transition-all ${app.interviewQuestions?.length > 0 ? 'bg-orange-100 text-orange-600' : 'text-gray-400'}`}
+    onClick={() => handleGenerateQuestions(app._id)}
+    disabled={!app.matchScore} // Score ke bina disabled rahega
+>
+    <MessageSquare size={16} /> {/* Lucide icon */}
+</Button>
             {/* CASE 1: Agar status PENDING hai -> Shortlist aur Reject dikhao */}
             {app.status === "pending" && (
               <>
@@ -462,6 +532,7 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
               >
                 <Calendar size={16} />
               </Button>
+              
             )}
           </div>
         </td>
@@ -482,7 +553,50 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
               <ProfileItem label="Full Name" value={selectedApp.applicant?.fullname} />
               <ProfileItem label="Email Address" value={selectedApp.applicant?.email} />
               <ProfileItem label="Job Position" value={selectedApp.job?.title} />
-              <ProfileItem label="Current Status" value={selectedApp.status} isStatus />
+             <ProfileItem label="Current Status" value={selectedApp.status} isStatus />
+
+{/* ⭐ AI MATCH SCORE SECTION - Isse yahan add karein */}
+<div className="mt-6 p-5 bg-gradient-to-br from-purple-50 to-white border border-purple-100 rounded-[2rem] shadow-sm">
+  <div className="flex justify-between items-center mb-4">
+    <div>
+      <h4 className="text-[10px] uppercase font-black text-purple-400 tracking-widest">AI Screening Result</h4>
+      <p className="text-xs font-bold text-gray-600 mt-1">Candidate Suitability Score</p>
+    </div>
+    {/* Match Score Badge */}
+    <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-lg ${
+      selectedApp.matchScore > 70 ? 'bg-green-500 text-white' : 'bg-purple-600 text-white'
+    }`}>
+      <span className="text-lg font-black leading-none">{selectedApp.matchScore || 0}%</span>
+      <span className="text-[7px] font-bold uppercase mt-1">Match</span>
+    </div>
+  </div>
+
+  {/* AI Insights/Feedback */}
+  <div className="bg-white/60 p-3 rounded-2xl border border-white/50">
+    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 flex items-center gap-1">
+      <Sparkles size={10} className="text-purple-500" /> AI Insights
+    </p>
+    <p className="text-xs text-gray-600 leading-relaxed font-medium italic">
+      {selectedApp.aiInsights || "No scan data available. Use 'AI Scan' button in the dashboard table to analyze this profile."}
+    </p>
+   {selectedApp.interviewQuestions?.length > 0 && (
+  <div className="mt-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+    <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+      <Sparkles size={14} className="text-purple-500" /> 
+      AI Suggested Questions
+    </h3>
+    <div className="space-y-2">
+      {selectedApp.interviewQuestions.map((item, index) => (
+        <div key={index} className="bg-white p-3 rounded-xl text-xs text-gray-600 shadow-sm border border-gray-50">
+          <span className="font-bold text-purple-600 mr-2">{index + 1}.</span> {item}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+  </div>
+</div>
               <div className="pt-4 border-t border-gray-100">
              <p className="text-[10px] uppercase font-bold text-gray-400 mb-3 tracking-widest">
         Resume Attachment

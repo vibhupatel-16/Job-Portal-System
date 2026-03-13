@@ -21,8 +21,12 @@ statusHistory: [
         type:String,
         enum:['pending','shortlisted', 'accepted', 'rejected'],
         default:'pending'
-    }
+    },
+    matchScore: { type: Number, default: 0 },
+    aiInsights: { type: String, default: "" },
+    interviewQuestions: [String],
     
-}, {timestamps:true});
+}, 
+{timestamps:true});
 
 export const Application = mongooes.model("Application", applicationSchema)

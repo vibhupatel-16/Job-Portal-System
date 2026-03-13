@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import sendEmail from '../utils/sendEmail.js';
-
+import cloudinary from '../utils/cloudinary.js';
 export const register = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, password, role } = req.body;
@@ -296,12 +296,15 @@ export const updateProfile = async (req, res) => {
     if (phoneNumber) user.phoneNumber = phoneNumber;
     if (bio) user.profile.bio = bio;
     if (skills) user.profile.skills = skills.split(",");
+if (resumeFile) {
+  const result = await cloudinary.uploader.upload(resumeFile.path, {
+    folder: "jobportal_uploads/resumes",
+    resource_type: "raw"
+  });
 
-    // Resume file
-    if (resumeFile) {
-      user.profile.resume = resumeFile.path;
-      user.profile.resumeOriginalName = resumeFile.originalname;
-    }
+  user.profile.resume = result.secure_url;
+  user.profile.resumeOriginalName = resumeFile.originalname;
+}
 
     // Profile photo
     if (photoFile) {

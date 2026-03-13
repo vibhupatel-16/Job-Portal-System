@@ -2,6 +2,85 @@ import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
 import sendEmail from "../utils/sendEmail.js";
 import { Notification } from "../models/notification.model.js";
+
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from "axios";
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse/lib/pdf-parse.js');
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+export const getAiMatchScore = async (req, res) => {
+    try {
+        const applicationId = req.params.id;
+        const application = await Application.findById(applicationId).populate('job applicant');
+
+        if (!application) return res.status(404).json({ message: "Application not found", success: false });
+
+        const resumeUrl = application.applicant.profile.resume;
+        if (!resumeUrl) return res.status(400).json({ message: "Resume URL not found", success: false });
+
+        const response = await axios.get(resumeUrl, { responseType: "arraybuffer" });
+        
+        let resumeText = "";
+        try {
+            const buffer = Buffer.from(response.data);
+            const data = await pdfParse(buffer); 
+            resumeText = data.text;
+            console.log("✅ Resume Text Extracted");
+        } catch (pdfErr) {
+            return res.status(500).json({ message: "Could not read PDF.", success: false });
+        }
+
+        // --- 🟢 NEW OPTIMIZATION START ---
+        // Faltu spaces aur characters hatayein taaki Tokens kam consume hon
+        const cleanResume = resumeText.replace(/\s+/g, ' ').trim().substring(0, 4000); 
+        const cleanJobDesc = application.job.description.substring(0, 1000);
+        // --- 🟢 NEW OPTIMIZATION END ---
+
+        try {
+            // Model selection (gemini-2.0-flash-lite is good for quota)
+            const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+            const prompt = `
+                Analyze Resume vs Job.
+                JOB: ${application.job.title} - ${cleanJobDesc}
+                RESUME: ${cleanResume}
+                Return ONLY JSON: {"score": number, "insights": "string"}
+            `;
+
+            const result = await model.generateContent(prompt);
+            const responseText = result.response.text();
+
+            const cleanedJson = responseText.replace(/```json|```/g, "").trim();
+            const aiResult = JSON.parse(cleanedJson);
+
+            application.matchScore = aiResult.score;
+            application.aiInsights = aiResult.insights;
+            await application.save();
+
+            return res.status(200).json({
+                message: "AI Scan successful",
+                score: aiResult.score,
+                insights: aiResult.insights,
+                success: true
+            });
+
+        } catch (aiErr) {
+            // Agar Quota 429 error aaye toh handle karein
+            console.error("🔥 AI Limit Reached:", aiErr.message);
+            return res.status(429).json({ 
+                message: "AI Limit reached. Please try after some time.", 
+                success: false 
+            });
+        }
+
+    } catch (error) {
+        console.error("🔥 Global Error:", error.message);
+        res.status(500).json({ message: "Server Error", success: false });
+    }
+};
 export const applyJob = async (req, res)=>{
     try{
         const userId = req.id;
@@ -280,5 +359,50 @@ export const getAnalyticsData = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Analytics Error", success: false });
+    }
+};
+
+export const getNotifications = async (req, res) => {
+    try {
+        const userId = req.id; 
+        const notifications = await Notification.find({ recipient: userId }).sort({ createdAt: -1 });
+        return res.status(200).json({ notifications, success: true });
+    } catch (error) {
+        return res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+};
+
+// application.controller.js
+export const generateInterviewQuestions = async (req, res) => {
+    try {
+        const applicationId = req.params.id;
+        const application = await Application.findById(applicationId).populate('job applicant');
+
+        if (!application) return res.status(404).json({ message: "Application not found", success: false });
+
+        // Optimization: Resume aur Job details ko limit karein
+        const cleanResume = (application.aiInsights || "Professional candidate").substring(0, 2000);
+        const jobDesc = application.job.description.substring(0, 1000);
+
+        const model = genAI.getGenerativeModel({model: "gemini-3-flash-preview"});
+
+        const prompt = `
+            Analyze this candidate for ${application.job.title}.
+            Resume Insights: ${cleanResume}
+            Job Requirements: ${jobDesc}
+            Generate 5 specific technical interview questions.
+            Return ONLY a raw JSON array of strings like: ["Question 1", "Question 2"]
+        `;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text().replace(/```json|```/g, "").trim();
+        const questions = JSON.parse(responseText);
+
+        application.interviewQuestions = questions;
+        await application.save();
+
+        return res.status(200).json({ questions, success: true });
+    } catch (error) {
+        res.status(500).json({ message: "AI is busy, try later", success: false });
     }
 };
