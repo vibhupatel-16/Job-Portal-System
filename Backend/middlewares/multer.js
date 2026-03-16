@@ -28,15 +28,26 @@ const storage = new CloudinaryStorage({
 export const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
+    // 1. Identify which route is being accessed
+    const isCompanyRoute = req.originalUrl.includes("company");
 
-    // Resume validation
+    // 2. Logic for the "file" field
     if (file.fieldname === "file") {
-      if (file.mimetype !== "application/pdf") {
-        return cb(new Error("Only PDF resume allowed"), false);
+      // If it's a company logo, allow images
+      if (isCompanyRoute) {
+        if (!file.mimetype.startsWith("image/")) {
+          return cb(new Error("Only images (jpg, png) allowed for company logo"), false);
+        }
+      } 
+      // If it's NOT a company route (e.g., student resume), keep it PDF only
+      else {
+        if (file.mimetype !== "application/pdf") {
+          return cb(new Error("Only PDF resume allowed"), false);
+        }
       }
     }
 
-    // Profile photo validation
+    // 3. Profile photo validation (remains the same)
     if (file.fieldname === "profilePhoto") {
       if (!file.mimetype.startsWith("image/")) {
         return cb(new Error("Only image allowed for profile photo"), false);
@@ -47,5 +58,6 @@ export const upload = multer({
   }
 }).fields([
   { name: "file", maxCount: 1 },
-  { name: "profilePhoto", maxCount: 1 }
+  { name: "profilePhoto", maxCount: 1 },
+  { name: "logo", maxCount: 1 }
 ]);

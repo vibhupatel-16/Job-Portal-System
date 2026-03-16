@@ -1,30 +1,36 @@
 import React, { useEffect, useState } from "react";
 import Job from "./Job";
-import Pagination from "../components/Pagination";
+import Pagination from "./Pagination";
 import useBrowseJobs from "./hooks/useBrowseJobs";
 import { useSelector } from "react-redux";
+import { JobCardSkeleton } from "./JobCardSkeleton";
 
 const Browse = () => {
   const [page, setPage] = useState(1);
   const limit = 6;
 
-  const { filters, searchedQuery } = useSelector(state => state.job);
+  const { filters, searchedQuery } = useSelector((state) => state.job);
   const { jobs, totalPages, loading } = useBrowseJobs(page, limit);
 
-  // Filter/search change → page reset
   useEffect(() => {
     setPage(1);
   }, [filters, searchedQuery]);
 
   return (
-    <div className="max-w-7xl mx-auto my-10">
-      <h1 className="font-bold text-xl mb-5">Search Results ({jobs?.length || 0})</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 my-10">
+      <h1 className="font-bold text-xl mb-5">
+        Search Results {!loading && `(${jobs?.length || 0})`}
+      </h1>
 
       {loading ? (
-        <p className="text-center mt-10 text-gray-600">Loading...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <JobCardSkeleton key={i} />
+          ))}
+        </div>
       ) : jobs?.length > 0 ? (
         <>
-          <div className="grid grid-cols-3 gap-4 mt-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-5">
             {jobs.map((job) => (
               <Job key={job._id} job={job} />
             ))}

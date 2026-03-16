@@ -289,10 +289,11 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
         </div>
 
        
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 mt-10">
+{/* 📊 ANALYTICS SECTION */}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 overflow-hidden">
     
     {/* 📊 CHART 1: JOB PERFORMANCE (Bar Chart) */}
-    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col">
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col min-h-[450px]">
         <div className="flex justify-between items-center mb-6">
             <div>
                 <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Job Performance</h3>
@@ -303,9 +304,15 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
             </div>
         </div>
         
-        <div className="h-[300px] w-full">
+        {/* FIX: Is div ki height fixed honi chahiye (h-[320px]) */}
+        <div style={{ width: '100%', height: 320 }}> 
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={jobs.map(j => ({ name: j.title.substring(0,10), count: j.applications.length }))}>
+                <BarChart 
+                    data={jobs.slice(0, 6).map(j => ({ 
+                        name: j.title.length > 10 ? j.title.substring(0, 10) + "..." : j.title, 
+                        count: j.applications?.length || 0 
+                    }))}
+                >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                     <XAxis 
                         dataKey="name" 
@@ -318,7 +325,7 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                     <YAxis axisLine={false} tickLine={false} fontSize={10} tick={{fill: '#94a3b8'}} />
                     <Tooltip 
                         cursor={{fill: '#f8faff'}} 
-                        contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} 
+                        contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} 
                     />
                     <Bar dataKey="count" fill="#7c3aed" radius={[10, 10, 0, 0]} barSize={35} />
                 </BarChart>
@@ -326,49 +333,51 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
         </div>
     </div>
 
-    {/* 🍕 CHART 2: HIRING FUNNEL (Pie Chart) */}
-    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col">
+    {/* 📊 CHART 2: APPLICATION STATUS (Pie Chart) */}
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col min-h-[450px]">
         <div className="flex justify-between items-center mb-6">
             <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Hiring Pipeline</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Selection Funnel</h3>
                 <p className="text-[10px] text-gray-300 font-bold uppercase mt-1">Status Distribution</p>
             </div>
-            <div className="p-3 bg-green-50 rounded-2xl text-green-600">
-                <Users size={20} />
+            <div className="p-3 bg-orange-50 rounded-2xl text-orange-600">
+                <ListChecks size={20} />
             </div>
         </div>
 
-        <div className="h-[300px] w-full">
+        {/* FIX: Is div ki height fixed honi chahiye (h-[320px]) */}
+        <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie
                         data={[
                             { name: 'Pending', value: applications.filter(a => a.status === 'pending').length },
-                            { name: 'Shortlisted', value: applications.filter(a => a.status === 'shortlisted').length },
                             { name: 'Accepted', value: applications.filter(a => a.status === 'accepted').length },
                             { name: 'Rejected', value: applications.filter(a => a.status === 'rejected').length },
-                        ]}
-                        innerRadius={70}
+                            { name: 'Shortlisted', value: applications.filter(a => a.status === 'shortlisted').length }
+                        ].filter(d => d.value > 0)}
+                        innerRadius={65}
                         outerRadius={90}
                         paddingAngle={8}
                         dataKey="value"
                     >
-                        {COLORS.map((color, index) => (
-                            <Cell key={`cell-${index}`} fill={color} stroke="none" />
-                        ))}
+                        <Cell fill="#fcd34d" />
+                        <Cell fill="#22c55e" />
+                        <Cell fill="#ef4444" />
+                        <Cell fill="#6366f1" />
                     </Pie>
-                    <Tooltip />
+                    <Tooltip contentStyle={{borderRadius: '15px', border: 'none'}} />
                     <Legend 
                         verticalAlign="bottom" 
+                        height={36} 
                         iconType="circle" 
-                        wrapperStyle={{fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', paddingTop: '20px'}} 
+                        wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
                     />
                 </PieChart>
             </ResponsiveContainer>
         </div>
     </div>
 </div>
-
         {/* RECENTLY POSTED JOBS */}
         <div className="bg-white rounded-[2rem] p-8 shadow-sm mb-8 border border-gray-100">
           <Header title="Recently Posted Jobs" action={() => setShowAllJobs(!showAllJobs)} label={showAllJobs ? "Show Less" : "View All"} />

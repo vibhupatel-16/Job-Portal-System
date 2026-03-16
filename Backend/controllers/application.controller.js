@@ -167,7 +167,7 @@ export const getApplicants = async (req, res)=>{
             options:{sort:{createdAt:-1}},
             populate: [
            { path: 'applicant',
-                select: 'fullname email profile' },
+            select: 'fullname email phoneNumber profile createdAt' },
            { path: "job" }   
       ]
         });

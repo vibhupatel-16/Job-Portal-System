@@ -1,8 +1,9 @@
 import React from "react";
-import { 
-  FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter, 
-  FaApple, FaGooglePlay, FaArrowRight, FaMapMarkerAlt, 
-  FaEnvelope, FaPhoneAlt, FaGlobe 
+import { Link } from "react-router-dom";
+import {
+  FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter,
+  FaApple, FaGooglePlay, FaArrowRight, FaMapMarkerAlt,
+  FaEnvelope, FaPhoneAlt, FaGlobe,
 } from "react-icons/fa";
 
 const Footer = () => {
@@ -54,10 +55,10 @@ const Footer = () => {
           <div className="lg:col-span-2 space-y-6">
             <h4 className="text-white font-bold text-xs uppercase tracking-[0.2em] border-l-2 border-orange-500 pl-3">Platform</h4>
             <ul className="space-y-4 text-sm font-semibold">
-              <li><a href="/jobs" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> Browse Jobs</a></li>
-              <li><a href="/companies" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> Top Companies</a></li>
-              <li><a href="/interviews" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> For Candidates</a></li>
-              <li><a href="/pricing" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> Premium Plans</a></li>
+              <li><Link to="/browse" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> Browse Jobs</Link></li>
+              <li><Link to="/browse" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> Top Companies</Link></li>
+              <li><Link to="/jobseeker/interviews" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> For Candidates</Link></li>
+              <li><Link to="/faq" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> FAQ</Link></li>
             </ul>
           </div>
 

@@ -7,7 +7,7 @@ import axios from 'axios';
 import { APPLICATION_API_END_POINT } from '@/utils/constant';
 import { toast } from 'sonner';
 
-const shortlistingStatus = ["Accepted", "rejected"];
+const shortlistingStatus = ["Shortlisted", "Accepted", "Rejected"];
 const ApplicantsTable = () => {
   const {applicants} = useSelector(store=>store.application)
   const statusHandler = async (status, id) =>{
@@ -55,13 +55,17 @@ const ApplicantsTable = () => {
  
 </TableCell>
 
-              <TableCell>{item?.applicant?.createdAt.split("T")[0].split("-").reverse().join("-")}</TableCell>
+<TableCell>
+  {item?.applicant?.createdAt 
+    ? new Date(item.applicant.createdAt).toLocaleDateString('en-GB') // Results in DD/MM/YYYY
+    : "NA"}
+</TableCell>
               <TableCell className="float-right cursor-pointer">
                 <Popover>
                   <PopoverTrigger>
                     <MoreHorizontal/>
                   </PopoverTrigger>
-                  <PopoverContent className-="w-32">
+                  <PopoverContent className="w-32">
                         {
                   shortlistingStatus.map((status, index)=>{
                     return (

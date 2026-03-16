@@ -156,8 +156,9 @@ function Navbar() {
                                         </Link>
                                     </div>
                                 </li>
+                                <li><Link to="/jobseeker/dashboard" className="hover:text-[#6A38C2] transition font-medium">Dashboard</Link></li>
                                 <li><Link to="/browse" className="hover:text-[#6A38C2] transition font-medium">Browse</Link></li>
-                                {user && <li><Link to="/jobseeker/interviews" className="hover:text-[#6A38C2] transition font-medium">My Schedule</Link></li>}
+                                {/* {user && <li><Link to="/jobseeker/interviews" className="hover:text-[#6A38C2] transition font-medium">My Schedule</Link></li>} */}
                             </>
                         )}
                     </ul>

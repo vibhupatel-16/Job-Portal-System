@@ -35,7 +35,6 @@ import { postJob, updateJob } from "../controllers/job.controller.js";
 // ✅ INTERVIEW CONTROLLER (ADDED)
 import { scheduleInterview } from "../controllers/interview.controller.js";
 
-import { getHiringStats } from "../controllers/application.controller.js";
 const router = express.Router();
 
 // ================= ADMIN DASHBOARD =================
@@ -179,9 +178,5 @@ router.put(
   checkRole("admin"),
   updateJobStatus
 );
-
-
-router.route("/stats").get(isAuthenticated, getHiringStats);
-
 
 export default router;

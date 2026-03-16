@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
@@ -29,9 +29,12 @@ import JobSetup from "./components/Employer/JobSetup";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ErrorPage from "./pages/ErrorPage";
+import NotAuthorized from "./pages/NotAuthorized";
 import EmployerDashboard from "./components/Employer/EmployerDashboard";
 import AdminProtectedRoute from "./components/Admin/AdminProtectedRoute";
-import AdminPanel from "./components/Admin/Adminpanel";
+import AdminPanel from "./components/Admin/AdminPanel";
+import AdminLayout from "./components/dashboard/AdminLayout";
+import EmployerLayout from "./components/dashboard/EmployerLayout";
 import ManageUsers from "./components/Admin/ManageUsers";
 import ManageJobs from "./components/Admin/ManageJobs";
 import ManageCompanies from "./components/Admin/ManageCompanies";
@@ -40,10 +43,11 @@ import AdminCompanyCreate from "./components/Admin/AdminCompanyCreate";
 import AdminCompanyUpdate from "./components/Admin/AdminCompanyUpdate";
 
 // Interviews
-
 import ScheduledInterviews from "./components/Employer/ScheduleInterviews";
 import AdminInterviewList from "./components/Admin/AdminInterviewList";
 import JobseekerInterviews from "./components/JobseekerInterviews";
+import JobSeekerDashboard from "./components/Jobseeker/JobSeekerDashboard";
+import JobSeekerLayout from "./components/dashboard/JobSeekerLayout";
 import SavedJobs from "./components/SavedJobs";
 import FAQSection from "./components/shared/FAQSection";
 
@@ -66,49 +70,67 @@ const appRouter = createBrowserRouter([
       { path: "/employer-login", element: <EmployerLogin /> },
       { path: "/employer-signup", element: <EmployerSignup /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/not-authorized", element: <NotAuthorized /> },
       { path: "/reset-password/:token", element: <ResetPassword /> },
       { path: "/jobs", element: <Jobs /> },
       { path: "/description/:id", element: <JobDescription /> },
       { path: "/browse", element: <Browse /> },
       { path: "/profile", element: <Profile /> },
 
-      {path:"/saved-jobs", element:<SavedJobs/> },
+      { path: "/saved-jobs", element: <SavedJobs /> },
 
-
-      // Employer Routes
-      { path: "/employer/companies", element: <Companies /> },
-      { path: "/employer/companies/create", element: <CompanyCreate /> },
-      { path: "/employer/companies/:id", element: <CompanySetup /> },
-      { path: "/employer/jobs", element: <EmployerJobs /> },
-      { path: "/employer/jobs/create", element: <PostJob /> },
-      { path: "/employer/jobs/:id/applicants", element: <Applicants /> },
-      { path: "/employer/jobs/:id", element: <JobSetup /> },
-      { path: "/employer/dashboard", element: <EmployerDashboard /> },
-
-      // Admin Routes
+      // Employer Routes (with sidebar layout)
       {
-        path: "/admin/panel",
+        path: "/employer",
+        element: <EmployerLayout />,
+        children: [
+          { index: true, element: <Navigate to="/employer/dashboard" replace /> },
+          { path: "dashboard", element: <EmployerDashboard /> },
+          { path: "companies", element: <Companies /> },
+          { path: "companies/create", element: <CompanyCreate /> },
+          { path: "companies/:id", element: <CompanySetup /> },
+          { path: "jobs", element: <EmployerJobs /> },
+          { path: "jobs/create", element: <PostJob /> },
+          { path: "jobs/:id/applicants", element: <Applicants /> },
+          { path: "jobs/:id", element: <JobSetup /> },
+          { path: "interview-list", element: <ScheduledInterviews /> },
+        ],
+      },
+
+      // Admin Routes (with sidebar layout)
+      {
+        path: "/admin",
         element: (
           <AdminProtectedRoute>
-            <AdminPanel />
+            <AdminLayout />
           </AdminProtectedRoute>
         ),
+        children: [
+          { index: true, element: <Navigate to="/admin/panel" replace /> },
+          { path: "panel", element: <AdminPanel /> },
+          { path: "users", element: <ManageUsers /> },
+          { path: "jobs", element: <ManageJobs /> },
+          { path: "jobs/create", element: <PostJob /> },
+          { path: "jobs/update/:id", element: <JobSetup /> },
+          { path: "companies", element: <ManageCompanies /> },
+          { path: "companies/create", element: <AdminCompanyCreate /> },
+          { path: "companies/update/:id", element: <AdminCompanyUpdate /> },
+          { path: "applications", element: <ManageApplications /> },
+          { path: "interview-list", element: <AdminInterviewList /> },
+        ],
       },
-      { path: "/admin/users", element: <ManageUsers /> },
-      { path: "/admin/jobs", element: <ManageJobs /> },
-      { path: "/admin/jobs/create", element: <PostJob /> },
-      { path: "/admin/jobs/update/:id", element: <JobSetup /> },
-      { path: "/admin/companies", element: <ManageCompanies /> },
-      { path: "/admin/companies/create", element: <AdminCompanyCreate /> },
-      { path: "/admin/companies/update/:id", element: <AdminCompanyUpdate /> },
-      { path: "/admin/applications", element: <ManageApplications /> },
 
-      // Interview Routes
-      
-      { path: "/employer/interview-list", element: <ScheduledInterviews/> },
-      {path:"/admin/interview-list", element:<AdminInterviewList/>},
-      {path:"/jobseeker/interviews", element:<JobseekerInterviews/>},
-      {path:"/faq", element:<FAQSection/>}
+      // Job Seeker Dashboard (with sidebar layout)
+      {
+        path: "/jobseeker/dashboard",
+        element: (
+          <JobSeekerLayout>
+            <JobSeekerDashboard />
+          </JobSeekerLayout>
+        ),
+      },
+      { path: "/jobseeker/interviews", element: <JobseekerInterviews /> },
+      { path: "/faq", element: <FAQSection /> }
       
       
     ],
