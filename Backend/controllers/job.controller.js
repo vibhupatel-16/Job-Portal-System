@@ -1,4 +1,4 @@
-import {Job} from "../models/job.model.js";
+import { Job } from "../models/job.model.js";
 import { User } from "../models/user.model.js";
 import sendEmail from "../utils/sendEmail.js";
 //admin post job
@@ -54,12 +54,12 @@ export const postJob = async (req, res) => {
     const users = await User.find({ role: "jobseeker" });
 
     // 📧 SEND EMAIL TO JOB SEEKERS
-for (const user of users) {
-  await sendEmail({
-    email: user.email,
-    subject: ` New Opening: ${title} Position at Job Portal`,
-    message: `A new job for ${title} is available in ${location}.`, // Plain text fallback
-    html: `
+    for (const user of users) {
+      await sendEmail({
+        email: user.email,
+        subject: ` New Opening: ${title} Position at Job Portal`,
+        message: `A new job for ${title} is available in ${location}.`, // Plain text fallback
+        html: `
       <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
         
         <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 20px; text-align: center;">
@@ -110,7 +110,7 @@ for (const user of users) {
         </div>
       </div>
     `
-  });
+      });
 
     }
 
@@ -160,24 +160,24 @@ export const getAllJobs = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
     const location = req.query.location || "";
-   
+
     const salary = req.query.salary || "";
     const experience = req.query.experience || "";
 
     //  Pagination params
     const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 6; 
+    const limit = Number(req.query.limit) || 6;
     const skip = (page - 1) * limit;
 
     //  FIXED BASE QUERY (keyword optional)
-   const query = { status: "approved" };
+    const query = { status: "approved" };
 
-   if (keyword) {
-  query.$or = [
-    { title: { $regex: keyword, $options: "i" } },
-    { description: { $regex: keyword, $options: "i" } },
-  ];
-}
+    if (keyword) {
+      query.$or = [
+        { title: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+      ];
+    }
 
 
     //  ADDITIONAL FILTERS 
@@ -185,25 +185,25 @@ export const getAllJobs = async (req, res) => {
       query.location = { $regex: location, $options: "i" };
     }
 
-   
-
-   if (salary) {
-  if (salary === "0-3LPA") {
-    query.salary = { $gte: 0, $lte: 300000 };
-  }
-  if (salary === "3-6LPA") {
-    query.salary = { $gte: 300000, $lte: 600000 };
-  }
-  if (salary === "6-10LPA") {
-    query.salary = { $gte: 600000, $lte: 1000000 };
-  }
-}
 
 
+    if (salary) {
+      if (salary === "0-3LPA") {
+        query.salary = { $gte: 0, $lte: 300000 };
+      }
+      if (salary === "3-6LPA") {
+        query.salary = { $gte: 300000, $lte: 600000 };
+      }
+      if (salary === "6-10LPA") {
+        query.salary = { $gte: 600000, $lte: 1000000 };
+      }
+    }
 
-   if (experience) {
-  query.experienceLevel = Number(experience);
-}
+
+
+    if (experience) {
+      query.experienceLevel = Number(experience);
+    }
 
 
     //  total count
@@ -225,7 +225,7 @@ export const getAllJobs = async (req, res) => {
 
     return res.status(200).json({
       jobs,
-      totalJobs,            
+      totalJobs,
       totalPages: Math.ceil(totalJobs / limit),
       currentPage: page,
       success: true,
@@ -238,26 +238,26 @@ export const getAllJobs = async (req, res) => {
 
 
 //job seeker 
-export const getJobById = async (req,res)=>{
-    try{
-        const jobId = req.params.id;
-        const job  = await Job.findById(jobId).populate({
-            path:"applications"
-        });
-        if(!job){
-            return res.status(404).json({
-                message: "jobs not found",
-                success:false
-            })
-        };
-        return res.status(200).json({
-            job,
-            success:true
-        })
+export const getJobById = async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    const job = await Job.findById(jobId).populate({
+      path: "applications"
+    });
+    if (!job) {
+      return res.status(404).json({
+        message: "jobs not found",
+        success: false
+      })
+    };
+    return res.status(200).json({
+      job,
+      success: true
+    })
 
-    }catch(error){
-        console.log(error)
-    }
+  } catch (error) {
+    console.log(error)
+  }
 }
 //how many create jobs by admin
 
@@ -313,7 +313,7 @@ export const updateJob = async (req, res) => {
     // SAFE UPDATE SYSTEM
     if (req.body.title !== undefined) updateData.title = req.body.title;
 
-    if (req.body.description !== undefined) 
+    if (req.body.description !== undefined)
       updateData.description = req.body.description || "";
 
     if (req.body.requirements !== undefined) {
@@ -362,41 +362,41 @@ export const updateJob = async (req, res) => {
 };
 
 export const getRecommendedJobs = async (req, res) => {
-    try {
-        const userId = req.id; // Assuming middleware se user id mil rahi hai
-        const user = await User.findById(userId);
+  try {
+    const userId = req.id; // Assuming middleware se user id mil rahi hai
+    const user = await User.findById(userId);
 
-        if (!user || user.role !== 'jobseeker') {
-            return res.status(404).json({ message: "User not found or not a jobseeker", success: false });
-        }
-
-        const userSkills = user.profile.skills;
-
-        // Logic: Agar user ke paas skills hain, toh match karo, 
-        // nahi toh latest jobs dikhao
-        let query = {};
-        if (userSkills && userSkills.length > 0) {
-            query = {
-                $or: [
-                    { requirements: { $in: userSkills.map(skill => new RegExp(skill, 'i')) } },
-                    { title: { $in: userSkills.map(skill => new RegExp(skill, 'i')) } }
-                ],
-                status: 'approved' // Sirf approved jobs
-            };
-        }
-
-        const recommendedJobs = await Job.find(query)
-            .populate({ path: "company" })
-            .sort({ createdAt: -1 })
-            .limit(6); // Sirf top 6 jobs dashboard ke liye
-
-        return res.status(200).json({
-            success: true,
-            recommendedJobs
-        });
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Internal server error", success: false });
+    if (!user || user.role !== 'jobseeker') {
+      return res.status(404).json({ message: "User not found or not a jobseeker", success: false });
     }
+
+    const userSkills = user.profile.skills;
+
+    // Logic: Agar user ke paas skills hain, toh match karo, 
+    // nahi toh latest jobs dikhao
+    let query = {};
+    if (userSkills && userSkills.length > 0) {
+      query = {
+        $or: [
+          { requirements: { $in: userSkills.map(skill => new RegExp(skill, 'i')) } },
+          { title: { $in: userSkills.map(skill => new RegExp(skill, 'i')) } }
+        ],
+        status: 'approved' // Sirf approved jobs
+      };
+    }
+
+    const recommendedJobs = await Job.find(query)
+      .populate({ path: "company" })
+      .sort({ createdAt: -1 })
+      .limit(6); // Sirf top 6 jobs dashboard ke liye
+
+    return res.status(200).json({
+      success: true,
+      recommendedJobs
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error", success: false });
+  }
 }

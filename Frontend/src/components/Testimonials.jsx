@@ -71,7 +71,7 @@ const Testimonials = () => {
               </div>
             ))
           ) : Array.isArray(testimonials) && testimonials.length > 0 ? (
-            testimonials.slice(0, 3).map((t, i) => {
+            testimonials.slice(0, 10).map((t, i) => {
               const name = t?.user?.fullname || "Anonymous";
               const initials = getInitials(name);
               const role = formatRole(t?.role || t?.user?.role);

@@ -59,7 +59,7 @@ export const getApprovedTestimonials = async (req, res) => {
   try {
     const data = await Testimonial.find({ status: "approved" })
       .populate("user", "fullname email role profile")
-      .sort({ createdAt: -1 });
+      .sort({ updatedAt: -1 });
 
     return res.status(200).json({
       success: true,

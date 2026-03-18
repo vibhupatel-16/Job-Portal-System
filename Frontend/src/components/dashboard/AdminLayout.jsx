@@ -8,7 +8,7 @@ const adminSidebarItems = [
   { label: "Manage Jobs", path: "/admin/jobs", icon: "Briefcase" },
   { label: "Manage Companies", path: "/admin/companies", icon: "Building2" },
   { label: "Manage Applications", path: "/admin/applications", icon: "ClipboardList" },
-  { label: "Employer Testimonials", path: "/admin/testimonials", icon: "MessageSquare" },
+  { label: "Manage Testimonials", path: "/admin/testimonials", icon: "MessageSquare" },
   { label: "Interview List", path: "/admin/interview-list", icon: "Calendar" },
 ];
 
