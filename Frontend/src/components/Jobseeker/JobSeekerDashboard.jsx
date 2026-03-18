@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import useGetAppliedJobs from "../hooks/useGetAppliedJob";
+import TestimonialFeedbackForm from "@/components/shared/TestimonialFeedbackForm";
 
 const StatCard = ({ title, value, icon: Icon, path, pathLabel }) => (
   <Link
@@ -129,6 +130,12 @@ const JobSeekerDashboard = () => {
           View full application history
         </Link>
       </motion.div>
+
+      {/* Same feedback UI as Employer */}
+      <TestimonialFeedbackForm
+        submitPath="/testimonials/submit/jobseeker"
+        placeholder="Tell us how we helped you find your dream job..."
+      />
     </div>
   );
 };

@@ -41,6 +41,7 @@ import ManageCompanies from "./components/Admin/ManageCompanies";
 import ManageApplications from "./components/Admin/ManageApplications";
 import AdminCompanyCreate from "./components/Admin/AdminCompanyCreate";
 import AdminCompanyUpdate from "./components/Admin/AdminCompanyUpdate";
+import ManageTestimonials from "./components/Admin/ManageTestimonials";
 
 // Interviews
 import ScheduledInterviews from "./components/Employer/ScheduleInterviews";
@@ -116,6 +117,7 @@ const appRouter = createBrowserRouter([
           { path: "companies/create", element: <AdminCompanyCreate /> },
           { path: "companies/update/:id", element: <AdminCompanyUpdate /> },
           { path: "applications", element: <ManageApplications /> },
+          { path: "testimonials", element: <ManageTestimonials /> },
           { path: "interview-list", element: <AdminInterviewList /> },
         ],
       },

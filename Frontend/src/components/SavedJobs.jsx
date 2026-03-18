@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { setSingleJob } from '@/redux/jobSlice'; // Redux update ke liye
+import { setUser } from "@/redux/authSlice";
 
 const SavedJobs = () => {
   const [jobs, setJobs] = useState([]);
@@ -27,14 +28,29 @@ const SavedJobs = () => {
   // ================= REMOVE SAVED JOB =================
   const removeJob = async (jobId) => {
     try {
-      await axiosInstance.delete(`/user/saved-jobs/${jobId}`);
-      setJobs((prev) => prev.filter((job) => job._id !== jobId));
-      toast.success("Job removed from saved list");
-    } catch {
-      toast.error("Remove failed");
-    }
-  };
+        const res = await axiosInstance.delete(`/user/saved-jobs/${jobId}`);
+        
+        if (res.data.success) {
+            // 1. Local state update (Page se card hatane ke liye)
+            setJobs((prev) => prev.filter((job) => job._id !== jobId));
 
+            // 2. Redux State Update (Navbar icon update karne ke liye)
+            // User object ki copy banayein aur savedJobs array se ID remove karein
+            const updatedUser = {
+                ...user,
+                savedJobs: user.savedJobs.filter(id => id !== jobId)
+            };
+
+            // Redux store mein naya user object bhejien
+            dispatch(setUser(updatedUser));
+
+            toast.success("Job removed successfully");
+        }
+    } catch (error) {
+        console.error(error);
+        toast.error("Remove failed");
+    }
+};
   // ================= QUICK APPLY (Updated Logic) =================
   const applyJob = async (jobId) => {
     try {

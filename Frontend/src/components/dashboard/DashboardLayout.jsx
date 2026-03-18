@@ -10,6 +10,7 @@ import {
   Calendar,
   UserCircle,
   Bookmark,
+  MessageSquare,
   Menu,
   X,
   ChevronRight,
@@ -24,6 +25,7 @@ const iconMap = {
   Calendar,
   UserCircle,
   Bookmark,
+  MessageSquare,
 };
 
 export function DashboardLayout({ sidebarItems, children, title }) {
