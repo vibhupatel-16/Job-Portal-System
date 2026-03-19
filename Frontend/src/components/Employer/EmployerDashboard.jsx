@@ -28,7 +28,6 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import TestimonialFeedbackForm from "@/components/shared/TestimonialFeedbackForm";
 const EmployerDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ totalJobs: 0, totalApplicants: 0, totalCompanies: 0 });
@@ -284,18 +283,13 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
         </div>
 
         {/* STATS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <StatCard title="Total Jobs" value={stats.totalJobs} icon={<Briefcase className="text-blue-500" />} />
-          <StatCard title="Total Applicants" value={stats.totalApplicants} icon={<Users className="text-orange-500" />} />
-          <StatCard title="Companies" value={stats.totalCompanies} icon={<Building2 className="text-green-500" />} />
+        <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-3">
+          <StatCard title="Total Jobs" value={stats.totalJobs} icon={<Briefcase className="text-blue-500" size={20} />} chartColor="#3b82f6" iconBg="bg-blue-50" />
+          <StatCard title="Total Applicants" value={stats.totalApplicants} icon={<Users className="text-orange-500" size={20} />} chartColor="#f97316" iconBg="bg-orange-50" />
+          <StatCard title="Companies" value={stats.totalCompanies} icon={<Building2 className="text-green-500" size={20} />} chartColor="#22c55e" iconBg="bg-green-50" />
         </div>
 
-       {/* 2. NEW TESTIMONIAL SECTION (Adding it here) */}
-      <TestimonialFeedbackForm
-        submitPath="/testimonials/submit/employer"
-        placeholder="Tell us how we helped you find talent..."
-      />
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 mt-10">
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
     
     {/* 📊 CHART 1: JOB PERFORMANCE (Bar Chart) */}
     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col">
@@ -326,7 +320,7 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                         cursor={{fill: '#f8faff'}} 
                         contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} 
                     />
-                    <Bar dataKey="count" fill="#7c3aed" radius={[10, 10, 0, 0]} barSize={35} />
+                    <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={35} />
                 </BarChart>
             </ResponsiveContainer>
         </div>
@@ -354,9 +348,9 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                             { name: 'Accepted', value: applications.filter(a => a.status === 'accepted').length },
                             { name: 'Rejected', value: applications.filter(a => a.status === 'rejected').length },
                         ]}
-                        innerRadius={70}
+                        innerRadius={60}
                         outerRadius={90}
-                        paddingAngle={8}
+                        paddingAngle={4}
                         dataKey="value"
                     >
                         {COLORS.map((color, index) => (
@@ -462,15 +456,15 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
           </span>
         </td>
         <td className="px-8 py-5">
-          <Button 
-        size="icon" 
-        className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl border-none" 
-        onClick={() => handleAiScan(app._id)}
-        title="AI Resume Scan"
-    >
-        <Sparkles size={16} />
-    </Button>
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center items-center gap-3">
+            <Button 
+              size="icon" 
+              className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl border-none" 
+              onClick={() => handleAiScan(app._id)}
+              title="AI Resume Scan"
+            >
+              <Sparkles size={16} />
+            </Button>
             {/* View Button hamesha dikhega */}
             <Button size="icon" variant="outline" className="rounded-xl border-gray-200" onClick={() => { setSelectedApp(app); setShowViewModal(true); }}>
               <Eye size={16} />
@@ -769,10 +763,19 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
 };
 
 // HELPERS
-const StatCard = ({ title, value, icon }) => (
-  <div className="bg-white p-6 rounded-[2rem] shadow-sm flex items-center justify-between border border-transparent hover:border-gray-100 transition-all">
-    <div><p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-1">{title}</p><h2 className="text-4xl font-black text-gray-800">{value}</h2></div>
-    <div className="p-5 bg-gray-50 rounded-3xl">{icon}</div>
+const StatCard = ({ title, value, icon, chartColor, iconBg }) => (
+  <div className="bg-white p-6 rounded-[2rem] shadow-sm flex items-center justify-between border border-gray-100/60 hover:shadow-md transition-all group">
+    <div>
+        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">{title}</p>
+        <h2 className="text-4xl font-black text-gray-800">{value}</h2>
+    </div>
+    <div className="flex items-center gap-4">
+        {/* Fake Mini line graph like in image */}
+        <svg width="60" height="30" viewBox="0 0 60 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70 group-hover:opacity-100 transition-opacity">
+          <path d="M0 25 Q 10 10, 20 20 T 40 10 T 60 5" stroke={chartColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+        <div className={`p-4 rounded-[1.25rem] ${iconBg}`}>{icon}</div>
+    </div>
   </div>
 );
 

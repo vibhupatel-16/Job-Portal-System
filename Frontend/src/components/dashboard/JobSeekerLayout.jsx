@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { DashboardLayout } from "./DashboardLayout";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import TestimonialFeedbackForm from "../shared/TestimonialFeedbackForm";
+import { MessageSquareHeart } from "lucide-react";
 
 const jobSeekerSidebarItems = [
   { label: "Dashboard", path: "/jobseeker/dashboard", icon: "LayoutDashboard" },
@@ -9,9 +12,30 @@ const jobSeekerSidebarItems = [
 ];
 
 export function JobSeekerLayout({ children }) {
+  const [showTestimonialModal, setShowTestimonialModal] = useState(false);
+
   return (
     <DashboardLayout sidebarItems={jobSeekerSidebarItems} title="Job Seeker">
       {children}
+      
+      {/* Floating Action Button for Testimonial */}
+      <button 
+        onClick={() => setShowTestimonialModal(true)}
+        className="fixed bottom-8 right-8 z-50 flex items-center justify-center p-4 text-white transition-all bg-indigo-600 rounded-full shadow-2xl hover:bg-indigo-700 hover:scale-105"
+        title="Share your feedback"
+      >
+        <MessageSquareHeart size={24} />
+      </button>
+
+      {/* Testimonial Modal */}
+      <Dialog open={showTestimonialModal} onOpenChange={setShowTestimonialModal}>
+        <DialogContent className="max-w-md p-0 overflow-hidden bg-transparent border-none shadow-none">
+          <TestimonialFeedbackForm 
+            submitPath="/testimonials/submit/jobseeker"
+            placeholder="Tell us how we helped you find your dream job..."
+          />
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
