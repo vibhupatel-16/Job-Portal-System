@@ -47,6 +47,12 @@ isBlocked: {
       default: ""
     }
   },
+  profileViews: [
+    {
+      viewedAt: { type: Date, default: Date.now },
+      viewerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    }
+  ],
   // user.model.js mein add karein
 notifications: [
     {

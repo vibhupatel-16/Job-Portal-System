@@ -47,13 +47,13 @@ export function DashboardLayout({ sidebarItems, children, title }) {
       <aside
         className={cn(
           "fixed lg:sticky top-16 left-0 z-50 h-[calc(100vh-4rem)] w-64 flex-shrink-0 border-r transform transition-transform duration-200 ease-out lg:translate-x-0",
-          title === "Job Seeker" ? "bg-gradient-to-b from-[#25103f] to-[#120822] border-[#311b51] text-white" : "border-gray-200 bg-white text-gray-900",
+          "border-gray-200 bg-white text-gray-900",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full py-4">
           <div className="flex items-center justify-between px-4 mb-4 lg:justify-center">
-            <span className={cn("text-sm font-semibold uppercase tracking-wider", title === "Job Seeker" ? "text-indigo-200" : "text-gray-500")}>
+            <span className="text-sm font-semibold uppercase tracking-wider text-gray-500">
               {title}
             </span>
             <button
@@ -80,8 +80,8 @@ export function DashboardLayout({ sidebarItems, children, title }) {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? (title === "Job Seeker" ? "bg-white/10 text-white" : "bg-indigo-50 text-indigo-700")
-                      : (title === "Job Seeker" ? "text-indigo-200 hover:bg-white/5 hover:text-white" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   )}
                 >
                   <Icon className="h-5 w-5 shrink-0" />

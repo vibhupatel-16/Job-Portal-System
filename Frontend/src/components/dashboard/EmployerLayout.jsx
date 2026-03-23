@@ -10,6 +10,7 @@ const employerSidebarItems = [
   { label: "Companies", path: "/employer/companies", icon: "Building2" },
   { label: "My Jobs", path: "/employer/jobs", icon: "Briefcase" },
   { label: "Interview List", path: "/employer/interview-list", icon: "Calendar" },
+  { label: "FAQ & Support", path: "/employer/faq", icon: "HelpCircle" },
 ];
 
 export function EmployerLayout({ children }) {

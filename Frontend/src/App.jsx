@@ -95,6 +95,7 @@ const appRouter = createBrowserRouter([
           { path: "jobs/:id/applicants", element: <Applicants /> },
           { path: "jobs/:id", element: <JobSetup /> },
           { path: "interview-list", element: <ScheduledInterviews /> },
+          { path: "faq", element: <FAQSection /> },
         ],
       },
 
@@ -128,6 +129,14 @@ const appRouter = createBrowserRouter([
         element: (
           <JobSeekerLayout>
             <JobSeekerDashboard />
+          </JobSeekerLayout>
+        ),
+      },
+      {
+        path: "/jobseeker/faq",
+        element: (
+          <JobSeekerLayout>
+            <FAQSection />
           </JobSeekerLayout>
         ),
       },

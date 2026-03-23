@@ -448,5 +448,30 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// ---------------- RECORD PROFILE VIEW ----------------
+export const recordProfileView = async (req, res) => {
+  try {
+    const jobseekerId = req.params.id;
+    const viewerId = req.id;
 
+    if (jobseekerId === viewerId) {
+      return res.status(200).json({ success: true, message: "Self view" });
+    }
 
+    const user = await User.findById(jobseekerId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    if (!user.profileViews) user.profileViews = [];
+
+    user.profileViews.push({
+      viewedAt: new Date(),
+      viewerId: viewerId
+    });
+
+    await user.save();
+    return res.status(200).json({ success: true, message: "Profile view recorded" });
+  } catch (error) {
+    console.error("Profile view error:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

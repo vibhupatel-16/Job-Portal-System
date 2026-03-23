@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter,
   FaApple, FaGooglePlay, FaArrowRight, FaMapMarkerAlt,
@@ -8,6 +9,38 @@ import {
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { user } = useSelector(store => store.auth);
+
+  // Dynamic routing maps
+  const getDynamicLinks = () => {
+    if (!user) {
+      return [
+        { label: "Browse Jobs", path: "/browse" },
+        { label: "Register Account", path: "/signup" },
+        { label: "Employer Login", path: "/login" },
+        { label: "Support & FAQ", path: "/faq" },
+      ];
+    }
+    
+    if (user.role === 'employer') {
+      return [
+        { label: "Employer Dashboard", path: "/employer/dashboard" },
+        { label: "Manage My Jobs", path: "/employer/jobs" },
+        { label: "Manage Companies", path: "/employer/companies" },
+        { label: "Employer FAQ", path: "/employer/faq" },
+      ];
+    }
+
+    // Default to Jobseeker (student)
+    return [
+      { label: "Browse Jobs", path: "/browse" },
+      { label: "My Applications", path: "/jobseeker/dashboard" },
+      { label: "My Interviews", path: "/jobseeker/interviews" },
+      { label: "Jobseeker FAQ", path: "/jobseeker/faq" },
+    ];
+  };
+
+  const dynamicLinks = getDynamicLinks();
 
   return (
     <footer className="bg-[#05070A] text-gray-400 py-20 mt-20 font-sans selection:bg-orange-500 selection:text-white relative overflow-hidden">
@@ -55,10 +88,14 @@ const Footer = () => {
           <div className="lg:col-span-2 space-y-6">
             <h4 className="text-white font-bold text-xs uppercase tracking-[0.2em] border-l-2 border-orange-500 pl-3">Platform</h4>
             <ul className="space-y-4 text-sm font-semibold">
-              <li><Link to="/browse" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> Browse Jobs</Link></li>
-              <li><Link to="/browse" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> Top Companies</Link></li>
-              <li><Link to="/jobseeker/interviews" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> For Candidates</Link></li>
-              <li><Link to="/faq" className="hover:text-orange-500 transition-colors flex items-center gap-2 group"><FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> FAQ</Link></li>
+              {dynamicLinks.map((link, i) => (
+               <li key={i}>
+                 <Link to={link.path} className="hover:text-orange-500 transition-colors flex items-center gap-2 group">
+                   <FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> 
+                   {link.label}
+                 </Link>
+               </li>
+              ))}
             </ul>
           </div>
 

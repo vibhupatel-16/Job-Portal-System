@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { MoreHorizontal } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { APPLICATION_API_END_POINT } from '@/utils/constant';
+import { APPLICATION_API_END_POINT, USER_API_END_POINT } from '@/utils/constant';
 import { toast } from 'sonner';
 
 const shortlistingStatus = ["Shortlisted", "Accepted", "Rejected"];
@@ -45,6 +45,13 @@ const ApplicantsTable = () => {
               <TableCell className="text-blue-600 cursor-pointer">
                 {
                   item.applicant?.profile?.resume ?  <a
+    onClick={async (e) => {
+      e.preventDefault();
+      try {
+        await axios.post(`${USER_API_END_POINT}/profile/view/${item?.applicant?._id}`, {}, { withCredentials: true });
+      } catch(error) { console.log(error); }
+      window.open(item?.applicant?.profile?.resume, '_blank', 'noopener,noreferrer');
+    }}
     href={item?.applicant?.profile?.resume}
     target="_blank"
     rel="noopener noreferrer"

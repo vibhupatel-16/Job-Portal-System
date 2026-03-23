@@ -27,7 +27,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 const EmployerDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ totalJobs: 0, totalApplicants: 0, totalCompanies: 0 });
@@ -36,6 +36,54 @@ const EmployerDashboard = () => {
   
   const [showAllJobs, setShowAllJobs] = useState(false);
   const [showAllApplicants, setShowAllApplicants] = useState(false);
+
+  // ✨ Analytics Hooks
+  const applicantTrends = React.useMemo(() => {
+    const data = [
+      { n: "Week 1", applicants: 0, interviews: 0 },
+      { n: "Week 2", applicants: 0, interviews: 0 },
+      { n: "Week 3", applicants: 0, interviews: 0 },
+      { n: "Week 4", applicants: 0, interviews: 0 },
+    ];
+    
+    const now = new Date();
+    applications.forEach(app => {
+      const appDate = new Date(app.createdAt);
+      const diffDays = Math.ceil(Math.abs(now - appDate) / (1000 * 60 * 60 * 24)); 
+      
+      let weekIdx = -1;
+      if (diffDays <= 7) weekIdx = 3;
+      else if (diffDays <= 14) weekIdx = 2;
+      else if (diffDays <= 21) weekIdx = 1;
+      else if (diffDays <= 28) weekIdx = 0;
+
+      if (weekIdx !== -1) {
+        data[weekIdx].applicants += 1;
+        if (app.status === 'accepted') data[weekIdx].interviews += 1;
+      }
+    });
+    return data;
+  }, [applications]);
+
+  const skillsDemand = React.useMemo(() => {
+    const skillCount = {};
+    applications.forEach(app => {
+       const skills = app.applicant?.profile?.skills || [];
+       skills.forEach(s => {
+          const lowerS = s.trim().toUpperCase();
+          if(!lowerS) return;
+          skillCount[lowerS] = (skillCount[lowerS] || 0) + 1;
+       });
+    });
+    const sorted = Object.keys(skillCount).map(k => ({
+       s: k, d: skillCount[k]
+    })).sort((a,b) => b.d - a.d).slice(0, 5); 
+    
+    if (sorted.length === 0) {
+      return [{s:'React',d:0},{s:'Node.js',d:0},{s:'Python',d:0},{s:'MongoDB',d:0},{s:'AWS',d:0}];
+    }
+    return sorted;
+  }, [applications]);
 
   // Modals State
   const [openInterview, setOpenInterview] = useState(false);
@@ -272,21 +320,21 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                 const res = await axios.get(`${INTERVIEW_API_END_POINT}/google/auth`, { withCredentials: true });
                 if(res.data.url) window.location.href = res.data.url;
               }}
-              className="flex items-center gap-2 bg-white text-red-600 border border-red-200 px-5 py-2.5 rounded-2xl shadow-sm hover:bg-red-50 transition-all font-semibold"
+              className="flex items-center gap-2 bg-white text-red-500 border border-red-200 px-5 py-2.5 rounded-2xl shadow-sm hover:bg-red-50 transition-all font-bold text-sm"
             >
-              <Video size={18} /> Connect Google Meet
+              <Calendar size={18} /> Connect Google Meet
             </button>
-            <Link to="/employer/interview-list" className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-2xl shadow-lg hover:bg-purple-700 transition-all font-semibold">
-              <ListChecks size={20} /> View Scheduled Interviews
+            <Link to="/employer/interview-list" className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-2xl shadow-md hover:bg-blue-700 transition-all font-bold text-sm">
+              <Calendar size={18} /> View Scheduled Interviews
             </Link>
           </div>
         </div>
 
         {/* STATS */}
         <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-3">
-          <StatCard title="Total Jobs" value={stats.totalJobs} icon={<Briefcase className="text-blue-500" size={20} />} chartColor="#3b82f6" iconBg="bg-blue-50" />
+          <StatCard title="Total Jobs" value={stats.totalJobs} icon={<Briefcase className="text-indigo-500" size={20} />} chartColor="#6366f1" iconBg="bg-indigo-50" />
           <StatCard title="Total Applicants" value={stats.totalApplicants} icon={<Users className="text-orange-500" size={20} />} chartColor="#f97316" iconBg="bg-orange-50" />
-          <StatCard title="Companies" value={stats.totalCompanies} icon={<Building2 className="text-green-500" size={20} />} chartColor="#22c55e" iconBg="bg-green-50" />
+          <StatCard title="Companies" value={stats.totalCompanies} icon={<Building2 className="text-emerald-500" size={20} />} chartColor="#10b981" iconBg="bg-emerald-50" />
         </div>
 
 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
@@ -330,8 +378,7 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col">
         <div className="flex justify-between items-center mb-6">
             <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Hiring Pipeline</h3>
-                <p className="text-[10px] text-gray-300 font-bold uppercase mt-1">Status Distribution</p>
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-800">Hiring Pipeline</h3>
             </div>
             <div className="p-3 bg-green-50 rounded-2xl text-green-600">
                 <Users size={20} />
@@ -343,27 +390,64 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                 <PieChart>
                     <Pie
                         data={[
-                            { name: 'Pending', value: applications.filter(a => a.status === 'pending').length },
+                            { name: 'Interview', value: applications.filter(a => a.status === 'accepted').length },
                             { name: 'Shortlisted', value: applications.filter(a => a.status === 'shortlisted').length },
-                            { name: 'Accepted', value: applications.filter(a => a.status === 'accepted').length },
+                            { name: 'Pending', value: applications.filter(a => a.status === 'pending').length },
                             { name: 'Rejected', value: applications.filter(a => a.status === 'rejected').length },
-                        ]}
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={4}
+                        ].filter(item => item.value > 0).length > 0 ? [
+                            { name: 'Interview', value: applications.filter(a => a.status === 'accepted').length },
+                            { name: 'Shortlisted', value: applications.filter(a => a.status === 'shortlisted').length },
+                            { name: 'Pending', value: applications.filter(a => a.status === 'pending').length },
+                            { name: 'Rejected', value: applications.filter(a => a.status === 'rejected').length },
+                        ] : [{ name: 'No Data', value: 1 }]}
+                        innerRadius={65}
+                        outerRadius={100}
+                        paddingAngle={5}
                         dataKey="value"
                     >
-                        {COLORS.map((color, index) => (
+                        {['#10b981', '#8b5cf6', '#f59e0b', '#ef4444'].map((color, index) => (
                             <Cell key={`cell-${index}`} fill={color} stroke="none" />
                         ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip cursor={{fill: 'transparent'}} contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
                     <Legend 
                         verticalAlign="bottom" 
                         iconType="circle" 
-                        wrapperStyle={{fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', paddingTop: '20px'}} 
+                        wrapperStyle={{fontSize: '10px', fontWeight: '900', color: '#64748b'}} 
                     />
                 </PieChart>
+            </ResponsiveContainer>
+        </div>
+    </div>
+</div>
+
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col">
+        <h3 className="text-sm font-black text-gray-800 mb-6">Applicant Trends</h3>
+        <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+<LineChart data={applicantTrends}>
+                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
+                 <XAxis dataKey="n" axisLine={false} tickLine={false} fontSize={10} tick={{fill: '#94a3b8'}} />
+                 <YAxis axisLine={false} tickLine={false} fontSize={10} tick={{fill: '#94a3b8'}} />
+                 <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)'}} />
+                 <Line name="Total Applicants" type="basis" dataKey="applicants" stroke="#10b981" strokeWidth={3} dot={{ stroke: '#10b981', strokeWidth: 3, r: 4, fill: '#fff' }} activeDot={{ r: 6 }} />
+                 <Line name="Interviews (Accepted)" type="basis" dataKey="interviews" stroke="#8b5cf6" strokeWidth={3} dot={{ stroke: '#8b5cf6', strokeWidth: 3, r: 4, fill: '#fff' }} activeDot={{ r: 6 }} />
+                 <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{fontSize: '10px', fontWeight: 'bold', color: '#64748b'}} />
+               </LineChart>
+            </ResponsiveContainer>
+        </div>
+    </div>
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col">
+        <h3 className="text-sm font-black text-gray-800 mb-6">Skills in Demand</h3>
+        <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={skillsDemand}>
+                 <PolarGrid stroke="#e2e8f0" />
+                 <PolarAngleAxis dataKey="s" tick={{fontSize: 10, fill: '#64748b', fontWeight: 'bold'}} />
+                 <Radar name="Applicant Skill Frequency" dataKey="d" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+                 <Tooltip contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+               </RadarChart>
             </ResponsiveContainer>
         </div>
     </div>
@@ -459,25 +543,32 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
           <div className="flex justify-center items-center gap-3">
             <Button 
               size="icon" 
-              className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl border-none" 
+              className="bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl border-none" 
               onClick={() => handleAiScan(app._id)}
               title="AI Resume Scan"
             >
               <Sparkles size={16} />
             </Button>
             {/* View Button hamesha dikhega */}
-            <Button size="icon" variant="outline" className="rounded-xl border-gray-200" onClick={() => { setSelectedApp(app); setShowViewModal(true); }}>
+            <Button size="icon" className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl border-none" onClick={() => { 
+              setSelectedApp(app); 
+              setShowViewModal(true); 
+
+              // Silently track this detailed view
+              import('@/utils/constant').then(({ USER_API_END_POINT }) => {
+                 axios.post(`${USER_API_END_POINT}/profile/view/${app.applicant._id}`, {}, { withCredentials: true }).catch(e=>console.log(e));
+              });
+            }}>
               <Eye size={16} />
             </Button>
            <Button 
-    size="icon" 
-    variant="ghost"
-    className={`rounded-xl transition-all ${app.interviewQuestions?.length > 0 ? 'bg-orange-100 text-orange-600' : 'text-gray-400'}`}
-    onClick={() => handleGenerateQuestions(app._id)}
-    disabled={!app.matchScore} // Score ke bina disabled rahega
->
-    <MessageSquare size={16} /> {/* Lucide icon */}
-</Button>
+              size="icon" 
+              className={`rounded-xl border-none transition-all ${app.interviewQuestions?.length > 0 ? 'bg-orange-100 text-orange-600' : 'bg-orange-50 text-orange-400'}`}
+              onClick={() => handleGenerateQuestions(app._id)}
+              disabled={!app.matchScore} // Score ke bina disabled rahega
+            >
+              <MessageSquare size={16} /> {/* Lucide icon */}
+            </Button>
             {/* CASE 1: Agar status PENDING hai -> Shortlist aur Reject dikhao */}
             {app.status === "pending" && (
               <>
@@ -764,17 +855,18 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
 
 // HELPERS
 const StatCard = ({ title, value, icon, chartColor, iconBg }) => (
-  <div className="bg-white p-6 rounded-[2rem] shadow-sm flex items-center justify-between border border-gray-100/60 hover:shadow-md transition-all group">
-    <div>
-        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">{title}</p>
-        <h2 className="text-4xl font-black text-gray-800">{value}</h2>
+  <div className="bg-white p-6 rounded-[1.5rem] shadow-sm flex flex-col justify-between border border-gray-100/60 hover:shadow-md transition-all group relative overflow-hidden h-[160px]">
+    <div className="flex justify-between items-start z-10 relative">
+        <div>
+            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">{title}</p>
+            <h2 className="text-3xl font-black text-gray-800">{value}</h2>
+        </div>
+        <div className={`p-3 rounded-xl ${iconBg}`}>{icon}</div>
     </div>
-    <div className="flex items-center gap-4">
-        {/* Fake Mini line graph like in image */}
-        <svg width="60" height="30" viewBox="0 0 60 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70 group-hover:opacity-100 transition-opacity">
-          <path d="M0 25 Q 10 10, 20 20 T 40 10 T 60 5" stroke={chartColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <div className="absolute bottom-0 left-0 w-full h-12 pointer-events-none">
+        <svg width="100%" height="100%" viewBox="0 0 100 40" fill="none" preserveAspectRatio="none">
+          <path d="M0 35 Q 25 15, 50 25 T 100 20" stroke={chartColor} strokeWidth="2.5" fill="none" vectorEffect="non-scaling-stroke" />
         </svg>
-        <div className={`p-4 rounded-[1.25rem] ${iconBg}`}>{icon}</div>
     </div>
   </div>
 );

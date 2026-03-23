@@ -5,7 +5,8 @@ import {
   logout, 
   register, 
   resetPassword, 
-  updateProfile 
+  updateProfile,
+  recordProfileView
 } from '../controllers/user.controller.js';
 
 import isAuthenticated from '../middlewares/isAuthenticated.js';
@@ -29,6 +30,9 @@ router.post("/profile/update", isAuthenticated, upload, updateProfile);
 // Forgot / Reset password
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
+
+// Record profile view
+router.post("/profile/view/:id", isAuthenticated, recordProfileView);
 
 // Role based routes
 router.get("/jobseeker/profile",

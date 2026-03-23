@@ -9,6 +9,7 @@ const jobSeekerSidebarItems = [
   { label: "My Profile", path: "/profile", icon: "UserCircle" },
   { label: "Saved Jobs", path: "/saved-jobs", icon: "Bookmark" },
   { label: "My Interviews", path: "/jobseeker/interviews", icon: "Calendar" },
+  { label: "FAQ & Support", path: "/jobseeker/faq", icon: "HelpCircle" },
 ];
 
 export function JobSeekerLayout({ children }) {

@@ -209,6 +209,11 @@ const ManageApplications = () => {
                       onClick={() => {
                         setSelectedApp(app);
                         setShowViewModal(true);
+
+                        // Silently track this detailed view
+                        import('@/utils/constant').then(({ USER_API_END_POINT }) => {
+                           axiosInstance.post(`${USER_API_END_POINT.replace('/user', '')}/user/profile/view/${app.applicant._id}`, {}).catch(e=>console.log(e));
+                        });
                       }}
                     >
                       <Eye size={16} />
@@ -318,6 +323,17 @@ const ManageApplications = () => {
     ) : (
       /* FALLBACK */
       <a
+        onClick={async (e) => {
+          e.preventDefault();
+          try {
+             import('@/utils/constant').then(({ USER_API_END_POINT }) => {
+                import('axios').then(axios => {
+                   axios.default.post(`${USER_API_END_POINT}/profile/view/${selectedApp.applicant._id}`, {}, { withCredentials: true }).catch(console.error);
+                })
+             });
+          } catch(err) {}
+          window.open(selectedApp.applicant.profile.resume, '_blank', 'noopener,noreferrer');
+        }}
         href={selectedApp.applicant.profile.resume}
         target="_blank"
         rel="noreferrer"
