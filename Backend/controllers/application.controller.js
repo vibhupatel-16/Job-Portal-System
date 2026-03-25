@@ -1,6 +1,7 @@
 import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
 import sendEmail from "../utils/sendEmail.js";
+import { applicationStatusTemplate } from "../utils/emailTemplates.js";
 import { Notification } from "../models/notification.model.js";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -22,11 +23,11 @@ export const getAiMatchScore = async (req, res) => {
         if (!resumeUrl) return res.status(400).json({ message: "Resume URL not found", success: false });
 
         const response = await axios.get(resumeUrl, { responseType: "arraybuffer" });
-        
+
         let resumeText = "";
         try {
             const buffer = Buffer.from(response.data);
-            const data = await pdfParse(buffer); 
+            const data = await pdfParse(buffer);
             resumeText = data.text;
             console.log("✅ Resume Text Extracted");
         } catch (pdfErr) {
@@ -35,7 +36,7 @@ export const getAiMatchScore = async (req, res) => {
 
         // --- 🟢 NEW OPTIMIZATION START ---
         // Faltu spaces aur characters hatayein taaki Tokens kam consume hon
-        const cleanResume = resumeText.replace(/\s+/g, ' ').trim().substring(0, 4000); 
+        const cleanResume = resumeText.replace(/\s+/g, ' ').trim().substring(0, 4000);
         const cleanJobDesc = application.job.description.substring(0, 1000);
         // --- 🟢 NEW OPTIMIZATION END ---
 
@@ -70,9 +71,9 @@ export const getAiMatchScore = async (req, res) => {
         } catch (aiErr) {
             // Agar Quota 429 error aaye toh handle karein
             console.error("🔥 AI Limit Reached:", aiErr.message);
-            return res.status(429).json({ 
-                message: "AI Limit reached. Please try after some time.", 
-                success: false 
+            return res.status(429).json({
+                message: "AI Limit reached. Please try after some time.",
+                success: false
             });
         }
 
@@ -81,38 +82,38 @@ export const getAiMatchScore = async (req, res) => {
         res.status(500).json({ message: "Server Error", success: false });
     }
 };
-export const applyJob = async (req, res)=>{
-    try{
+export const applyJob = async (req, res) => {
+    try {
         const userId = req.id;
         const jobId = req.params.id;
-        
-        if(!jobId){
+
+        if (!jobId) {
             return res.status(400).json({
-                message:"job id is required",
-                success:false
+                message: "job id is required",
+                success: false
             })
         };
-       // check if the user has already applied for the job
-        const existingApplication = await Application.findOne({job:jobId, applicant:userId}) ;
+        // check if the user has already applied for the job
+        const existingApplication = await Application.findOne({ job: jobId, applicant: userId });
 
-        if(existingApplication){
+        if (existingApplication) {
             return res.status(400).json({
-                message:"You have already applied for this jobs",
-                success:false
+                message: "You have already applied for this jobs",
+                success: false
             });
         }
         //check if the job exists
-        const job  = await Job.findById(jobId);
-        if(!job){
+        const job = await Job.findById(jobId);
+        if (!job) {
             return res.status(404).json({
-                message:"Job not found",
-                success:false
+                message: "Job not found",
+                success: false
             })
         }
 
         const newApplication = await Application.create({
             job: jobId,
-            applicant:userId
+            applicant: userId
 
         });
 
@@ -120,184 +121,144 @@ export const applyJob = async (req, res)=>{
         await job.save();
         return res.status(201).json({
             message: "Job Applied Successfully",
-            success:true
+            success: true
         })
 
-        
-    }catch(error){
+
+    } catch (error) {
         console.log(error);
     }
 };
 
-export const getAppliedJobs = async(req, res)=>{
-    try{
+export const getAppliedJobs = async (req, res) => {
+    try {
         const userId = req.id;
-        const application = await Application.find({applicant:userId}).sort({createdAt:-1}).populate({
+        const application = await Application.find({ applicant: userId }).sort({ createdAt: -1 }).populate({
             path: 'job',
-            option: {sort:{createdAt:-1}},
-            populate:{
+            option: { sort: { createdAt: -1 } },
+            populate: {
                 path: 'company',
-                options: {sort:{createdAt:-1}},
+                options: { sort: { createdAt: -1 } },
             }
         });
-        if(!application){
+        if (!application) {
             return res.status(404).json({
                 message: "No Appplications",
-                success:false
+                success: false
             })
         };
 
         return res.status(200).json({
             application,
-            success:true
+            success: true
         })
 
-    }catch(error){
+    } catch (error) {
         console.log(error);
     }
 }
 
 //admin dekhega kitne user ne apply ne kiya hai
 
-export const getApplicants = async (req, res)=>{
-    try{
+export const getApplicants = async (req, res) => {
+    try {
         const jobId = req.params.id;
         const job = await Job.findById(jobId).populate({
-            path:'applications',
-            options:{sort:{createdAt:-1}},
+            path: 'applications',
+            options: { sort: { createdAt: -1 } },
             populate: [
-           { path: 'applicant',
-            select: 'fullname email phoneNumber profile createdAt' },
-           { path: "job" }   
-      ]
+                {
+                    path: 'applicant',
+                    select: 'fullname email phoneNumber profile createdAt'
+                },
+                { path: "job" }
+            ]
         });
 
-        if(!job){
-          return res.status(404).json({
-            message:'Job not found',
-            success: false
-          })  
+        if (!job) {
+            return res.status(404).json({
+                message: 'Job not found',
+                success: false
+            })
         };
 
         return res.status(200).json({
             job,
-            success:true
+            success: true
         });
 
-    }catch(error){
+    } catch (error) {
         console.log(error);
     }
 }
 
 export const updateStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const applicationId = req.params.id;
+    try {
+        const { status } = req.body;
+        const applicationId = req.params.id;
 
-    if (!status) {
-      return res.status(400).json({
-        message: "status is required",
-        success: false
-      });
+        if (!status) {
+            return res.status(400).json({
+                message: "status is required",
+                success: false
+            });
+        }
+
+        // 🔍 Find application + populate applicant & job
+        const application = await Application.findOne({ _id: applicationId })
+            .populate("applicant")
+            .populate("job");
+
+        if (!application) {
+            return res.status(404).json({
+                message: "Application not found",
+                success: false
+            });
+        }
+
+        // ✅ Update status
+        application.status = status.toLowerCase();
+        application.statusHistory.push({
+            status: status.toLowerCase(),
+            changedAt: new Date()
+        });
+        await application.save();
+
+        // 🎨 Status color
+        const statusColor = status === "accepted" ? "#22c55e" : "#ef4444";
+        await Notification.create({
+            recipient: application.applicant._id,
+            sender: req.id, // Employer ID
+            type: "STATUS_UPDATED",
+            title: `Application ${status.toUpperCase()}`,
+            message: `Your application for ${application.job.title} has been ${status}.`,
+            link: "/profile"
+        });
+        await sendEmail({
+            email: application.applicant.email,
+            subject: `Application Update: ${application.job.title}`,
+            message: `Your application status has been updated to ${status}.`, // fallback
+            html: applicationStatusTemplate(
+                application.applicant.fullname,
+                application.job.title,
+                status.toLowerCase(),
+                statusColor
+            )
+        });
+
+
+        return res.status(200).json({
+            message: "Status updated successfully and email sent",
+            success: true
+        });
+
+    } catch (error) {
+        console.log("Update status error:", error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false
+        });
     }
-
-    // 🔍 Find application + populate applicant & job
-    const application = await Application.findOne({ _id: applicationId })
-      .populate("applicant")
-      .populate("job");
-
-    if (!application) {
-      return res.status(404).json({
-        message: "Application not found",
-        success: false
-      });
-    }
-
-    // ✅ Update status
-    application.status = status.toLowerCase();
-    application.statusHistory.push({
-    status: status.toLowerCase(),
-    changedAt: new Date()
-});
-    await application.save();
-
-   // 🎨 Status color
-const statusColor = status === "accepted" ? "#22c55e" : "#ef4444";
-await Notification.create({
-    recipient: application.applicant._id,
-    sender: req.id, // Employer ID
-    type: "STATUS_UPDATED",
-    title: `Application ${status.toUpperCase()}`,
-    message: `Your application for ${application.job.title} has been ${status}.`,
-    link: "/profile"
-});
-await sendEmail({
-  email: application.applicant.email,
-  subject: `Application Update: ${application.job.title}`,
-  message: `Your application status has been updated to ${status}.`, // fallback
-  html: `
-  <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: auto; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb;">
-    
-    <!-- Header -->
-    <div style="background: ${statusColor}; padding: 22px; text-align: center;">
-      <h2 style="color: #ffffff; margin: 0;">Application Status Update</h2>
-    </div>
-
-    <!-- Body -->
-    <div style="padding: 28px; background-color: #ffffff;">
-      <p style="font-size: 17px; color: #111827;">
-        Hello <strong>${application.applicant.fullname}</strong>,
-      </p>
-
-      <p style="font-size: 15px; color: #374151; line-height: 1.6;">
-        We wanted to inform you that the status of your application has been updated after reviewing your profile.
-      </p>
-
-      <!-- Job Info -->
-      <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; margin: 20px 0;">
-        <p style="margin: 0; font-size: 14px; color: #6b7280;">Job Title</p>
-        <h3 style="margin: 4px 0 12px 0; color: #111827;">${application.job.title}</h3>
-
-        <p style="margin: 0; font-size: 14px; color: #6b7280;">Current Status</p>
-        <h2 style="margin: 6px 0; color: ${statusColor}; text-transform: capitalize;">
-          ${status}
-        </h2>
-      </div>
-
-      ${
-        status === "accepted"
-          ? `<p style="color: #374151;">
-              🎉 Congratulations! Our team will contact you soon regarding the next steps, including interview scheduling.
-            </p>`
-          : `<p style="color: #374151;">
-              We appreciate your interest. Although you were not selected this time, we encourage you to apply again in the future.
-            </p>`
-      }
-
-      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 28px 0;" />
-
-      <p style="font-size: 13px; color: #9ca3af; text-align: center;">
-        © ${new Date().getFullYear()} Job Portal Team<br/>
-        This is an automated message, please do not reply.
-      </p>
-    </div>
-  </div>
-  `,
-});
-
-
-return res.status(200).json({
-      message: "Status updated successfully and email sent",
-      success: true
-    });
-
-  } catch (error) {
-    console.log("Update status error:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-      success: false
-    });
-  }
 };
 
 export const getHiringStats = async (req, res) => {
@@ -364,7 +325,7 @@ export const getAnalyticsData = async (req, res) => {
 
 export const getNotifications = async (req, res) => {
     try {
-        const userId = req.id; 
+        const userId = req.id;
         const notifications = await Notification.find({ recipient: userId }).sort({ createdAt: -1 });
         return res.status(200).json({ notifications, success: true });
     } catch (error) {
@@ -384,7 +345,7 @@ export const generateInterviewQuestions = async (req, res) => {
         const cleanResume = (application.aiInsights || "Professional candidate").substring(0, 2000);
         const jobDesc = application.job.description.substring(0, 1000);
 
-        const model = genAI.getGenerativeModel({model: "gemini-3-flash-preview"});
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
         const prompt = `
             Analyze this candidate for ${application.job.title}.

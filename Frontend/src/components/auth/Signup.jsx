@@ -42,7 +42,7 @@ const Signup = () => {
     formdata.append("password", input.password);
     formdata.append("role", input.role); // ✅ always jobseeker
     if (input.file) {
-      formdata.append("file", input.file);
+      formdata.append("profilePhoto", input.file);
     }
 
     try {

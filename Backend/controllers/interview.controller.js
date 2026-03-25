@@ -4,7 +4,8 @@ import { Interview } from "../models/interview.model.js";
 import { Application } from "../models/application.model.js";
 import sendEmail from "../utils/sendEmail.js";
 
-import { Notification } from "../models/notification.model.js"; 
+import { Notification } from "../models/notification.model.js";
+import { interviewScheduleTemplate } from "../utils/emailTemplates.js";
 
 // Google OAuth Setup
 const oauth2Client = new google.auth.OAuth2(
@@ -28,8 +29,8 @@ export const googleCallback = async (req, res) => {
     const { code } = req.query;
     try {
         const { tokens } = await oauth2Client.getToken(code);
-        
-        console.log("👉 YOUR_REFRESH_TOKEN:", tokens.refresh_token); 
+
+        console.log("👉 YOUR_REFRESH_TOKEN:", tokens.refresh_token);
 
         if (tokens.refresh_token) {
             // Success hone par seedha Employer Dashboard par redirect karein
@@ -46,254 +47,222 @@ export const googleCallback = async (req, res) => {
 };
 
 export const scheduleInterview = async (req, res) => {
-  try {
-    const { applicationId, jobseekerId, date, time, mode, meetingLink } = req.body;
+    try {
+        const { applicationId, jobseekerId, date, time, mode, meetingLink } = req.body;
 
-    const scheduledByRole = req.user.role; 
-    const scheduledById = req.id;
+        const scheduledByRole = req.user.role;
+        const scheduledById = req.id;
 
-    // --- ⭐ TIME FORMAT FIX HELPER ---
-    const convertTo24Hour = (timeStr) => {
-      if (!timeStr) return "00:00";
-      if (!timeStr.includes("AM") && !timeStr.includes("PM")) {
-        return timeStr.length === 5 ? timeStr : `0${timeStr}`.slice(-5);
-      }
-      const [timePart, modifier] = timeStr.split(' ');
-      let [hours, minutes] = timePart.split(':');
-      if (hours === '12') hours = '00';
-      if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
-      return `${hours.toString().padStart(2, '0')}:${minutes.padStart(2, '0')}`;
-    };
-
-    const time24 = convertTo24Hour(time);
-    const startDateTimeStr = `${date}T${time24}:00`;
-    const startDateTime = new Date(startDateTimeStr);
-
-    const now = new Date();
-if (startDateTime < now) {
-    return res.status(400).json({ 
-        message: "You cannot schedule an interview for a past date or time.", 
-        success: false 
-    });
-}
-
-    // Validation Check
-    if (isNaN(startDateTime.getTime())) {
-        return res.status(400).json({ 
-            message: "Invalid Date or Time format. Please select again.", 
-            success: false 
-        });
-    }
-
-    const endDateTime = new Date(startDateTime.getTime() + 3600000); // 1 Hour later
-
-    // Display formats
-    const formattedDate = startDateTime.toLocaleDateString('en-GB').replace(/\//g, '-');
-    const formattedTime = startDateTime.toLocaleTimeString('en-US', {
-        hour: '2-digit', minute: '2-digit', hour12: true
-    });
-
-    /* ================= ⭐ SLOT CHECK ================= */
-    const isSlotBusy = await Interview.findOne({
-        scheduledBy: scheduledById,
-        date: formattedDate,
-        time: formattedTime,
-        status: { $ne: 'cancelled' }
-    });
-
-    if (isSlotBusy) {
-        return res.status(400).json({
-            message: `Aapka is time (${formattedTime}) par pehle se ek interview scheduled hai.`,
-            success: false
-        });
-    }
-
-    const application = await Application.findById(applicationId)
-      .populate({ path: "job", populate: { path: "company" } })
-      .populate("applicant");
-
-    if (!application) return res.status(404).json({ message: "Application not found", success: false });
-
-    let finalMeetingLink = meetingLink || ""; 
-
-    /* ================= 📅 GOOGLE MEET GENERATION ================= */
-    if (mode === "online") {
-        try {
-            if (process.env.GOOGLE_REFRESH_TOKEN) {
-                oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-                const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-
-                const event = {
-                    summary: `Interview: ${application.job.title}`,
-                    description: `Candidate: ${application.applicant.fullname}`,
-                    start: { dateTime: startDateTime.toISOString(), timeZone: "Asia/Kolkata" },
-                    end: { dateTime: endDateTime.toISOString(), timeZone: "Asia/Kolkata" },
-                    conferenceData: {
-                        createRequest: { requestId: `req-${Date.now()}`, conferenceSolutionKey: { type: "hangoutsMeet" } }
-                    },
-                };
-
-                const response = await calendar.events.insert({
-                    calendarId: "primary",
-                    resource: event,
-                    conferenceDataVersion: 1,
-                });
-                finalMeetingLink = response.data.hangoutLink; 
+        // --- ⭐ TIME FORMAT FIX HELPER ---
+        const convertTo24Hour = (timeStr) => {
+            if (!timeStr) return "00:00";
+            if (!timeStr.includes("AM") && !timeStr.includes("PM")) {
+                return timeStr.length === 5 ? timeStr : `0${timeStr}`.slice(-5);
             }
-        } catch (err) {
-            console.error("Google Meet Error:", err.message);
+            const [timePart, modifier] = timeStr.split(' ');
+            let [hours, minutes] = timePart.split(':');
+            if (hours === '12') hours = '00';
+            if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+            return `${hours.toString().padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+        };
+
+        const time24 = convertTo24Hour(time);
+        const startDateTimeStr = `${date}T${time24}:00`;
+        const startDateTime = new Date(startDateTimeStr);
+
+        const now = new Date();
+        if (startDateTime < now) {
+            return res.status(400).json({
+                message: "You cannot schedule an interview for a past date or time.",
+                success: false
+            });
         }
+
+        // Validation Check
+        if (isNaN(startDateTime.getTime())) {
+            return res.status(400).json({
+                message: "Invalid Date or Time format. Please select again.",
+                success: false
+            });
+        }
+
+        const endDateTime = new Date(startDateTime.getTime() + 3600000); // 1 Hour later
+
+        // Display formats
+        const formattedDate = startDateTime.toLocaleDateString('en-GB').replace(/\//g, '-');
+        const formattedTime = startDateTime.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
+
+        /* ================= ⭐ SLOT CHECK ================= */
+        const isSlotBusy = await Interview.findOne({
+            scheduledBy: scheduledById,
+            date: formattedDate,
+            time: formattedTime,
+            status: { $ne: 'cancelled' }
+        });
+
+        if (isSlotBusy) {
+            return res.status(400).json({
+                message: `Aapka is time (${formattedTime}) par pehle se ek interview scheduled hai.`,
+                success: false
+            });
+        }
+
+        const application = await Application.findById(applicationId)
+            .populate({ path: "job", populate: { path: "company" } })
+            .populate("applicant");
+
+        if (!application) return res.status(404).json({ message: "Application not found", success: false });
+
+        let finalMeetingLink = meetingLink || "";
+
+        /* ================= 📅 GOOGLE MEET GENERATION ================= */
+        if (mode === "online") {
+            try {
+                if (process.env.GOOGLE_REFRESH_TOKEN) {
+                    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+                    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+                    const event = {
+                        summary: `Interview: ${application.job.title}`,
+                        description: `Candidate: ${application.applicant.fullname}`,
+                        start: { dateTime: startDateTime.toISOString(), timeZone: "Asia/Kolkata" },
+                        end: { dateTime: endDateTime.toISOString(), timeZone: "Asia/Kolkata" },
+                        conferenceData: {
+                            createRequest: { requestId: `req-${Date.now()}`, conferenceSolutionKey: { type: "hangoutsMeet" } }
+                        },
+                    };
+
+                    const response = await calendar.events.insert({
+                        calendarId: "primary",
+                        resource: event,
+                        conferenceDataVersion: 1,
+                    });
+                    finalMeetingLink = response.data.hangoutLink;
+                }
+            } catch (err) {
+                console.error("Google Meet Error:", err.message);
+            }
+        }
+
+        /* ================= ⭐ DB & NOTIFICATION ================= */
+        const interview = await Interview.create({
+            application: application._id,
+            job: application.job._id,
+            company: application.job.company._id,
+            jobseeker: application.applicant._id,
+            date: formattedDate,
+            time: formattedTime,
+            mode,
+            meetingLink: finalMeetingLink,
+            scheduledBy: scheduledById,
+            scheduledByRole: scheduledByRole
+        });
+
+        const notification = await Notification.create({
+            recipient: application.applicant._id,
+            sender: scheduledById,
+            type: "INTERVIEW_SCHEDULED",
+            title: "New Interview Scheduled!",
+            message: `Your interview for ${application.job.title} at ${application.job.company.name} is fixed for ${formattedDate} at ${formattedTime}.`,
+            link: "/jobseeker/interviews"
+        });
+
+        if (req.io) {
+            req.io.to(application.applicant._id.toString()).emit("notification", {
+                id: notification._id,
+                title: notification.title,
+                message: notification.message,
+                type: notification.type
+            });
+        }
+
+        /* ================= 📅 GOOGLE CALENDAR LINK LOGIC (NEW) ================= */
+        // Format: YYYYMMDDTHHmmSSZ
+        const calStart = startDateTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const calEnd = endDateTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
+
+        const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Interview: ${application.job.title} at ${application.job.company.name}`)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(`Meeting Link: ${finalMeetingLink || 'N/A'}`)}&location=${encodeURIComponent(finalMeetingLink || 'Office')}`;
+
+        /* ================= 📧 ATTRACTIVE EMAIL TEMPLATE (UPDATED) ================= */
+
+        const emailHtml = interviewScheduleTemplate(
+            application.applicant.fullname,
+            application.job.title,
+            application.job.company.name,
+            formattedDate,
+            formattedTime,
+            mode,
+            finalMeetingLink,
+            googleCalendarUrl,
+            application.applicant.profile?.resume || "",
+            false
+        );
+
+        await sendEmail({
+            email: application.applicant.email,
+            subject: `Interview Invitation: ${application.job.title} at ${application.job.company.name}`,
+            message: `Interview scheduled on ${date} at ${time}`,
+            html: emailHtml
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Interview scheduled and notification saved!",
+            interview
+        });
+
+    } catch (error) {
+        console.error("Scheduling Error:", error);
+        res.status(500).json({ message: "Interview scheduling failed", success: false });
     }
-
-    /* ================= ⭐ DB & NOTIFICATION ================= */
-    const interview = await Interview.create({
-      application: application._id,
-      job: application.job._id,
-      company: application.job.company._id,
-      jobseeker: application.applicant._id,
-      date: formattedDate,
-      time: formattedTime,
-      mode,
-      meetingLink: finalMeetingLink,
-      scheduledBy: scheduledById,
-      scheduledByRole: scheduledByRole
-    });
-
-    const notification = await Notification.create({
-      recipient: application.applicant._id,
-      sender: scheduledById,
-      type: "INTERVIEW_SCHEDULED",
-      title: "New Interview Scheduled!",
-      message: `Your interview for ${application.job.title} at ${application.job.company.name} is fixed for ${formattedDate} at ${formattedTime}.`,
-      link: "/jobseeker/interviews" 
-    });
-
-    if (req.io) {
-      req.io.to(application.applicant._id.toString()).emit("notification", {
-        id: notification._id,
-        title: notification.title,
-        message: notification.message,
-        type: notification.type
-      });
-    }
-
-    /* ================= 📅 GOOGLE CALENDAR LINK LOGIC (NEW) ================= */
-    // Format: YYYYMMDDTHHmmSSZ
-    const calStart = startDateTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
-    const calEnd = endDateTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
-    
-    const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Interview: ${application.job.title} at ${application.job.company.name}`)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(`Meeting Link: ${finalMeetingLink || 'N/A'}`)}&location=${encodeURIComponent(finalMeetingLink || 'Office')}`;
-
-    /* ================= 📧 ATTRACTIVE EMAIL TEMPLATE (UPDATED) ================= */
-
-    const emailHtml = `
-      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-        <div style="background-color: #6A38C2; padding: 30px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Interview Invitation</h1>
-        </div>
-        
-        <div style="padding: 30px; background-color: #ffffff;">
-          <p style="font-size: 16px; color: #333;">Hi <b>${application.applicant.fullname}</b>,</p>
-          <p style="font-size: 15px; color: #555; line-height: 1.6;">
-            Great news! Your application for the <b>${application.job.title}</b> position at <b>${application.job.company.name}</b> has moved to the interview stage.
-          </p>
-          
-          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #6A38C2;">
-            <p style="margin: 5px 0; color: #333;">📅 <b>Date:</b> ${formattedDate}</p>
-            <p style="margin: 5px 0; color: #333;">⏰ <b>Time:</b> ${formattedTime}</p>
-            <p style="margin: 5px 0; color: #333;">📍 <b>Mode:</b> ${mode.toUpperCase()}</p>
-          </div>
-
-          <div style="text-align: center; margin-top: 30px;">
-            ${mode === "online" && finalMeetingLink ? `
-              <a href="${finalMeetingLink}" style="background-color: #6A38C2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 15px;">
-                Join Interview (Meeting Link)
-              </a>
-            ` : ""}
-            <br/>
-            <a href="${googleCalendarUrl}" style="color: #4285F4; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid #4285F4; padding: 8px 20px; border-radius: 6px; display: inline-block;">
-               🗓️ Add to Google Calendar
-            </a>
-            <br/>
-           
-           <p><b>Candidate Resume:</b> <a href="${application.applicant.profile.resume}">Download/View Resume</a></p>
-          </div>
-
-          <p style="font-size: 14px; color: #888; margin-top: 40px; text-align: center; line-height: 1.5;">
-            If you have any questions, please feel free to reply to this email.<br/>
-            Best of luck with your interview!
-          </p>
-        </div>
-
-        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #aaa;">
-          Sent by <b>${application.job.company.name}</b> Recruitment Team via JobPortal
-        </div>
-      </div>
-    `;
-
-    await sendEmail({
-      email: application.applicant.email,
-      subject: `Interview Invitation: ${application.job.title} at ${application.job.company.name}`,
-      message: `Interview scheduled on ${date} at ${time}`,
-      html: emailHtml
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Interview scheduled and notification saved!",
-      interview
-    });
-
-  } catch (error) {
-    console.error("Scheduling Error:", error);
-    res.status(500).json({ message: "Interview scheduling failed", success: false });
-  }
 };
 
 export const getJobseekerInterviews = async (req, res) => {
-  try {
-    const userId = req.id; // isAuthenticated middleware se mil raha hai
+    try {
+        const userId = req.id; // isAuthenticated middleware se mil raha hai
 
-    const interviews = await Interview.find({ jobseeker: userId })
-    .populate('company')
-      .populate({
-        path: "job",
-        populate: { path: "company" }
-      })
-      .sort({ createdAt: -1 });
+        const interviews = await Interview.find({ jobseeker: userId })
+            .populate('company')
+            .populate({
+                path: "job",
+                populate: { path: "company" }
+            })
+            .sort({ createdAt: -1 });
 
-    return res.status(200).json({
-      success: true,
-      interviews
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to fetch interviews" });
-  }
+        return res.status(200).json({
+            success: true,
+            interviews
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch interviews" });
+    }
 };
 
 
 export const getScheduledInterviewsByCreator = async (req, res) => {
     try {
-        const userId = req.id; 
+        const userId = req.id;
 
-       const interviews = await Interview.find()
+        const interviews = await Interview.find()
             .populate({
                 path: 'application',
-                populate: { 
-                    path: 'applicant', 
-                    select: 'fullname email phoneNumber' 
+                populate: {
+                    path: 'applicant',
+                    select: 'fullname email phoneNumber'
                 }
             })
             .populate('jobseeker', 'fullname email')
             .populate({
                 path: 'job',
-                match: { created_by: userId } 
+                match: { created_by: userId }
             })
             .populate('company')
             // ⭐ Change: select '_id' agar aapko sirf ID chahiye, 
             // ya poora object rehne dein par frontend par access sahi karein
-            .populate('scheduledBy', '_id fullname email') 
+            .populate('scheduledBy', '_id fullname email')
             .sort({ createdAt: -1 });
 
         const myScheduledInterviews = interviews.filter(item => item.job !== null);
@@ -358,7 +327,7 @@ export const getNotifications = async (req, res) => {
 export const markAsRead = async (req, res) => {
     try {
         const userId = req.id;
-        
+
         // Saari unread notifications ko read mark kar dena
         await Notification.updateMany(
             { recipient: userId, isRead: false },
@@ -394,9 +363,9 @@ export const requestReschedule = async (req, res) => {
         const { interviewId, reason, suggestedDate, suggestedTime } = req.body;
 
         if (!interviewId || !suggestedDate || !suggestedTime) {
-            return res.status(400).json({ 
-                message: "Interview ID, Date and Time are required", 
-                success: false 
+            return res.status(400).json({
+                message: "Interview ID, Date and Time are required",
+                success: false
             });
         }
 
@@ -429,16 +398,19 @@ export const requestReschedule = async (req, res) => {
 };
 export const approveReschedule = async (req, res) => {
     try {
-        const { interviewId, newDate, newTime } = req.body; 
-        const userId = req.id; 
+        const { interviewId, newDate, newTime } = req.body;
+        const userId = req.id;
 
         // 1. Data check and Populate
-        const interview = await Interview.findById(interviewId).populate("jobseeker").populate("job");
+        const interview = await Interview.findById(interviewId).populate("jobseeker").populate({
+            path: "job",
+            populate: { path: "company" }
+        });
         if (!interview) return res.status(404).json({ message: "Interview not found", success: false });
 
         // ⭐ Helper: Convert "12:00 PM" to "12:00"
         const convertTo24Hour = (timeStr) => {
-            if (!timeStr.includes(' ')) return timeStr; 
+            if (!timeStr.includes(' ')) return timeStr;
             const [time, modifier] = timeStr.split(' ');
             let [hours, minutes] = time.split(':');
             if (hours === '12') hours = '00';
@@ -448,12 +420,12 @@ export const approveReschedule = async (req, res) => {
 
         const time24 = convertTo24Hour(newTime);
         const startDateTime = new Date(`${newDate}T${time24}:00`);
-        
+
         if (isNaN(startDateTime.getTime())) {
             return res.status(400).json({ message: "Invalid Date/Time received", success: false });
         }
 
-        const endDateTime = new Date(startDateTime.getTime() + 30 * 60000); 
+        const endDateTime = new Date(startDateTime.getTime() + 30 * 60000);
 
         // ⭐ CHANGE 1: Variable names ko theek karein (formattedDate/formattedTime create karein)
         const formattedDate = new Date(newDate).toLocaleDateString('en-GB').replace(/\//g, '-');
@@ -479,11 +451,11 @@ export const approveReschedule = async (req, res) => {
         const newMeetingLink = response.data.hangoutLink; // ⭐ CHANGE 2: Is variable ko define karein (email mein use ho raha hai)
 
         // 3. Database Update
-        interview.date = formattedDate; 
-        interview.time = formattedTime; 
+        interview.date = formattedDate;
+        interview.time = formattedTime;
         interview.meetingLink = newMeetingLink;
-        interview.status = 'scheduled'; 
-        interview.rescheduleRequest = undefined; 
+        interview.status = 'scheduled';
+        interview.rescheduleRequest = undefined;
         await interview.save();
 
         // 6. Notification save (formattedDate aur formattedTime use karein)
@@ -497,28 +469,18 @@ export const approveReschedule = async (req, res) => {
         });
 
         /* ================= 📧 EMAIL TEMPLATE ================= */
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
-            <div style="background-color: #22c55e; padding: 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Reschedule Approved</h1>
-            </div>
-            <div style="padding: 30px; background-color: #ffffff;">
-              <p>Hi <b>${interview.jobseeker?.fullname || "Candidate"}</b>,</p>
-              <p>Your request to reschedule the interview for <b>${interview.job?.title || "your applied job"}</b> has been <b>approved</b>.</p>
-              
-              <div style="background-color: #f0fdf4; border-radius: 8px; padding: 15px; margin: 20px 0; border-left: 4px solid #22c55e;">
-                <p style="margin: 5px 0;">📅 <b>New Date:</b> ${formattedDate}</p>
-                <p style="margin: 5px 0;">⏰ <b>New Time:</b> ${formattedTime}</p>
-              </div>
-
-              <div style="text-align: center; margin-top: 25px;">
-                <a href="${newMeetingLink}" style="background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                  Join Rescheduled Interview
-                </a>
-              </div>
-            </div>
-          </div>
-        `;
+        const emailHtml = interviewScheduleTemplate(
+            interview.jobseeker?.fullname || "Candidate",
+            interview.job?.title || "your applied job",
+            interview.job?.company?.name || "The Hiring Team",
+            formattedDate,
+            formattedTime,
+            interview.mode || 'online',
+            newMeetingLink,
+            '', 
+            interview.jobseeker?.profile?.resume || "",
+            true
+        );
 
         // ⭐ FIX 2: Ensure email is sent to the populated email field
         await sendEmail({
@@ -528,16 +490,16 @@ export const approveReschedule = async (req, res) => {
             html: emailHtml
         });
 
-        return res.status(200).json({ 
-            message: "Approved! New link generated and email sent.", 
-            success: true 
+        return res.status(200).json({
+            message: "Approved! New link generated and email sent.",
+            success: true
         });
 
     } catch (error) {
         console.error("Detailed Error:", error);
-        res.status(500).json({ 
-            message: "Internal Server Error. Please check logs.", 
-            success: false 
+        res.status(500).json({
+            message: "Internal Server Error. Please check logs.",
+            success: false
         });
     }
 };
@@ -545,8 +507,8 @@ export const approveReschedule = async (req, res) => {
 export const deleteInterview = async (req, res) => {
     try {
         const interviewId = req.params.id;
-        const userId = req.id; 
-        const userRole = req.user.role; 
+        const userId = req.id;
+        const userRole = req.user.role;
 
         // Interview fetch karein
         const interview = await Interview.findById(interviewId);
@@ -593,7 +555,7 @@ export const submitFeedback = async (req, res) => {
     try {
         const { interviewId } = req.params; // Backend route :id use kar raha hai
         const { ratings, comment, recommendation } = req.body;
-        const interviewerId = req.id; 
+        const interviewerId = req.id;
 
         const interview = await Interview.findById(interviewId);
         if (!interview) {
@@ -613,7 +575,7 @@ export const submitFeedback = async (req, res) => {
         });
 
         // 🟢 FIX: Ensure this value exists in your Interview Model's Enum
-        interview.status = "completed"; 
+        interview.status = "completed";
         await interview.save();
 
         /* ================= 🔔 SAVE NOTIFICATION ================= */
@@ -669,8 +631,8 @@ export const getFeedbackByInterviewId = async (req, res) => {
 
 export const getBookedSlots = async (req, res) => {
     try {
-        const { date, employerId: queryEmployerId } = req.query; 
-        
+        const { date, employerId: queryEmployerId } = req.query;
+
         // ⭐ Priority logic: 
         // 1. Agar query mein employerId hai (Jobseeker side se), toh woh use karein.
         // 2. Agar nahi hai, toh req.id use karein (Employer side se).

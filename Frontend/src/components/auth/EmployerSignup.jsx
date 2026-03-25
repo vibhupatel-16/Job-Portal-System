@@ -42,7 +42,7 @@ const EmployerSignup = () => {
     formdata.append("password", input.password);
     formdata.append("role", "employer"); // ✅ Fixed role
     if (input.file) {
-      formdata.append("file", input.file);
+      formdata.append("profilePhoto", input.file);
     }
 
     try {

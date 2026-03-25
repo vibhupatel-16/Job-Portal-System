@@ -27,35 +27,34 @@ const storage = new CloudinaryStorage({
 
 export const upload = multer({
   storage,
-  fileFilter: (req, file, cb) => {
-    // 1. Identify which route is being accessed
-    const isCompanyRoute = req.originalUrl.includes("company");
+fileFilter: (req, file, cb) => {
+  const isCompanyRoute = req.originalUrl.includes("company");
+  const isRegisterRoute = req.originalUrl.includes("register"); // Signup check
 
-    // 2. Logic for the "file" field
-    if (file.fieldname === "file") {
-      // If it's a company logo, allow images
-      if (isCompanyRoute) {
-        if (!file.mimetype.startsWith("image/")) {
-          return cb(new Error("Only images (jpg, png) allowed for company logo"), false);
-        }
-      } 
-      // If it's NOT a company route (e.g., student resume), keep it PDF only
-      else {
-        if (file.mimetype !== "application/pdf") {
-          return cb(new Error("Only PDF resume allowed"), false);
-        }
-      }
-    }
-
-    // 3. Profile photo validation (remains the same)
-    if (file.fieldname === "profilePhoto") {
+  if (file.fieldname === "file") {
+    // 1. Agar Company Logo ya Signup Profile Photo hai -> Image allow karo
+    if (isCompanyRoute || isRegisterRoute) {
       if (!file.mimetype.startsWith("image/")) {
-        return cb(new Error("Only image allowed for profile photo"), false);
+        return cb(new Error("Only images (jpg, png) allowed"), false);
+      }
+    } 
+    // 2. Sirf tab PDF maango jab ye register ya company route NA HO (e.g., Application submit)
+    else {
+      if (file.mimetype !== "application/pdf") {
+        return cb(new Error("Only PDF resume allowed"), false);
       }
     }
-
-    cb(null, true);
   }
+  
+  // Baki validation (profilePhoto field ke liye)
+  if (file.fieldname === "profilePhoto") {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image allowed for profile photo"), false);
+    }
+  }
+
+  cb(null, true);
+}
 }).fields([
   { name: "file", maxCount: 1 },
   { name: "profilePhoto", maxCount: 1 },

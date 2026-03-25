@@ -7,7 +7,7 @@ import cloudinary from '../utils/cloudinary.js';
 export const register = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, password, role } = req.body;
-    const file = req.file;   // ye Cloudinary se aane wala profilePhoto hai
+   const photoFile = req.files?.profilePhoto?.[0];
 
     // Validation
     if (!fullname || !email || !phoneNumber || !password || !role) {
@@ -37,7 +37,8 @@ export const register = async (req, res) => {
       password: hashedPassword,
       role,
       profile: {
-        profilePhoto: file ? file.path : ""   // ✔️ only photo update
+        // ✅ FIX: photoFile.path ko save karein jo Cloudinary ka URL hai
+        profilePhoto: photoFile ? photoFile.path : "" 
       }
     });
 
