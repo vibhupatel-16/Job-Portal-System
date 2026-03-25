@@ -20,6 +20,8 @@ const Signup = () => {
     role: "jobseeker", // ✅ fixed by default
     file: ""
   });
+  
+  const [preview, setPreview] = useState("");
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -30,21 +32,51 @@ const Signup = () => {
   };
 
   const changeFileHandler = (e) => {
-    setInput({ ...input, file: e.target.files?.[0] });
+    const file = e.target.files?.[0];
+    setInput({ ...input, file });
+    if(file){
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreview("");
+    }
   };
 
   const submitHandler = async (e) => {
     e.preventDefault();
+
+    // Industry Standard Validations
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const nameRegex = /^[A-Za-z\s]{3,}$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const phoneRegex = /^[0-9]{10}$/;
+
+    if (!nameRegex.test(input.fullname.trim())) {
+      return toast.error("Please enter a valid Full Name (min 3 letters, no numbers).");
+    }
+    if (!emailRegex.test(input.email.trim())) {
+      return toast.error("Please enter a valid Email address.");
+    }
+    if (!phoneRegex.test(input.phoneNumber.trim())) {
+      return toast.error("Phone number must be exactly 10 digits.");
+    }
+    if (!passwordRegex.test(input.password)) {
+      return toast.error("Password must be at least 8 chars, include an uppercase, lowercase, number, and special character.");
+    }
+
     const formdata = new FormData();
     formdata.append("fullname", input.fullname);
     formdata.append("email", input.email);
     formdata.append("phoneNumber", input.phoneNumber);
     formdata.append("password", input.password);
     formdata.append("role", input.role); // ✅ always jobseeker
+    
     if (input.file) {
       formdata.append("profilePhoto", input.file);
     }
-
     try {
       dispatch(setLoading(true));
       const res = await axios.post(`${USER_API_END_POINT}/register`, formdata, {
@@ -133,6 +165,12 @@ const Signup = () => {
               className="cursor-pointer"
             />
           </div>
+
+          {preview && (
+            <div className="flex justify-center mb-4">
+              <img src={preview} alt="Profile Preview" className="w-24 h-24 rounded-full object-cover border-4 border-indigo-100 shadow-sm" />
+            </div>
+          )}
 
           {loading ? (
             <Button className='w-full my-4'>

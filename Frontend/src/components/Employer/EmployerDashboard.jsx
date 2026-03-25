@@ -24,12 +24,21 @@ import {
   INTERVIEW_API_END_POINT,
 } from "@/utils/constant";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 const EmployerDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useSelector(store => store.auth);
+
+  useEffect(() => {
+    if (!user || user.role !== 'employer') {
+      navigate('/employer-login');
+    }
+  }, [user, navigate]);
+
   const [stats, setStats] = useState({ totalJobs: 0, totalApplicants: 0, totalCompanies: 0 });
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);

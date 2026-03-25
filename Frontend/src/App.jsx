@@ -69,7 +69,7 @@ const appRouter = createBrowserRouter([
       { path: "/login", element: <Login /> },
       { path: "/signup", element: <Signup /> },
       { path: "/employer-login", element: <EmployerLogin /> },
-      { path: "/employer-signup", element: <EmployerSignup /> },
+      { path: "/employer/signup", element: <EmployerSignup /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
       { path: "/not-authorized", element: <NotAuthorized /> },
       { path: "/reset-password/:token", element: <ResetPassword /> },

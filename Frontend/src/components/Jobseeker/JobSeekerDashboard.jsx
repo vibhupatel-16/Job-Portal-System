@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
   UserCircle,
@@ -21,26 +21,50 @@ const JobSeekerDashboard = () => {
   const { user } = useSelector((store) => store.auth);
   const appliedJobs = useSelector((store) => store.job?.allAppliedJobs || []);
   const dispatch = useDispatch();
-  
-  React.useEffect(() => {
-    const refreshUser = async () => {
-      try {
-        const { USER_API_END_POINT } = await import('@/utils/constant');
-        const axios = (await import('axios')).default;
-        const { setUser } = await import('@/redux/authSlice');
-        const res = await axios.get(`${USER_API_END_POINT.replace('/user', '')}/user/me`, { withCredentials: true });
-        if (res.data.success && res.data.user) {
-          dispatch(setUser(res.data.user));
-          localStorage.setItem("user", JSON.stringify(res.data.user));
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      const refreshUser = async () => {
+        try {
+          const { USER_API_END_POINT } = await import('@/utils/constant');
+          const axios = (await import('axios')).default;
+          const { setUser } = await import('@/redux/authSlice');
+          const res = await axios.get(`${USER_API_END_POINT.replace('/user', '')}/user/me`, { withCredentials: true });
+          if (res.data.success && res.data.user) {
+            dispatch(setUser(res.data.user));
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+          }
+        } catch (error) {
+          console.log("Failed to refresh user stats silently", error);
         }
-      } catch (error) {
-        console.log("Failed to refresh user stats silently", error);
-      }
-    };
-    refreshUser();
-  }, [dispatch]);
+      };
+      refreshUser();
+    }
+  }, [dispatch, user]);
   
   const [selectedJourney, setSelectedJourney] = useState(null);
+
+  const profileProgress = React.useMemo(() => {
+    if (!user) return 0;
+    let score = 0;
+    if (user.fullname) score += 20;
+    if (user.email) score += 20;
+    if (user.phoneNumber) score += 20;
+    if (user.profile?.bio) score += 10;
+    if (user.profile?.skills && user.profile.skills.length > 0) score += 10;
+    if (user.profile?.resume) score += 10;
+    if (user.profile?.profilePhoto) score += 10;
+    return score;
+  }, [user]);
+
+  if (!user) return null;
 
   const appliedCount = appliedJobs?.length ?? 0;
   const savedCount = user?.savedJobs?.length ?? 0;
@@ -180,13 +204,13 @@ const JobSeekerDashboard = () => {
             <div className="flex justify-between items-start z-10 relative">
                <div>
                   <p className="text-sm font-medium text-white/80 mb-1">Profile Status</p>
-                  <p className="text-3xl font-bold text-white leading-none">90%</p>
+                  <p className="text-3xl font-bold text-white leading-none">{profileProgress}%</p>
                   <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">Complete</p>
                </div>
                <div className="relative w-14 h-14 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90 rounded-full" viewBox="0 0 36 36">
                   <path className="text-white/20" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path className="text-white" strokeDasharray="90, 100" strokeWidth="4" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path className="text-white" strokeDasharray={`${profileProgress}, 100`} strokeWidth="4" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                 </svg>
               </div>
             </div>
@@ -295,34 +319,38 @@ const JobSeekerDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {(appliedJobs.length > 0 ? appliedJobs.slice(0, 5) : [
-                     { _id: 1, createdAt: '2026-03-18T00:00:00Z', job: { title: 'Python Developer', company: { name: 'Odoo' } }, status: 'accepted' },
-                     { _id: 2, createdAt: '2026-03-16T00:00:00Z', job: { title: 'Computer Operator', company: { name: 'Nexforge' } }, status: 'accepted' },
-                     { _id: 3, createdAt: '2026-03-14T00:00:00Z', job: { title: 'Php Developer', company: { name: 'Dharma Infosystem' } }, status: 'accepted' }
-                  ]).map((app, idx) => (
-                    <tr key={app._id || idx} className="hover:bg-gray-50/50 transition-colors relative group">
-                      <td className="px-6 py-5 text-xs text-gray-600 font-medium whitespace-nowrap">
-                        {new Date(app.createdAt).toLocaleDateString('en-GB').replace(/\//g, '-')}
-                      </td>
-                      <td className="px-6 py-5 text-sm text-gray-800 font-semibold">{app.job?.title}</td>
-                      <td className="px-6 py-5 text-sm text-gray-600">{app.job?.company?.name}</td>
-                      <td className="px-6 py-5 flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                          app.status === 'accepted' ? 'bg-green-100 text-green-700' : 
-                          app.status === 'rejected' ? 'bg-red-100 text-red-700' : 
-                          app.status === 'shortlisted' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {app.status}
-                        </span>
-                        <button 
-                          onClick={() => setSelectedJourney(app)}
-                          className="p-1.5 rounded-full border border-indigo-100 text-indigo-600 hover:bg-indigo-50 transition-colors"
-                        >
-                          <Clock size={16} />
-                        </button>
+                  {appliedJobs.length > 0 ? (
+                    appliedJobs.slice(0, 5).map((app, idx) => (
+                      <tr key={app._id || idx} className="hover:bg-gray-50/50 transition-colors relative group">
+                        <td className="px-6 py-5 text-xs text-gray-600 font-medium whitespace-nowrap">
+                          {new Date(app.createdAt).toLocaleDateString('en-GB').replace(/\//g, '-')}
+                        </td>
+                        <td className="px-6 py-5 text-sm text-gray-800 font-semibold">{app.job?.title}</td>
+                        <td className="px-6 py-5 text-sm text-gray-600">{app.job?.company?.name}</td>
+                        <td className="px-6 py-5 flex items-center gap-3">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                            app.status === 'accepted' ? 'bg-green-100 text-green-700' : 
+                            app.status === 'rejected' ? 'bg-red-100 text-red-700' : 
+                            app.status === 'shortlisted' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {app.status}
+                          </span>
+                          <button 
+                            onClick={() => setSelectedJourney(app)}
+                            className="p-1.5 rounded-full border border-indigo-100 text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          >
+                            <Clock size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="text-center py-10 text-gray-400 text-sm font-medium">
+                        You have not applied to any jobs yet.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
