@@ -3,9 +3,10 @@ import axios from 'axios';
 import { INTERVIEW_API_END_POINT } from '@/utils/constant';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Video, MapPin, Calendar, Clock, Timer } from "lucide-react";
-import { toast } from 'sonner'; // Notification ke liye
+import { Video, MapPin, Calendar, Clock, Timer, Building2, Send, X } from "lucide-react";
+import { toast } from 'sonner'; 
 import ViewFeedbackModal from './ViewFeedbackModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 const JobseekerInterviews = () => {
@@ -206,216 +207,261 @@ const handleViewFeedback = async (interviewId) => {
 };
 
     return (
-        <div className='max-w-5xl mx-auto my-10 px-4'>
-            <h1 className='font-bold text-2xl mb-6 text-gray-800'>My Scheduled Interviews</h1>
-            <div className='bg-white border rounded-2xl shadow-sm overflow-hidden'>
-                <Table>
-                    <TableHeader className="bg-gray-50">
-                        <TableRow>
-                            <TableHead>Company</TableHead>
-                            <TableHead>Job Title</TableHead>
-                            <TableHead>Date & Time</TableHead>
-                            <TableHead>Mode</TableHead>
-                            <TableHead>Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {interviews.map((item) => (
-                            <TableRow key={item._id} className="hover:bg-gray-50/50 transition">
-                                <TableCell className="font-medium text-gray-900">{item.company.name}</TableCell>
-                                <TableCell>{item.job.title}</TableCell>
-       <TableCell>
-    <div className="flex flex-col text-sm">
-        <span className="font-medium text-gray-700 flex items-center gap-1">
-            <Calendar size={13} className="text-orange-500"/> 
-            {/* ⭐ Direct DD-MM-YYYY Display without Date Object bugs */}
-            {item.date ? (() => {
-                const parts = item.date.split('-');
-                // Agar format YYYY-MM-DD hai (reschedule ke baad) toh use palat do
-                if (parts.length === 3 && parts[0].length === 4) {
-                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-                return item.date; // Agar backend se DD-MM-YYYY aa raha hai
-            })() : "N/A"}
-        </span>
-        <span className="text-gray-500 flex items-center gap-1">
-            <Clock size={13} className="text-orange-400"/> 
-            {item.time}
-        </span>
-        <CountdownTimer targetDate={item.date} targetTime={item.time} />
-    </div>
-</TableCell>
-                               <TableCell>
-    {/* 1. Pehle check karein ki kya interview complete ho gaya hai */}
-    {item.status === "completed" ? (
-        // ✅ Wrap multiple elements in a fragment <> or div
-        <>
-            <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px] uppercase tracking-widest">
-                Interview Evaluated
-            </Badge>
+        <div className='min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-blue-50 py-10 relative overflow-hidden'>
+            {/* Decorative Blobs */}
+            <div className="absolute top-0 -left-20 w-[600px] h-[600px] bg-indigo-200 rounded-full mix-blend-multiply filter blur-[128px] opacity-30 pointer-events-none"></div>
+            <div className="absolute bottom-0 -right-20 w-[600px] h-[600px] bg-blue-200 rounded-full mix-blend-multiply filter blur-[128px] opacity-30 pointer-events-none"></div>
 
-            <div className="mt-1 flex flex-col">
-                <button 
-                    onClick={() => handleViewFeedback(item._id)}
-                    className="text-[10px] text-purple-600 font-bold hover:underline text-left pl-1"
+            <div className='max-w-6xl mx-auto px-4 sm:px-6 relative z-10'>
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="mb-8"
                 >
-                    View Feedback
-                </button>
-            </div>
-        </>
-    ) : 
-    /* 2. Agar complete nahi hai, toh check karein ki kya time nikal gaya hai */
-    new Date(`${item.date.split('T')[0]}T${item.time}`).getTime() < new Date().getTime() ? (
-        <div className="flex flex-col gap-1">
-            <Badge className="bg-yellow-100 text-yellow-700 border-none font-bold text-[10px] uppercase tracking-widest">
-                Evaluating...
-            </Badge>
-            <span className="text-[9px] text-gray-400 italic">Waiting for recruiter's result</span>
-        </div>
-    ) : 
-    /* 3. Agar future ka interview hai */
-    (
-        <Badge className={`${
-            item.status === 'Scheduled' ? 'bg-blue-100 text-blue-700' : 
-            'bg-orange-100 text-orange-700'
-        } border-none font-bold text-[10px] uppercase tracking-widest`}>
-            {item.status}
-        </Badge>
-    )}
-</TableCell>
+                    <h1 className='font-black text-3xl text-gray-900 tracking-tight flex items-center gap-3'>
+                        <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
+                           <Calendar size={24} />
+                        </div>
+                        My Scheduled Interviews
+                    </h1>
+                    <p className="mt-2 text-gray-500 font-medium ml-1">Track upcoming meetings and view recruiter feedback.</p>
+                </motion.div>
 
-                                <TableCell>
-                                    <div className="flex flex-col gap-2">
-                                        {item.mode === "online" && item.meetingLink ? (
-                                            <a href={item.meetingLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1 font-medium text-sm">
-                                                <Video size={16} /> Join Interview
-                                            </a>
-                                        ) : (
-                                            <span className="text-gray-500 flex items-center gap-1 text-sm">
-                                                <MapPin size={16} /> In-Person Office
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className='bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden'
+                >
+                    <Table>
+                        <TableHeader className="bg-gray-50/80 border-b border-gray-100">
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead className="font-bold text-gray-500 py-5">Company & Role</TableHead>
+                                <TableHead className="font-bold text-gray-500">Date & Time</TableHead>
+                                <TableHead className="font-bold text-gray-500">Status</TableHead>
+                                <TableHead className="font-bold text-gray-500 text-right pr-6">Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-gray-50/50">
+                            {interviews.map((item, idx) => (
+                                <TableRow key={item._id} className="hover:bg-indigo-50/30 transition-colors group">
+                                    <TableCell className="py-5">
+                                        <div className="flex items-start gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+                                                {item.company?.logo ? (
+                                                    <img src={item.company.logo} alt="logo" className="w-8 h-8 object-contain" />
+                                                ) : (
+                                                    <Building2 className="text-gray-400" size={20} />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-gray-900 text-[15px]">{item.company.name}</h3>
+                                                <p className="text-xs font-semibold text-indigo-600 mt-1 uppercase tracking-widest">{item.job.title}</p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    
+                                    <TableCell>
+                                        <div className="flex flex-col text-sm gap-1.5">
+                                            <span className="font-semibold text-gray-700 flex items-center gap-2">
+                                                <div className="p-1 bg-orange-100 rounded text-orange-600"><Calendar size={12}/></div> 
+                                                {item.date ? (() => {
+                                                    const parts = item.date.split('-');
+                                                    if (parts.length === 3 && parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                                    return item.date;
+                                                })() : "N/A"}
                                             </span>
+                                            <span className="font-medium text-gray-500 flex items-center gap-2">
+                                                <div className="p-1 bg-orange-50 rounded text-orange-400"><Clock size={12}/></div> 
+                                                {item.time}
+                                            </span>
+                                            <CountdownTimer targetDate={item.date} targetTime={item.time} />
+                                        </div>
+                                    </TableCell>
+                                    
+                                    <TableCell>
+                                        {item.status === "completed" ? (
+                                            <div className="flex flex-col items-start gap-2">
+                                                <Badge className="bg-green-50 text-green-700 border border-green-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
+                                                    Evaluated
+                                                </Badge>
+                                                <button 
+                                                    onClick={() => handleViewFeedback(item._id)}
+                                                    className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1 rounded-full font-bold hover:bg-purple-100 transition-colors uppercase tracking-widest"
+                                                >
+                                                    View Feedback
+                                                </button>
+                                            </div>
+                                        ) : 
+                                        new Date(`${item.date.split('T')[0]}T${item.time}`).getTime() < new Date().getTime() ? (
+                                            <div className="flex flex-col gap-1 items-start">
+                                                <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1 animate-pulse">
+                                                    Evaluating...
+                                                </Badge>
+                                            </div>
+                                        ) : 
+                                        (
+                                            <Badge className={`${
+                                                item.status === 'Scheduled' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 
+                                                'bg-orange-50 text-orange-700 border-orange-200'
+                                            } border font-bold text-[10px] uppercase tracking-widest px-3 py-1`}>
+                                                {item.status}
+                                            </Badge>
                                         )}
+                                    </TableCell>
 
-                                        {/* <a href={getGoogleCalendarLink(item)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 flex items-center gap-1 text-xs font-semibold bg-green-50 w-fit px-2 py-1 rounded-md border border-green-100 transition hover:bg-green-100">
-                                            <Calendar size={13} /> Add to Google Calendar
-                                        </a> */}
+                                    <TableCell className="text-right pr-6">
+                                        <div className="flex flex-col items-end gap-2">
+                                            {item.mode === "online" && item.meetingLink ? (
+                                                <a href={item.meetingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                                    <Video size={14} /> Join Now
+                                                </a>
+                                            ) : (
+                                                <span className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-xs font-bold border border-gray-200">
+                                                    <MapPin size={14} /> In-Person
+                                                </span>
+                                            )}
 
-                                        {/* ⭐ NEW: RESCHEDULE BUTTON */}
+                                            <button 
+                                                onClick={() => { setSelectedInterview(item); setIsModalOpen(true); }}
+                                                className="inline-flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-600 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
+                                            >
+                                                <Clock size={14} /> Reschedule
+                                            </button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    
+                    {interviews.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-4">
+                               <Calendar size={32} />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900">No scheduled interviews</h3>
+                            <p className="text-sm text-gray-500 mt-1">When an employer schedules an interview, it will appear here.</p>
+                        </div>
+                    )}
+                </motion.div>
+            </div>
+
+            {/* --- ⭐ RESCHEDULE MODAL --- */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.95, y: -20, opacity: 0 }}
+                            transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
+                            className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden relative"
+                        >
+                            {/* Header Gradient */}
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-400 to-orange-600"></div>
+                            
+                            <button 
+                                onClick={() => setIsModalOpen(false)}
+                                className="absolute top-6 right-6 p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <div className="p-8 pt-10">
+                                <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Request Reschedule</h2>
+                                <p className="text-gray-500 text-sm mb-8 font-medium">Suggest a new time and date to <span className="text-indigo-600 font-bold">{selectedInterview?.company?.name || 'the employer'}</span>.</p>
+
+                                <div className="space-y-6">
+                                    {/* 📅 DATE INPUT */}
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase tracking-widest">Select New Date</label>
+                                        <div className="relative group">
+                                            <input 
+                                                type="date"
+                                                value={rescheduleData.preferredDate}
+                                                onChange={handleDateChange}
+                                                className="w-full p-4 pl-12 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-gray-800 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all appearance-none"
+                                            />
+                                            <Calendar className="absolute left-4 top-4 text-gray-400 pointer-events-none group-focus-within:text-orange-500" size={20}/>
+                                        </div>
+                                    </div>
+
+                                    {/* ⏰ TIME SELECT */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-bold uppercase text-gray-400 tracking-widest block">
+                                            Select Preferred Slot
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {WORKING_SLOTS.map((slot) => {
+                                                const isBooked = bookedSlots.includes(slot);
+                                                const isSelected = rescheduleData.preferredTime === slot;
+
+                                                return (
+                                                    <button
+                                                        key={slot}
+                                                        type="button"
+                                                        disabled={isBooked}
+                                                        onClick={() => setRescheduleData({ ...rescheduleData, preferredTime: slot })}
+                                                        className={`py-3 rounded-2xl text-[11px] font-bold transition-all border
+                                                            ${isBooked 
+                                                                ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
+                                                                : isSelected
+                                                                    ? 'bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-600/20'
+                                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700'
+                                                            }`}
+                                                    >
+                                                        {slot}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {rescheduleData.preferredDate && availableSlots.length === 0 && (
+                                            <p className="text-[10px] text-red-500 font-bold text-center mt-2 flex items-center justify-center gap-1">
+                                                <X size={12}/> No slots available for this date.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* 💬 REASON TEXTAREA */}
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase tracking-widest">Reason for Rescheduling</label>
+                                        <textarea 
+                                            rows="3"
+                                            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-800 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all resize-none placeholder-gray-400"
+                                            placeholder="Explain briefly why you are requesting to change the time..."
+                                            value={rescheduleData.reason}
+                                            onChange={(e) => setRescheduleData({...rescheduleData, reason: e.target.value})}
+                                        />
+                                    </div>
+
+                                    {/* BUTTONS */}
+                                    <div className="flex gap-3 pt-4">
                                         <button 
-                                            onClick={() => { console.log("Setting selected interview:", item); // Check karein 'item' kya hai
-        setSelectedInterview(item); // 👈 Pura object pass hona chahiye
-        setIsModalOpen(true); }}
-                                            className="text-orange-600 hover:bg-orange-50 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md border border-orange-100 transition mt-1 w-fit"
+                                            onClick={() => setIsModalOpen(false)}
+                                            className="flex-1 py-4 bg-white border border-gray-200 text-gray-600 text-[13px] font-bold rounded-2xl hover:bg-gray-50 hover:text-gray-900 transition-all"
                                         >
-                                            <Clock size={13} /> Request Reschedule
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            onClick={handleRescheduleSubmit}
+                                            className="flex-[2] py-4 bg-gray-900 text-white text-[13px] font-bold rounded-2xl hover:bg-orange-600 shadow-xl shadow-gray-900/10 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <Send size={16} /> Send Request
                                         </button>
                                     </div>
-                                </TableCell>
-                               
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                {interviews.length === 0 && (
-                    <div className='text-center py-16 text-gray-400'>No interviews scheduled yet.</div>
-                )}
-            </div>
-
-  {/* --- ⭐ RESCHEDULE MODAL --- */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-200">
-                        <div className="p-8">
-                            <h2 className="text-2xl font-black text-gray-800 mb-2 uppercase tracking-tighter">Reschedule Request</h2>
-                            <p className="text-gray-500 text-sm mb-8">Suggest a new time and date for your interview.</p>
-
-                            <div className="space-y-6">
-                                {/* 📅 DATE INPUT (Aapne yahan pucha tha) */}
-                                <div>
-                                    <label className="text-[10px] font-black text-gray-400 mb-2 block uppercase tracking-widest">Select New Date</label>
-                                    <div className="relative group">
-                                        <input 
-                                            type="date"
-                                            value={rescheduleData.preferredDate}
-                                           onChange={handleDateChange}
-                                            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all appearance-none"
-                                        />
-                                        <Calendar className="absolute right-4 top-4 text-gray-400 pointer-events-none group-focus-within:text-orange-500" size={18}/>
-                                    </div>
-                                </div>
-
-                                {/* ⏰ TIME SELECT */}
-                               {/* JobseekerInterviews.jsx ke Reschedule Modal ke andar Time Slot section ko update karein */}
-<div className="space-y-2">
-    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-1">
-        Select Preferred Time Slot
-    </label>
-   {/* Modal ke andar Time Slot mapping */}
-<div className="grid grid-cols-3 gap-2">
-    {WORKING_SLOTS.map((slot) => {
-        // Check karein ki ye slot booked hai ya nahi
-        const isBooked = bookedSlots.includes(slot);
-        const isSelected = rescheduleData.preferredTime === slot;
-
-        return (
-            <button
-                key={slot}
-                type="button" // Form submit hone se rokne ke liye
-                disabled={isBooked} // Sirf booked slots disable honge
-                onClick={() => setRescheduleData({ ...rescheduleData, preferredTime: slot })}
-                className={`py-3 rounded-2xl text-[10px] font-bold transition-all border
-                    ${isBooked 
-                        ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' // Booked slot: Light color
-                        : isSelected
-                            ? 'bg-orange-600 text-white border-orange-600 shadow-lg' // Selected slot
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:bg-orange-50' // Available slot
-                    }`}
-            >
-                {slot}
-                {isBooked && <span className="block text-[8px] opacity-50">BOOKED</span>}
-            </button>
-        );
-    })}
-</div>
-    {rescheduleData.preferredDate && availableSlots.length === 0 && (
-        <p className="text-[10px] text-red-500 font-medium text-center mt-2">
-            No slots available for this date.
-        </p>
-    )}
-</div>
-
-                                {/* 💬 REASON TEXTAREA */}
-                                <div>
-                                    <label className="text-[10px] font-black text-gray-400 mb-2 block uppercase tracking-widest">Reason for Rescheduling</label>
-                                    <textarea 
-                                        rows="3"
-                                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all resize-none"
-                                        placeholder="Briefly explain why..."
-                                        value={rescheduleData.reason}
-                                        onChange={(e) => setRescheduleData({...rescheduleData, reason: e.target.value})}
-                                    />
-                                </div>
-
-                                {/* BUTTONS */}
-                                <div className="flex gap-3 pt-4">
-                                    <button 
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="flex-1 py-4 bg-gray-100 text-gray-500 text-xs font-black rounded-2xl hover:bg-gray-200 transition-all uppercase"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        onClick={handleRescheduleSubmit}
-                                        className="flex-[2] py-4 bg-orange-600 text-white text-xs font-black rounded-2xl hover:bg-orange-700 shadow-xl shadow-orange-200 transition-all uppercase"
-                                    >
-                                        Submit Request
-                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <ViewFeedbackModal 
             open={feedbackOpen} 
             setOpen={setFeedbackOpen} 

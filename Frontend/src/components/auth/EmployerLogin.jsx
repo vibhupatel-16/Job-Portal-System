@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import Navbar from '../shared/Navbar';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -63,41 +64,76 @@ if (res.data.success) {
   };
 
   return (
-    <div>
-      {/* <Navbar /> */}
-      <div className='flex justify-center items-center max-w-7xl mx-auto'>
-        <form onSubmit={submitHandler} className='w-1/2 border border-gray-200 rounded-md p-4 my-10'>
-          <h1 className='font-bold text-xl mb-5 text-center'>Login</h1>
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-fuchsia-50 via-purple-50/50 to-pink-50 p-4 relative overflow-hidden">
+      {/* Decorative Blob */}
+      <div className="absolute top-1/4 -right-20 w-72 h-72 bg-fuchsia-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-30"></div>
+      <div className="absolute bottom-1/4 -left-20 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-30"></div>
 
-          <div className='my-2'>
-            <Label>Email</Label>
-            <Input type="email" value={input.email} name="email" onChange={changeEventHandler} placeholder="Email" />
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className='w-full max-w-md bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-[2rem] p-8 sm:p-10 relative z-10'
+      >
+        <form onSubmit={submitHandler}>
+          <div className="text-center mb-8">
+            <h1 className='font-black text-3xl mb-2 text-gray-900 tracking-tight'>Employer Portal</h1>
+            <p className="text-sm font-semibold text-gray-500">Log in to manage your hiring pipeline</p>
           </div>
 
-          <div className='my-2'>
-            <Label>Password</Label>
-            <Input type="password" value={input.password} name="password" onChange={changeEventHandler} placeholder="Password" />
+          <div className='space-y-5'>
+            <div className='space-y-2'>
+              <Label className="text-xs font-bold text-gray-700 uppercase tracking-widest ml-1">Company Email</Label>
+              <Input 
+                type="email" 
+                value={input.email} 
+                name="email" 
+                onChange={changeEventHandler} 
+                placeholder="hr@company.com" 
+                required
+                className="h-12 bg-white/50 border-gray-200 focus:border-purple-400 focus:ring-purple-400 rounded-xl px-4 transition-all"
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <div className="flex justify-between items-center ml-1">
+                <Label className="text-xs font-bold text-gray-700 uppercase tracking-widest">Password</Label>
+                <Link to="/forgot-password" className="text-[10px] font-bold text-purple-600 hover:text-purple-800 transition-colors uppercase tracking-widest">
+                  Forgot?
+                </Link>
+              </div>
+              <Input 
+                type="password" 
+                value={input.password} 
+                name="password" 
+                onChange={changeEventHandler} 
+                placeholder="••••••••" 
+                required
+                className="h-12 bg-white/50 border-gray-200 focus:border-purple-400 focus:ring-purple-400 rounded-xl px-4 transition-all"
+              />
+            </div>
           </div>
 
-          {loading ? (
-            <Button className='w-full my-4'><Loader2 className='mr-2 h-4 w-4 animate-spin' /> Please Wait</Button>
-          ) : (
-            <Button type="submit" className='w-full my-4'>Login</Button>
-          )}
-
-          <div className="text-center mt-2">
-            <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-              Forgot Password?
-            </Link>
+          <div className="mt-8">
+            {loading ? (
+              <Button disabled className='w-full h-12 rounded-xl bg-purple-500 text-white font-bold text-sm shadow-md transition-all'>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' /> 
+                Verifying...
+              </Button>
+            ) : (
+              <Button type="submit" className='w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 hover:shadow-lg text-white font-bold text-sm shadow-md transition-all hover:-translate-y-0.5'>
+                Login as Employer
+              </Button>
+            )}
           </div>
 
-          <div className='text-center mt-3'>
-            <span className='text-sm'>
-              Don’t have an account? <Link to="/employer/signup" className='text-blue-600 hover:underline'>Signup</Link>
+          <div className='text-center mt-6'>
+            <span className='text-sm text-gray-500 font-medium'>
+              Don’t have an account? <Link to="/employer/signup" className='text-purple-600 font-bold hover:underline transition-all'>Create one</Link>
             </span>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };

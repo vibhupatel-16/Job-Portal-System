@@ -270,3 +270,50 @@ export const interviewScheduleTemplate = (applicantName, jobTitle, companyName, 
 </html>
     `;
 };
+
+export const forgotPasswordTemplate = (userName, resetUrl) => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; padding: 20px; margin: 0; color: #374151;">
+    <div style="max-width: 600px; background-color: #ffffff; margin: 0 auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <!-- Header -->
+        <div style="background-color: #ef4444; padding: 40px 30px; text-align: center;">
+            <svg style="width: 48px; height: 48px; color: white; margin: 0 auto 10px auto; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700;">Password Reset Request</h1>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 40px 30px;">
+            <p style="font-size: 16px; color: #4b5563; margin-top: 0;">Hello ${userName || "User"},</p>
+            <p style="font-size: 15px; color: #4b5563; line-height: 1.6; margin-bottom: 25px;">
+                We received a request to reset the password for your JobPortal account. If you made this request, please click the button below to set a new password.
+            </p>
+            
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="${resetUrl}" style="background-color: #ef4444; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.4);">
+                    Reset Password
+                </a>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin-bottom: 0;">
+                <b style="color: #ef4444;">Note:</b> This link will expire in <b>15 minutes</b>. If you did not request a password reset, you can safely ignore this email. Your current password will remain unchanged.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f1f5f9; padding: 25px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <p style="color: #64748b; font-size: 13px; margin: 0 0 8px 0;">
+                © ${new Date().getFullYear()} JobPortal Inc. | All rights reserved
+            </p>
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                Security Alert: Never share this link with anyone.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+`;

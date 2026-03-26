@@ -118,9 +118,9 @@ export const getAllJobs = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
     const location = req.query.location || "";
-
     const salary = req.query.salary || "";
     const experience = req.query.experience || "";
+    const title = req.query.title || ""; // <-- Added to support Industry filter
 
     //  Pagination params
     const page = Number(req.query.page) || 1;
@@ -136,7 +136,14 @@ export const getAllJobs = async (req, res) => {
         { description: { $regex: keyword, $options: "i" } },
       ];
     }
-
+    
+    // Support Industry (Title) filter from Frontend
+    if (title) {
+      // If we already have an $or (from keyword), it will be combined with this title regex by MongoDB implicitly via AND, 
+      // but to be safe, we just set title explicitly if keyword isn't overriding it entirely, 
+      // or we just add it to the query object.
+      query.title = { $regex: title, $options: "i" };
+    }
 
     //  ADDITIONAL FILTERS 
     if (location) {
@@ -146,15 +153,20 @@ export const getAllJobs = async (req, res) => {
 
 
     if (salary) {
-      if (salary === "0-3LPA") {
-        query.salary = { $gte: 0, $lte: 300000 };
-      }
-      if (salary === "3-6LPA") {
-        query.salary = { $gte: 300000, $lte: 600000 };
-      }
-      if (salary === "6-10LPA") {
-        query.salary = { $gte: 600000, $lte: 1000000 };
-      }
+      // Adjust numerical logic. The DB likely stores LPA as small numbers (e.g., 5, 12) or large (500000).
+      // Filter choices: "0-3LPA", "3-6LPA", "6-10LPA"
+      // We will check for BOTH small digit format and large digit format.
+      let min = 0, max = 0;
+      if (salary === "0-3LPA") { min = 0; max = 3; }
+      if (salary === "3-6LPA") { min = 3; max = 6; }
+      if (salary === "6-10LPA") { min = 6; max = 15; } // Extended max to cover "up to 10+"
+
+      query.$or = query.$or || [];
+      query.$or.push({ 
+        $and: [ { salary: { $gte: min } }, { salary: { $lte: max } } ] // Match 3, 5 format
+      }, {
+        $and: [ { salary: { $gte: min * 100000 } }, { salary: { $lte: max * 100000 } } ] // Match 300000, 500000 format
+      });
     }
 
 

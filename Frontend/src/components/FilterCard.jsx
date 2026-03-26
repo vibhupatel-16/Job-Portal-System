@@ -3,13 +3,13 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Label } from "./ui/label";
 import { useDispatch } from "react-redux";
 import { setFilter, setSearchedQuery } from "@/redux/jobSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const filterdata = [
   {
     filterType: "Location",
     key: "location",
-    array: ["Pune", "Bangalore", "Ahmedabad", "Baroda", "Delhi"],
+    array: ["Pune", "Bangalore", "Ahmedabad", "Baroda", "Delhi", "Mumbai", "Hyderabad", "Noida"],
   },
   {
     filterType: "Industry",
@@ -19,18 +19,21 @@ const filterdata = [
       "Frontend Developer",
       "Backend Developer",
       "MERN Developer",
+      "React Developer",
+      "Software Engineer"
     ],
   },
   {
     filterType: "Salary",
     key: "salary",
-    array: ["0-3LPA", "3-6LPA", "6-10LPA"],
+    array: ["0-3LPA", "3-6LPA", "6-10LPA", "10-15+LPA"],
   },
 ];
 
 const FilterCard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div className="w-full bg-white p-3 rounded-md">
@@ -51,10 +54,12 @@ const FilterCard = () => {
               // set filter
               dispatch(setFilter({ [data.key]: value }));
 
-              // navigate safely
-              setTimeout(() => {
-                navigate("/browse");
-              }, 80);
+              // Only navigate to browse if we are on the Home page (/)
+              if (location.pathname === "/") {
+                 setTimeout(() => {
+                   navigate("/browse");
+                 }, 80);
+              }
             }}
           >
             {data.array.map((item, i) => (

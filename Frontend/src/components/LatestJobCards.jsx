@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Badge } from "./ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Bookmark } from "lucide-react"; 
+import { Bookmark, Building2, MapPin } from "lucide-react"; 
 import axiosInstance from "@/utils/axiosInstance";
 import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
-import { setUser } from "@/redux/authSlice"; // User state update karne ke liye
+import { setUser } from "@/redux/authSlice";
+import { motion } from "framer-motion";
 
 const getShortText = (html, maxLength = 120) => {
   const div = document.createElement("div");
@@ -67,51 +68,53 @@ function LatestJobCards({ job }) {
   };
 
   return (
-    <div
-      onClick={() => navigate(`/description/${job._id}`)}
-      className="group p-6 rounded-2xl shadow-sm bg-white border border-gray-100 cursor-pointer hover:shadow-xl transition-all duration-300 relative"
+    <motion.div
+      whileHover={{ y: -4 }}
+      onClick={() => navigate(`/description/${job?._id}`)}
+      className="p-6 rounded-[1.5rem] bg-white border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 cursor-pointer flex flex-col h-[340px] relative group"
     >
-      {/* Toggle Bookmark Icon */}
-      <div 
-        onClick={handleToggleSave}
-        className={`absolute top-4 right-4 p-2.5 rounded-full transition-all duration-200 z-10 ${
-          saved 
-          ? "bg-purple-50 text-[#6A38C2]" 
-          : "bg-gray-50 text-gray-400 hover:text-[#6A38C2] hover:bg-purple-50"
-        }`}
-      >
-        <Bookmark 
-          size={22} 
-          className={saved ? "fill-[#6A38C2]" : "fill-transparent"} 
-        />
+      <div className="flex items-center justify-between mb-4">
+        <Badge variant="secondary" className="bg-gray-100/80 text-gray-500 hover:bg-gray-200 border-none px-3 py-1 text-xs font-semibold shadow-sm">
+          Recently Added
+        </Badge>
+        <button
+          onClick={handleToggleSave}
+          className={`p-2 rounded-full transition-all group/btn ${saved ? "bg-indigo-50 shadow-sm" : "hover:bg-gray-100"}`}
+        >
+          <Bookmark 
+            size={20} 
+            className={`transition-colors ${saved ? "text-indigo-600 fill-indigo-600" : "text-gray-400 group-hover/btn:text-gray-600"}`} 
+          />
+        </button>
       </div>
 
-      <div>
-        <h1 className="font-bold text-lg text-gray-800">{job?.company?.name}</h1>
-        <p className="text-xs text-gray-400 font-medium uppercase">India • Remote Available</p>
+      <div className="flex items-start gap-4 mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center shrink-0 overflow-hidden shadow-sm shadow-gray-100/50">
+           {job?.company?.logo ? (
+             <img src={job.company.logo} alt="logo" className="w-10 h-10 object-contain" />
+           ) : (
+             <Building2 className="text-gray-300" size={24} />
+           )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-black text-gray-900 text-lg leading-tight truncate">{job?.company?.name || 'Unknown Company'}</h1>
+          <p className="text-sm font-medium text-gray-400 mt-1 flex items-center gap-1"><MapPin size={14}/> {job?.location || 'India'}</p>
+        </div>
       </div>
 
-      <div className="mt-4">
-        <h1 className="font-extrabold text-xl text-gray-900 group-hover:text-[#6A38C2] transition-colors">
-          {job?.title}
-        </h1>
-        <p className="text-sm text-gray-500 mt-2 line-clamp-2">
-          {getShortText(job?.description)}
+      <div className="mb-4">
+        <h1 className="text-xl font-black text-indigo-700 leading-tight line-clamp-1">{job?.title}</h1>
+        <p className="text-[13px] text-gray-500 mt-2 font-medium line-clamp-2 leading-relaxed">
+          {getShortText(job?.description?.replace(/<[^>]*>?/gm, ''))}
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mt-5">
-        <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-none font-bold px-3">
-          {job?.position} Openings
-        </Badge>
-        <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-none font-bold px-3">
-          {job?.jobType}
-        </Badge>
-        <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-none font-bold px-3">
-          {job?.salary} LPA
-        </Badge>
+      <div className="flex flex-wrap items-center gap-2 mt-auto pb-4">
+        <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.position} Positions</Badge>
+        <Badge className="bg-orange-50 text-orange-600 border border-orange-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.jobType}</Badge>
+        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.salary} LPA</Badge>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

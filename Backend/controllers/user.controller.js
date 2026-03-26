@@ -1,9 +1,10 @@
-import { User } from '../models/user.model.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import sendEmail from '../utils/sendEmail.js';
-import cloudinary from '../utils/cloudinary.js';
+import { User } from "../models/user.model.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import cloudinary from "../utils/cloudinary.js";
+import crypto from "crypto";
+import sendEmail from "../utils/sendEmail.js";
+import { forgotPasswordTemplate } from "../utils/emailTemplates.js";
 export const register = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, password, role } = req.body;
@@ -372,20 +373,14 @@ export const forgotPassword = async (req, res) => {
     //  Create reset URL (frontend route)
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
-    // Email content
-    const message = `
-      <h3>Hello ${user.fullname || "User"},</h3>
-      <p>You requested a password reset.</p>
-      <p>Click the link below to reset your password:</p>
-      <a href="${resetUrl}" target="_blank">${resetUrl}</a>
-      <p><b>Note:</b> This link will expire in 15 minutes.</p>
-    `;
+    // Email content using template
+    const message = forgotPasswordTemplate(user.fullname, resetUrl);
 
     //  Send email via NodeMailer
     await sendEmail({
       email: user.email,
-      subject: "Password Reset Request",
-      message
+      subject: "Password Reset Request - JobPortal",
+      html: message
     });
 
     return res.status(200).json({

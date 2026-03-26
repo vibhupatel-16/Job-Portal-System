@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useSelector } from "react-redux";
 import { JOB_API_END_POINT } from "../../utils/constant";
 
 const usePaginatedJobs = (page = 1, limit = 6) => {
   const [jobs, setJobs] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+
+  // ⭐ Get Redux Filters
+  const { searchedQuery, filter } = useSelector((store) => store.job);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -15,7 +19,12 @@ const usePaginatedJobs = (page = 1, limit = 6) => {
         const res = await axios.get(`${JOB_API_END_POINT}/get`, {
           params: {
             page,
-            limit
+            limit,
+            // Map Redux to backend expected query params
+            keyword: searchedQuery || undefined,
+            location: filter?.location || undefined,
+            title: filter?.title || undefined, // Used in backend query.$or typically if it matches keyword, but wait... Redux `filter` has `title` mapped to Industry in FilterCard
+            salary: filter?.salary || undefined,
           },
         });
 
@@ -30,7 +39,7 @@ const usePaginatedJobs = (page = 1, limit = 6) => {
     };
 
     loadJobs();
-  }, [page, limit]);
+  }, [page, limit, searchedQuery, filter]);
 
   return { jobs, totalPages, loading };
 };

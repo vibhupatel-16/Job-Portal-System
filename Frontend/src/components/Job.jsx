@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Building2, MapPin } from 'lucide-react';
 import { Avatar, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/utils/axiosInstance';
 import { toast } from 'sonner';
 import { useDispatch, useSelector } from 'react-redux';
-import { setUser } from '@/redux/authSlice'; // Redux update ke liye
+import { setUser } from '@/redux/authSlice';
+import { motion } from 'framer-motion';
 
 const getShortText = (html, maxLength = 150) => {
   const div = document.createElement("div");
@@ -80,75 +81,78 @@ const Job = ({ job }) => {
   };
 
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -4 }}
       onClick={() => navigate(`/description/${job?._id}`)}
-      className="p-6 rounded-2xl bg-white/80 backdrop-blur-xl border border-gray-200 shadow-md hover:shadow-2xl hover:scale-[1.015] transition-all duration-300 cursor-pointer"
+      className="p-6 rounded-[1.5rem] bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 cursor-pointer flex flex-col h-[340px] group relative"
     >
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
+      <div className="flex items-center justify-between mb-4">
+        <Badge variant="secondary" className="bg-gray-100/80 text-gray-500 hover:bg-gray-200 border-none px-3 py-1 text-xs font-semibold shadow-sm">
           {daysAgoFunction(job?.createdAt) === 0 ? "Today" : `${daysAgoFunction(job?.createdAt)} days ago`}
-        </p>
+        </Badge>
 
         {/* Bookmark Icon Toggle */}
-        <Button
-          variant="outline"
-          size="icon"
+        <button
           onClick={handleToggleSave}
-          className={`rounded-full transition-colors ${saved ? "bg-purple-100" : "hover:bg-gray-100"}`}
+          className={`p-2 rounded-full transition-all group/btn ${saved ? "bg-indigo-50 shadow-sm" : "hover:bg-gray-100"}`}
         >
           <Bookmark 
             size={20} 
-            className={saved ? "text-[#6A38C2] fill-[#6A38C2]" : "text-gray-400"} 
+            className={`transition-colors ${saved ? "text-indigo-600 fill-indigo-600" : "text-gray-400 group-hover/btn:text-gray-600"}`} 
           />
-        </Button>
+        </button>
       </div>
 
-      <div className="flex items-center gap-3 mt-4">
-        <Avatar className="h-12 w-12 shadow-md border">
-          <AvatarImage src={job?.company?.logo} alt="logo" />
-        </Avatar>
-        <div>
-          <h1 className="font-bold text-lg text-gray-900">{job?.company?.name}</h1>
-          <p className="text-sm text-gray-500">India</p>
+      <div className="flex items-start gap-4 mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center shrink-0 overflow-hidden shadow-sm shadow-gray-100/50">
+           {job?.company?.logo ? (
+             <img src={job.company.logo} alt="logo" className="w-10 h-10 object-contain" />
+           ) : (
+             <Building2 className="text-gray-300" size={24} />
+           )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-black text-gray-900 text-lg leading-tight truncate">{job?.company?.name || 'Unknown Company'}</h1>
+          <p className="text-sm font-medium text-gray-400 mt-1 flex items-center gap-1"><MapPin size={14}/> {job?.location || 'India'}</p>
         </div>
       </div>
 
-      <div className="mt-5">
-        <h1 className="text-xl font-bold text-[#6A38C2] leading-tight">{job?.title}</h1>
-        <p className="text-sm text-gray-600 mt-2 line-clamp-2">{getShortText(job?.description)}</p>
+      <div className="mb-4">
+        <h1 className="text-xl font-black text-indigo-700 leading-tight line-clamp-1">{job?.title}</h1>
+        <p className="text-[13px] text-gray-500 mt-2 font-medium line-clamp-2 leading-relaxed">
+          {getShortText(job?.description?.replace(/<[^>]*>?/gm, ''))}
+        </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mt-4">
-        <Badge className="bg-blue-50 text-blue-700 border-blue-200 shadow">{job?.position} Positions</Badge>
-        <Badge className="bg-red-50 text-red-600 border-red-200 shadow">{job?.jobType}</Badge>
-        <Badge className="bg-purple-50 text-purple-700 border-purple-200 shadow">{job?.salary} LPA</Badge>
+      <div className="flex flex-wrap items-center gap-2 mt-auto pb-6">
+        <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.position} Positions</Badge>
+        <Badge className="bg-orange-50 text-orange-600 border border-orange-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.jobType}</Badge>
+        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.salary} LPA</Badge>
       </div>
 
-      <div className="flex items-center gap-4 mt-6">
-        <Button
+      <div className="flex items-center gap-3">
+        <button
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/description/${job?._id}`);
           }}
-          variant="outline"
-          className="flex-1 hover:border-purple-500 hover:text-purple-600 transition"
+          className="flex-[1.5] py-2.5 rounded-xl border-2 border-indigo-100 text-indigo-600 font-black text-[13px] hover:bg-indigo-50 hover:border-indigo-200 transition-all text-center tracking-wide"
         >
           Details
-        </Button>
+        </button>
 
-        {/* Industry Style Toggle Button */}
-        <Button
+        <button
           onClick={handleToggleSave}
-          className={`flex-1 shadow-md transition-all ${
+          className={`flex-[2] py-2.5 rounded-xl font-black text-[13px] transition-all tracking-wide shadow-md ${
             saved 
-            ? "bg-gray-100 text-[#6A38C2] border border-[#6A38C2]" 
-            : "bg-gradient-to-r from-purple-600 to-purple-800 text-white"
+            ? "bg-gray-100 text-indigo-600 border border-transparent shadow-none" 
+            : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg hover:-translate-y-0.5 border border-transparent"
           }`}
         >
-          {saved ? "Saved" : "Save for Later"}
-        </Button>
+          {saved ? "Saved" : "Save For Later"}
+        </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

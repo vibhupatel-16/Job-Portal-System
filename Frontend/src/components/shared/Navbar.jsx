@@ -229,7 +229,7 @@ function Navbar() {
                                 </PopoverTrigger>
                                 <PopoverContent className="w-48 p-2">
                                     <Link to="/employer-login"><Button variant="ghost" className="w-full justify-start text-sm">Login</Button></Link>
-                                    <Link to="/employer-signup"><Button variant="ghost" className="w-full justify-start text-sm">Sign Up</Button></Link>
+                                    <Link to="/employer/signup"><Button variant="ghost" className="w-full justify-start text-sm">Sign Up</Button></Link>
                                 </PopoverContent>
                             </Popover>
                             <Link to="/login"><Button variant="outline" size="sm">Login</Button></Link>

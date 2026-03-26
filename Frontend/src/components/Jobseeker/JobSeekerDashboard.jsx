@@ -30,24 +30,24 @@ const JobSeekerDashboard = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (user) {
-      const refreshUser = async () => {
-        try {
-          const { USER_API_END_POINT } = await import('@/utils/constant');
-          const axios = (await import('axios')).default;
-          const { setUser } = await import('@/redux/authSlice');
-          const res = await axios.get(`${USER_API_END_POINT.replace('/user', '')}/user/me`, { withCredentials: true });
-          if (res.data.success && res.data.user) {
-            dispatch(setUser(res.data.user));
-            localStorage.setItem("user", JSON.stringify(res.data.user));
-          }
-        } catch (error) {
-          console.log("Failed to refresh user stats silently", error);
+    const refreshUser = async () => {
+      try {
+        const { USER_API_END_POINT } = await import('@/utils/constant');
+        const axios = (await import('axios')).default;
+        const { setUser } = await import('@/redux/authSlice');
+        const res = await axios.get(`${USER_API_END_POINT.replace('/user', '')}/user/me`, { withCredentials: true });
+        if (res.data.success && res.data.user) {
+          dispatch(setUser(res.data.user));
+          localStorage.setItem("user", JSON.stringify(res.data.user));
         }
-      };
-      refreshUser();
-    }
-  }, [dispatch, user]);
+      } catch (error) {
+        console.log("Failed to refresh user stats silently", error);
+      }
+    };
+    
+    // Only fetch once when component mounts
+    refreshUser();
+  }, [dispatch]);
   
   const [selectedJourney, setSelectedJourney] = useState(null);
 
