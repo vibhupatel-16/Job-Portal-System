@@ -8,12 +8,11 @@ import {
   Select, SelectContent, SelectGroup, SelectItem,
   SelectTrigger, SelectValue
 } from '../ui/select';
-import axios from 'axios';
-import { JOB_API_END_POINT } from '@/utils/constant';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Briefcase, Building2, MapPin, FileText } from 'lucide-react';
 import RichTextEditor from '../RichTextEditor';
+import axiosInstance from '@/utils/axiosInstance';
 
 const PostJob = () => {
   const [input, setInput] = useState({
@@ -52,7 +51,7 @@ const PostJob = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post(`${JOB_API_END_POINT}/post`, input, {
+      const res = await axiosInstance.post(`/job/post`, input, {
         headers: { "Content-Type": "application/json" },
         withCredentials: true
       });

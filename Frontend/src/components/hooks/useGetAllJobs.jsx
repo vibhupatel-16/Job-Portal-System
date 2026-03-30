@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useSelector } from "react-redux";
-import { JOB_API_END_POINT } from "../../utils/constant.js";
+import axiosInstance from "@/utils/axiosInstance";
 
 const usePaginatedJobs = (page = 1, limit = 5) => {
   const { searchedQuery, filters } = useSelector((state) => state.job);
@@ -15,25 +14,24 @@ const usePaginatedJobs = (page = 1, limit = 5) => {
       try {
         setLoading(true);
 
-        const response = await axios.get(
-          `${JOB_API_END_POINT}/get`, {
-            params: {
-              keyword: searchedQuery || "",
-              location: filters.location || "",
-              industry: filters.industry || "",
-              salary: filters.salary || "",
-              page,
-              limit
-            },
-            withCredentials: true
-          }
-        );
+        const response = await axiosInstance.get(`/job/get`, {
+          params: {
+            keyword: searchedQuery || "",
+            location: filters.location || "",
+            title: filters.title || "",
+            salary: filters.salary || "",
+            experience: filters.experience || "",
+            page,
+            limit,
+          },
+        });
 
         setJobs(response.data.jobs || []);
         setTotalPages(response.data.totalPages || 1);
       } catch (err) {
         console.log("API Error:", err);
         setJobs([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }

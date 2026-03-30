@@ -6,13 +6,12 @@ import { LogOut, User2, Briefcase, Bell, Calendar, Bookmark, ChevronDown, HelpCi
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
-import axios from 'axios';
-import { USER_API_END_POINT, INTERVIEW_API_END_POINT } from '@/utils/constant';
-import { setUser } from '@/redux/authSlice';
+import { logout } from '@/redux/authSlice';
 import { socket } from '@/App';
+import axiosInstance from '@/utils/axiosInstance';
 
 function Navbar() {
-    const { user } = useSelector((store) => store.auth);
+    const user = useSelector((store) => store.auth.user);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -21,20 +20,27 @@ function Navbar() {
 
     useEffect(() => {
         const fetchNotifications = async () => {
-            if (user) {
-                try {
-                    const res = await axios.get(`${INTERVIEW_API_END_POINT}/notifications`, { withCredentials: true });
-                    if (res.data.success) {
-                        setNotifications(res.data.notifications);
-                        const unread = res.data.notifications.filter(n => !n.isRead).length;
-                        setUnreadCount(unread);
-                    }
-                } catch (error) {
+            try {
+                const res = await axiosInstance.get(`/interview/notifications`);
+                if (res.data.success) {
+                    setNotifications(res.data.notifications);
+                    const unread = res.data.notifications.filter((notification) => !notification.isRead).length;
+                    setUnreadCount(unread);
+                }
+            } catch (error) {
+                if (error.response?.status !== 401) {
                     console.log("Error fetching notifications", error);
                 }
             }
         };
-        fetchNotifications();
+
+        if (user) {
+            fetchNotifications();
+            return;
+        }
+
+        setNotifications([]);
+        setUnreadCount(0);
     }, [user]);
 
     useEffect(() => {
@@ -50,7 +56,7 @@ function Navbar() {
     const markAsReadHandler = async () => {
         try {
             if (unreadCount > 0) {
-                await axios.put(`${INTERVIEW_API_END_POINT}/notifications/mark-read`, {}, { withCredentials: true });
+                await axiosInstance.put(`/interview/notifications/mark-read`, {}, );
                 setUnreadCount(0);
                 setNotifications(notifications.map(n => ({ ...n, isRead: true })));
             }
@@ -61,7 +67,7 @@ function Navbar() {
 
     const handleNotificationClick = async (notifId) => {
         try {
-            const res = await axios.delete(`${INTERVIEW_API_END_POINT}/notifications/${notifId}`, { withCredentials: true });
+            const res = await axiosInstance.delete(`/interview/notifications/${notifId}`);
             if (res.data.success) {
                 setNotifications(notifications.filter(n => n._id !== notifId));
                 setUnreadCount(prev => Math.max(0, prev - 1));
@@ -70,15 +76,16 @@ function Navbar() {
                 else navigate('/admin/interview-list');
             }
         } catch (error) {
+            console.log(error);
             navigate(user.role === 'jobseeker' ? "/jobseeker/interviews" : "/employer/interview-list");
         }
     };
 
     const logoutHandler = async () => {
         try {
-            const res = await axios.get(`${USER_API_END_POINT}/logout`, { withCredentials: true });
+            const res = await axiosInstance.get(`/user/logout`);
             if (res.data.success) {
-                dispatch(setUser(null));
+                dispatch(logout());
                 navigate("/");
                 toast.success(res.data.message);
             }
@@ -92,9 +99,10 @@ function Navbar() {
             <div className="flex justify-between items-center mx-auto max-w-7xl h-16 px-4">
                 {/* Left Logo */}
                 <div>
-                    <h1 className="text-2xl font-bold">
-                        Job <span className="text-red-500">Portal</span>
-                    </h1>
+                   <h1 className="text-2xl font-bold tracking-tight">
+            <span className="text-[#7C3AED]">Nex</span>
+            <span className="text-[#1F2937]">Forge</span>
+        </h1>
                 </div>
 
                 {/* Middle Menu */}

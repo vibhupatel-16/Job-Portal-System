@@ -39,7 +39,7 @@ const ManageTestimonials = () => {
   const loadPending = async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.get("/testimonials/pending", { withCredentials: true });
+      const res = await axiosInstance.get("/testimonials/pending", );
       if (res.data?.success) setItems(res.data.testimonials || []);
       else setItems([]);
     } catch (e) {
@@ -55,7 +55,7 @@ const ManageTestimonials = () => {
 
   const approve = async (id) => {
     try {
-      const res = await axiosInstance.put(`/testimonials/approve/${id}`, {}, { withCredentials: true });
+      const res = await axiosInstance.put(`/testimonials/approve/${id}`, {}, );
       if (res.data?.success) {
         toast.success(res.data.message || "Approved");
         setItems((prev) => prev.filter((x) => x._id !== id));
@@ -67,7 +67,7 @@ const ManageTestimonials = () => {
 
   const reject = async (id) => {
     try {
-      const res = await axiosInstance.delete(`/testimonials/delete/${id}`, { withCredentials: true });
+      const res = await axiosInstance.delete(`/testimonials/delete/${id}`, );
       if (res.data?.success) {
         toast.success(res.data.message || "Rejected");
         setItems((prev) => prev.filter((x) => x._id !== id));
@@ -82,9 +82,7 @@ const ManageTestimonials = () => {
       <div className="flex items-end justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Manage Testimonials</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Yaha <b>Employer</b> aur <b>Job Seeker</b> dono ka feedback show ho raha hai. Approve karte hi landing page par appear ho jayega.
-          </p>
+         
         </div>
         <button
           onClick={loadPending}

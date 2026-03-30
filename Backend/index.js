@@ -4,8 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Server } from "socket.io";           // ✅ ADD
-import http from "http";                      // ✅ ADD
+import { Server } from "socket.io"; // ✅ ADD
+import http from "http"; // ✅ ADD
 
 import connectDB from "./utils/db.js";
 import userRoute from "./routes/user.route.js";
@@ -15,18 +15,19 @@ import applicationRoute from "./routes/application.route.js";
 import adminRoute from "./routes/admin.route.js";
 
 import interviewRoute from "./routes/interview.route.js";
-import savedJobRoute from './routes/savedJob.route.js';
-import './utils/cronJobs.js';
+import savedJobRoute from "./routes/savedJob.route.js";
+import "./utils/cronJobs.js";
 import testimonialRoute from "./routes/testimonial.route.js";
 
 dotenv.config({});
 const app = express();
 
 // ✅ REQUIRED FOR SOCKET
-const server = http.createServer(app);        // ✅ ADD
-const io = new Server(server, {               // ✅ ADD
+const server = http.createServer(app); // ✅ ADD
+const io = new Server(server, {
+  // ✅ ADD
   cors: {
-    origin:  ["http://localhost:5173", "http://192.168.1.21:5173"],
+    origin: ["http://localhost:5173", "http://192.168.1.21:5173"],
     credentials: true,
   },
 });
@@ -57,7 +58,7 @@ app.use(cors(corsOptions));
 
 // ✅ SOCKET ACCESS FOR CONTROLLERS
 app.use((req, res, next) => {
-  req.io = io;                                // ✅ ADD
+  req.io = io; // ✅ ADD
   next();
 });
 
@@ -68,12 +69,10 @@ app.use("/api/v1/job", jobRoute);
 app.use("/api/v1/application", applicationRoute);
 app.use("/api/v1/admin", adminRoute);
 
-
-
-app.use("/api/v1", interviewRoute);
+app.use("/api/v1/interview", interviewRoute);
 app.use("/api/v1/user", savedJobRoute);
 
-app.use("/api/v1/testimonials", testimonialRoute)
+app.use("/api/v1/testimonials", testimonialRoute);
 
 app.use("/uploads", express.static("uploads"));
 

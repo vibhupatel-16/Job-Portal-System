@@ -15,14 +15,8 @@ import {
   Sparkles,
   MessageSquare
 } from "lucide-react";
-import axios from "axios";
+
 import axiosInstance from "@/utils/axiosInstance";
-import {
-  JOB_API_END_POINT,
-  APPLICATION_API_END_POINT,
-  COMPANY_API_END_POINT,
-  INTERVIEW_API_END_POINT,
-} from "@/utils/constant";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -121,19 +115,19 @@ const COLORS = ['#94a3b8', '#9333ea', '#16a34a', '#dc2626']; // Pending, Shortli
 
   const fetchDashboardData = async () => {
     try {
-      const jobsRes = await axios.get(`${JOB_API_END_POINT}/getadminjobs`, { withCredentials: true });
+      const jobsRes = await axiosInstance.get(`/job/getadminjobs`, );
       const jobsData = (jobsRes.data.jobs || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setJobs(jobsData);
 
       const applicantReq = jobsData.map(job =>
-        axios.get(`${APPLICATION_API_END_POINT}/${job._id}/applicants`, { withCredentials: true })
+        axiosInstance.get(`/application/${job._id}/applicants`, )
       );
       const applicantRes = await Promise.all(applicantReq);
       const apps = applicantRes.flatMap(res => res.data.job.applications || [])
                                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setApplications(apps);
 
-      const compRes = await axios.get(`${COMPANY_API_END_POINT}/get`, { withCredentials: true });
+      const compRes = await axiosInstance.get(`/company/get`, );
       setStats({
         totalJobs: jobsData.length,
         totalApplicants: apps.length,
@@ -165,7 +159,7 @@ const handleSelectAll = (e) => {
 const handleBulkUpdate = async (newStatus) => {
     try {
         const promises = selectedIds.map(id => 
-            axios.post(`${APPLICATION_API_END_POINT}/status/${id}/update`, { status: newStatus }, { withCredentials: true })
+              axiosInstance.post(`/application/status/${id}/update`, { status: newStatus }, )
         );
         await Promise.all(promises);
         toast.success(`${selectedIds.length} Candidates updated to ${newStatus}`);
@@ -177,7 +171,7 @@ const handleBulkUpdate = async (newStatus) => {
 };
   const updateStatus = async (appId, status) => {
     try {
-      const res = await axios.post(`${APPLICATION_API_END_POINT}/status/${appId}/update`, { status }, { withCredentials: true });
+      const res = await axiosInstance.post(`/application/status/${appId}/update`, { status }, );
       if (res.data.success) {
         toast.success(res.data.message);
         setApplications(prev => prev.map(app => app._id === appId ? { ...app, status } : app));
@@ -193,7 +187,7 @@ const handleBulkUpdate = async (newStatus) => {
 
     try {
       // route.js mein path "/booked-slots" hai
-      const res = await axios.get(`${INTERVIEW_API_END_POINT}/booked-slots?date=${selectedDate}`, { withCredentials: true });
+      const res = await axiosInstance.get(`/interview/booked-slots?date=${selectedDate}`, );
       if (res.data.success) {
         setBookedSlots(res.data.bookedTimes || []);
       }
@@ -207,14 +201,14 @@ const handleBulkUpdate = async (newStatus) => {
         // Console log karke check karein ki data mil raha hai ya nahi
         console.log("Selected App Data:", selectedApp);
 
-        const res = await axios.post(`${INTERVIEW_API_END_POINT}/interviews`, {
+        const res = await axiosInstance.post(`/interview/interviews`, {
             applicationId: selectedApp?._id,
             jobseekerId: selectedApp?.applicant?._id, // Ye ID zaroori hai
             date: interviewData.date,
             time: interviewData.time,
             mode: interviewData.mode,
             meetingLink: interviewData.mode === "offline" ? interviewData.meetingLink : ""
-        }, { withCredentials: true });
+        }, );
 
         if (res.data.success) {
             toast.success("Interview Scheduled!");
@@ -229,9 +223,8 @@ const handleBulkUpdate = async (newStatus) => {
 const handleAiScan = async (applicationId) => {
     try {
         console.log("Scanning Application ID:", applicationId);
-        
-        // Correct endpoint use karein
-        const res = await axios.get(`${APPLICATION_API_END_POINT}/status/${applicationId}/ai-scan`, {
+
+        const res = await axiosInstance.get(`/application/status/${applicationId}/ai-scan`, {
             withCredentials: true
         });
 
@@ -249,9 +242,9 @@ const handleGenerateQuestions = async (applicationId) => {
     // Button par loading state dikhane ke liye aap ek loading state bhi use kar sakte hain
     toast.loading("AI is generating questions...");
 
-    const res = await axios.get(
-      `${APPLICATION_API_END_POINT}/${applicationId}/questions`, 
-      { withCredentials: true }
+    const res = await axiosInstance.get(
+      `/application/${applicationId}/questions`, 
+      
     );
 
     if (res.data.success) {
@@ -326,7 +319,7 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
           <div className="flex gap-4">
             <button 
               onClick={async () => {
-                const res = await axios.get(`${INTERVIEW_API_END_POINT}/google/auth`, { withCredentials: true });
+                const res = await axiosInstance.get(`/interview/google/auth`, );
                 if(res.data.url) window.location.href = res.data.url;
               }}
               className="flex items-center gap-2 bg-white text-red-500 border border-red-200 px-5 py-2.5 rounded-2xl shadow-sm hover:bg-red-50 transition-all font-bold text-sm"
@@ -564,9 +557,9 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
               setShowViewModal(true); 
 
               // Silently track this detailed view
-              import('@/utils/constant').then(({ USER_API_END_POINT }) => {
-                 axios.post(`${USER_API_END_POINT}/profile/view/${app.applicant._id}`, {}, { withCredentials: true }).catch(e=>console.log(e));
-              });
+              
+                 axiosInstance.post(`/user/profile/view/${app.applicant._id}`, {}, ).catch(e=>console.log(e));
+              
             }}>
               <Eye size={16} />
             </Button>

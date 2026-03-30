@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from '../shared/Navbar';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import EmployerJobTable from './EmployerJobTable';
 import useGetAllEmployerJobs from '../hooks/useGetAllEmployerJobs';
 import { setSearchJobByText } from '@/redux/jobSlice';
-import { Search, PlusCircle } from 'lucide-react';
+import { Search, PlusCircle, Briefcase } from 'lucide-react';
 
 const EmployerJobs = () => {
   useGetAllEmployerJobs();
@@ -17,48 +16,47 @@ const EmployerJobs = () => {
 
   useEffect(() => {
     dispatch(setSearchJobByText(input));
-  }, [input]);
+  }, [input, dispatch]);
 
   return (
-    <div className="bg-[#F8F9FC] min-h-screen">
-      {/* <Navbar /> */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50 p-6 md:p-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="rounded-[1.6rem] bg-sky-100 p-4 text-sky-700 shadow-sm">
+              <Briefcase size={24} />
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-500">Employer Workspace</p>
+              <h1 className="text-3xl font-black tracking-tight text-slate-900">Manage Jobs</h1>
+              <p className="mt-2 text-sm text-slate-500">Track your live listings, search quickly, and jump into editing or applicants in one place.</p>
+            </div>
+          </div>
 
-      <div className="max-w-6xl mx-auto mt-10 p-6">
-        
-        {/* HEADER CARD */}
-        <div className="bg-white shadow-xl border rounded-2xl p-6 mb-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <Button
+            className="h-12 rounded-2xl bg-sky-600 px-5 font-black shadow-sm hover:bg-sky-700"
+            onClick={() => navigate("/employer/jobs/create")}
+          >
+            <PlusCircle size={18} className="mr-2" />
+            New Job
+          </Button>
+        </div>
 
-            {/* Search Bar */}
-            <div className="relative w-full md:w-72">
-              <Search className="absolute top-3 left-3 text-gray-500" size={18} />
+        <div className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative w-full lg:max-w-sm">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <Input
-                className="pl-10 h-11 rounded-xl shadow-sm"
-                placeholder="Filter by job title..."
+                className="h-12 rounded-2xl border-slate-200 bg-slate-50 pl-11 text-sm shadow-none focus-visible:ring-sky-200"
+                placeholder="Filter by job title or company..."
                 onChange={(e) => setInput(e.target.value)}
               />
             </div>
-
-            {/* Create Job Button */}
-            <Button
-              className="h-11 rounded-xl font-semibold flex items-center gap-2 bg-[#6A38C2] hover:bg-[#5729A6]"
-              onClick={() => navigate("/employer/jobs/create")}
-            >
-              <PlusCircle size={20} />
-              New Job
-            </Button>
-
+            <p className="text-sm text-slate-500">Manage your posted jobs and jump directly into editing or applicant review.</p>
           </div>
-
-          {/* Small subtitle */}
-          <p className="text-gray-500 text-sm mt-3">
-            Manage your posted jobs and track applicant performance
-          </p>
         </div>
 
-        {/* TABLE CARD */}
-        <div className="bg-white shadow-xl border rounded-2xl p-6">
-          <h2 className="text-lg font-bold mb-4">Your Posted Jobs</h2>
+        <div className="rounded-[2rem] border border-white/70 bg-white/95 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur">
           <EmployerJobTable />
         </div>
       </div>

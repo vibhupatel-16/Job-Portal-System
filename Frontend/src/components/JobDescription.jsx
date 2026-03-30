@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { APPLICATION_API_END_POINT, JOB_API_END_POINT } from '@/utils/constant';
 import { setSingleJob } from '@/redux/jobSlice';
 import { toast } from 'sonner';
 import { Briefcase, MapPin, IndianRupee, Users, CalendarDays } from "lucide-react";
+import axiosInstance from '@/utils/axiosInstance';
 
 const JobDescription = () => {
   const { id: jobId } = useParams();
@@ -18,9 +17,8 @@ const JobDescription = () => {
 
   const applyJobHandler = async () => {
     try {
-      const res = await axios.get(
-        `${APPLICATION_API_END_POINT}/apply/${jobId}`,
-        { withCredentials: true }
+      const res = await axiosInstance.get(
+        `/application/apply/${jobId}`,
       );
 
       if (res.data.success) {
@@ -40,9 +38,9 @@ const JobDescription = () => {
   useEffect(() => {
     const fetchSingleJob = async () => {
       try {
-        const res = await axios.get(
-          `${JOB_API_END_POINT}/get/${jobId}`,
-          { withCredentials: true }
+        const res = await axiosInstance.get(
+          `/job/get/${jobId}`,
+          
         );
 
         if (res.data.success) {

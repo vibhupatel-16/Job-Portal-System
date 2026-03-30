@@ -25,11 +25,10 @@ export const registerCompany = async (req, res) => {
     });
 
     return res.status(201).json({
-      message: 'Company registered successfully',
+      message: "Company registered successfully",
       company,
       success: true
     });
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -39,52 +38,53 @@ export const registerCompany = async (req, res) => {
   }
 };
 
-export const getCompany = async (req,res)=>{
-    try{
-        const userId = req.id;
-        const companies = await Company.find({userId});
-        if(!companies){
-            return res.status(404).json({
-                message:"Company not found",
-                success : "false"
-            })
-        }
-        return res.status(200).json({
-            companies,
-            success: true
-        })
+export const getCompany = async (req, res) => {
+  try {
+    const userId = req.id;
+    const companies = await Company.find({ userId });
 
-    }catch(error){
-        console.log(error);
+    if (!companies) {
+      return res.status(404).json({
+        message: "Company not found",
+        success: "false"
+      });
     }
-}
 
-export const getCompanyById = async (req,res)=>{
-    try{
-        const companyId = req.params.id;
-        const company = await Company.findById(companyId)
-        if(!company){
-           return res.status(404).json({
-            message:"Company not found",
-            success: false
-           })
-        }
-        return res.status(200).json({
-            company,
-            success:true
-        })
+    return res.status(200).json({
+      companies,
+      success: true
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-    }catch(error){
-        console.log(error);
+export const getCompanyById = async (req, res) => {
+  try {
+    const companyId = req.params.id;
+    const company = await Company.findById(companyId);
+
+    if (!company) {
+      return res.status(404).json({
+        message: "Company not found",
+        success: false
+      });
     }
-}
+
+    return res.status(200).json({
+      company,
+      success: true
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 export const updateCompany = async (req, res) => {
   try {
     const { name, description, website, location } = req.body;
-
-    // multer.fields() → files live inside req.files
-    const uploadedFile = req.files?.file?.[0]; // <-- FIXED
+    const trimmedName = typeof name === "string" ? name.trim() : "";
+    const uploadedFile = req.files?.file?.[0] || req.files?.logo?.[0];
 
     const company = await Company.findById(req.params.id);
 
@@ -95,14 +95,28 @@ export const updateCompany = async (req, res) => {
       });
     }
 
-    if (name) company.name = name;
+    if (trimmedName) {
+      const existingCompany = await Company.findOne({
+        _id: { $ne: company._id },
+        name: trimmedName
+      });
+
+      if (existingCompany) {
+        return res.status(400).json({
+          message: "A company with this name already exists",
+          success: false
+        });
+      }
+
+      company.name = trimmedName;
+    }
+
     if (description) company.description = description;
     if (website) company.website = website;
     if (location) company.location = location;
 
-    // If new logo uploaded
     if (uploadedFile) {
-      company.logo = uploadedFile.path; // Cloudinary URL
+      company.logo = uploadedFile.path;
     }
 
     await company.save();
@@ -112,13 +126,19 @@ export const updateCompany = async (req, res) => {
       company,
       success: true
     });
-
   } catch (error) {
     console.log("Update company error:", error);
+
+    if (error?.code === 11000) {
+      return res.status(400).json({
+        message: "A company with this name already exists",
+        success: false
+      });
+    }
+
     return res.status(500).json({
       message: "Internal server error",
       success: false
     });
   }
 };
-

@@ -3,8 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
-import axios from "axios";
-import { INTERVIEW_API_END_POINT } from "@/utils/constant";
+import axiosInstance from "@/utils/axiosInstance";
 const FeedbackModal = ({ open, setOpen, interviewId, onFeedbackSubmit }) => {
   const [ratings, setRatings] = useState({ technical: 0, communication: 0, cultureFit: 0 });
   const [comment, setComment] = useState("");
@@ -16,9 +15,9 @@ const FeedbackModal = ({ open, setOpen, interviewId, onFeedbackSubmit }) => {
     try {
       setLoading(true);
       // FeedbackModel.jsx mein handleSubmit ke andar
-const res = await axios.post(`${INTERVIEW_API_END_POINT}/${interviewId}/feedback`, 
+const res = await axiosInstance.post(`/interview/${interviewId}/feedback`, 
     { ratings, comment, recommendation }, 
-    { withCredentials: true }
+    
 );
       if (res.data.success) {
         toast.success(res.data.message);

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const AppliedJobTable = () => {
   const { allAppliedJobs } = useSelector(store => store.job);
+  
   const [selectedApp, setSelectedApp] = useState(null); // Timeline ke liye state
   const [timelineOpen, setTimelineOpen] = useState(false);
 

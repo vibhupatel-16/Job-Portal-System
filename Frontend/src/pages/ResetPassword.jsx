@@ -5,9 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { USER_API_END_POINT } from "@/utils/constant";
 import { toast } from "sonner";
+import axiosInstance from "@/utils/axiosInstance";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -38,8 +37,8 @@ const ResetPassword = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post(
-        `${USER_API_END_POINT}/reset-password/${token}`,
+      const res = await axiosInstance.post(
+        `/user/reset-password/${token}`,
         { password },
         { headers: { "Content-Type": "application/json" } }
       );

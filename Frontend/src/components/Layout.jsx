@@ -8,7 +8,7 @@ const Layout = () => {
     <>
       <Navbar />
 
-      <div className="min-h-screen pt-16">
+      <div className="min-h-screen">
         <Outlet />   {/* ⭐ Yaha pe children pages render honge */}
       </div>
 

@@ -13,7 +13,7 @@ function HeroSection() {
 
   const searchJobHandler = () => {
     dispatch(setSearchedQuery(query));
-    dispatch(setFilter({ location: "", salary: "", experience: "" }));
+    dispatch(setFilter({ location: "", title: "", salary: "", experience: "" }));
     setTimeout(() => navigate("/browse"), 200);
   };
 

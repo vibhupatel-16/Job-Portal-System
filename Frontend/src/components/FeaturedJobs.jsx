@@ -7,6 +7,8 @@ import { Avatar, AvatarImage } from "./ui/avatar";
 import { Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 
+const EMPTY_JOBS = [];
+
 const getShortText = (html, maxLength = 80) => {
   if (!html) return "";
   const div = document.createElement("div");
@@ -16,7 +18,7 @@ const getShortText = (html, maxLength = 80) => {
 };
 
 const FeaturedJobs = () => {
-  const homeJobs = useSelector((store) => store.job?.homeJobs || []);
+  const homeJobs = useSelector((store) => store.job?.homeJobs ?? EMPTY_JOBS);
   const navigate = useNavigate();
   const featured = homeJobs.slice(0, 4);
 

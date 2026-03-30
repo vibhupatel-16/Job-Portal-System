@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import Navbar from '../shared/Navbar';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { useNavigate } from 'react-router-dom';
 
-import { COMPANY_API_END_POINT } from '@/utils/constant';
 import { toast } from 'sonner';
 import { useDispatch } from 'react-redux';
 import { setSingleCompany } from '@/redux/companySlice';
@@ -17,13 +15,19 @@ const CompanyCreate = () => {
   const dispatch = useDispatch();
 
   const registerNewCompany = async () => {
+    const trimmedName = companyName.trim();
+
+    if (!trimmedName) {
+      toast.error("Company name is required");
+      return;
+    }
+
     try {
       const res = await axiosInstance.post(
-        `${COMPANY_API_END_POINT}/register`,
-        { companyName },
+        `/company/register`,
+        { companyName: trimmedName },
         {
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: true
+          headers: { 'Content-Type': 'application/json' }
         }
       );
 
@@ -35,6 +39,7 @@ const CompanyCreate = () => {
 
     } catch (error) {
       console.log(error);
+      toast.error(error.response?.data?.message || "Failed to create company");
     }
   };
 

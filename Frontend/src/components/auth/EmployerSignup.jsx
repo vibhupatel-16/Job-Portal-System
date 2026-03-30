@@ -5,12 +5,11 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { USER_API_END_POINT } from '@/utils/constant';
 import { toast } from 'sonner';
 import { useDispatch, useSelector } from 'react-redux';
 import { setLoading } from '@/redux/authSlice';
 import { Loader2 } from 'lucide-react';
+import axiosInstance from '@/utils/axiosInstance';
 
 const EmployerSignup = () => {
   const [input, setInput] = useState({
@@ -79,7 +78,7 @@ const EmployerSignup = () => {
 
     try {
       dispatch(setLoading(true));
-      const res = await axios.post(`${USER_API_END_POINT}/register`, formdata, {
+      const res = await axiosInstance.post(`/user/register`, formdata, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });

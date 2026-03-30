@@ -11,15 +11,20 @@ import {
   TrendingUp,
   Clock
 } from "lucide-react";
-import { motion } from "framer-motion";
 import useGetAppliedJobs from "../hooks/useGetAppliedJob";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import axoiosInstance from "@/utils/axiosInstance";
+import { setUser } from "@/redux/authSlice";
+import { useMemo } from "react";
+import {motion } from "framer-motion";
+
+const EMPTY_APPLIED_JOBS = [];
 
 const JobSeekerDashboard = () => {
   useGetAppliedJobs();
-  const { user } = useSelector((store) => store.auth);
-  const appliedJobs = useSelector((store) => store.job?.allAppliedJobs || []);
+  const user = useSelector((store) => store.auth.user);
+  const appliedJobs = useSelector((store) => store.job?.allAppliedJobs ?? EMPTY_APPLIED_JOBS);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -32,13 +37,9 @@ const JobSeekerDashboard = () => {
   useEffect(() => {
     const refreshUser = async () => {
       try {
-        const { USER_API_END_POINT } = await import('@/utils/constant');
-        const axios = (await import('axios')).default;
-        const { setUser } = await import('@/redux/authSlice');
-        const res = await axios.get(`${USER_API_END_POINT.replace('/user', '')}/user/me`, { withCredentials: true });
+        const res = await axoiosInstance.get(`/user/me`, );
         if (res.data.success && res.data.user) {
           dispatch(setUser(res.data.user));
-          localStorage.setItem("user", JSON.stringify(res.data.user));
         }
       } catch (error) {
         console.log("Failed to refresh user stats silently", error);
@@ -69,7 +70,7 @@ const JobSeekerDashboard = () => {
   const appliedCount = appliedJobs?.length ?? 0;
   const savedCount = user?.savedJobs?.length ?? 0;
 
-  const statusCounts = React.useMemo(() => {
+  const statusCounts = useMemo(() => {
     const counts = { pending: 0, shortlisted: 0, accepted: 0, rejected: 0 };
     (appliedJobs || []).forEach((app) => {
       const s = (app?.status || "pending").toLowerCase();
@@ -78,7 +79,7 @@ const JobSeekerDashboard = () => {
     return counts;
   }, [appliedJobs]);
 
-  const monthlyData = React.useMemo(() => {
+  const monthlyData = useMemo(() => {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const now = new Date();
     const data = [];

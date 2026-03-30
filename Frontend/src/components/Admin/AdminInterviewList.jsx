@@ -1,164 +1,203 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { INTERVIEW_API_END_POINT } from "@/utils/constant";
-import { Calendar, Clock, Video, MapPin, Building2, User, CheckCircle2, Trash2 } from "lucide-react";
-import { toast } from "sonner"; 
+import {
+  Calendar,
+  Clock,
+  Video,
+  MapPin,
+  Building2,
+  User,
+  CheckCircle2,
+  Trash2,
+  RefreshCw,
+} from "lucide-react";
+import { toast } from "sonner";
+import axiosInstance from "@/utils/axiosInstance";
 
 const AdminInterviewList = () => {
-    const [interviews, setInterviews] = useState([]);
+  const [interviews, setInterviews] = useState([]);
 
-    // 1. Fetch all interviews
-    const fetchAll = async () => {
-        try {
-            const res = await axios.get(`http://localhost:8000/api/v1/admin/all-interviews`, { withCredentials: true });
-            if (res.data.success) {
-                setInterviews(res.data.interviews);
-            }
-        } catch (error) {
-            console.error("Admin fetch error", error);
-        }
-    };
+  const fetchAll = async () => {
+    try {
+      const res = await axiosInstance.get(`/interview/admin/all-interviews`);
+      if (res.data.success) {
+        setInterviews(res.data.interviews || []);
+      }
+    } catch (error) {
+      console.error("Admin fetch error", error);
+      toast.error("Failed to load interview list");
+    }
+  };
 
-    useEffect(() => {
+  useEffect(() => {
+    fetchAll();
+  }, []);
+
+  const handleApproveReschedule = async (interviewId, newDate, newTime) => {
+    try {
+      const res = await axiosInstance.post(`/interview/approve-reschedule`, {
+        interviewId,
+        newDate,
+        newTime,
+      });
+      if (res.data.success) {
+        toast.success("Interview rescheduled successfully!");
         fetchAll();
-    }, []);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to approve");
+    }
+  };
 
-    // 2. Approve Reschedule Handler
-    const handleApproveReschedule = async (interviewId, newDate, newTime) => {
-        try {
-            const res = await axios.post(`${INTERVIEW_API_END_POINT}/approve-reschedule`, 
-                { interviewId, newDate, newTime }, 
-                { withCredentials: true }
-            );
-            if (res.data.success) {
-                toast.success("Interview rescheduled successfully!");
-                fetchAll(); 
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to approve");
-        }
-    };
+  const deleteInterview = async (id) => {
+    if (!window.confirm("Are you sure you want to cancel and delete this interview?")) return;
+    try {
+      const res = await axiosInstance.delete(`/interview/interview/${id}`);
+      if (res.data.success) {
+        toast.success(res.data.message || "Interview deleted");
+        fetchAll();
+      }
+    } catch (error) {
+      toast.error("Error deleting interview");
+      console.error(error);
+    }
+  };
 
-    // ⭐ 3. NEW: Delete Interview Handler
-    const deleteInterview = async (id) => {
-        if(!window.confirm("Are you sure you want to cancel and delete this interview?")) return;
-        try {
-            const res = await axios.delete(`${INTERVIEW_API_END_POINT}/interview/${id}`, { withCredentials: true });
-            if(res.data.success) {
-                toast.success(res.data.message || "Interview deleted");
-                fetchAll(); // Refresh list after delete
-            }
-        } catch (error) {
-            toast.error("Error deleting interview");
-            console.error(error);
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-50 p-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Admin Interview Master List</h1>
-                        <p className="text-gray-500">Manage all scheduled interviews across the platform</p>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-800 text-white">
-                            <tr>
-                                <th className="p-4 font-semibold uppercase text-xs">Candidate</th>
-                                <th className="p-4 font-semibold uppercase text-xs">Job & Company</th>
-                                <th className="p-4 font-semibold uppercase text-xs">Schedule</th>
-                                <th className="p-4 font-semibold uppercase text-xs text-center">Mode</th>
-                                <th className="p-4 font-semibold uppercase text-xs text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {interviews.map((item) => (
-                                <tr key={item._id} className="hover:bg-gray-50/80 transition-colors">
-                                    {/* Candidate Info */}
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-indigo-100 p-2 rounded-full text-indigo-600">
-                                                <User size={18} />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-gray-900">
-                                                    {item.jobseeker?.fullname || item.application?.applicant?.fullname || "N/A"}
-                                                </p>
-                                                <p className="text-[10px] text-gray-500">{item.jobseeker?.email || "No Email"}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    {/* Job & Company Info */}
-                                    <td className="p-4">
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold text-gray-800 text-sm">
-                                                <Building2 size={12} className="inline mr-1 mb-1"/>
-                                                {item.company?.name || "N/A"}
-                                            </span>
-                                            <span className="text-xs text-gray-500">{item.job?.title || "N/A"}</span>
-                                        </div>
-                                    </td>
-
-                                    {/* Date & Time */}
-                                    <td className="p-4">
-                                        <div className="text-xs space-y-1 text-gray-700">
-                                            <p className="flex items-center gap-1 font-medium"><Calendar size={12} className="text-indigo-500"/> {item.date}</p>
-                                            <p className="flex items-center gap-1"><Clock size={12} className="text-indigo-500"/> {item.time}</p>
-                                        </div>
-                                    </td>
-                                    
-                                    {/* Mode Badge */}
-                                    <td className="p-4 text-center">
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                                            item.mode === 'online' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
-                                        }`}>
-                                            {item.mode || "offline"}
-                                        </span>
-                                    </td>
-
-                                    {/* Actions: Approve & Delete */}
-                                    <td className="p-4">
-                                        <div className="flex items-center justify-center gap-3">
-                                            {item.status === 'reschedule_requested' && (
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <span className="text-[9px] font-bold text-orange-500 uppercase">New Req: {item.suggestedDate}</span>
-                                                    <button 
-                                                        onClick={() => handleApproveReschedule(item._id, item.suggestedDate, item.suggestedTime)}
-                                                        className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 transition-all shadow-sm"
-                                                    >
-                                                        <CheckCircle2 size={14} /> APPROVE
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            <button 
-                                                onClick={() => deleteInterview(item._id)}
-                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
-                                                title="Delete Interview"
-                                            >
-                                                <Trash2 size={20} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    
-                    {interviews.length === 0 && (
-                        <div className="text-center py-20 bg-gray-50 text-gray-400">
-                            <p>No interviews found in the system.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-sky-500">Admin Control</p>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Interview Master List</h1>
+            <p className="text-sm text-slate-500 mt-2">Monitor, approve, and manage interview schedules across the platform.</p>
+          </div>
+          <button
+            onClick={fetchAll}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+          >
+            <RefreshCw size={16} />
+            Refresh List
+          </button>
         </div>
-    );
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard label="Total Interviews" value={interviews.length} tone="sky" />
+          <StatCard label="Reschedule Requests" value={interviews.filter((item) => item.status === "reschedule_requested").length} tone="amber" />
+          <StatCard label="Online Meetings" value={interviews.filter((item) => item.mode === "online").length} tone="emerald" />
+        </div>
+
+        <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
+          {interviews.length === 0 ? (
+            <div className="py-24 text-center">
+              <p className="text-lg font-bold text-slate-700">No interviews found</p>
+              <p className="mt-2 text-sm text-slate-400">Once interviews are scheduled, they will appear here.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1000px]">
+                <thead className="bg-slate-50 text-slate-500">
+                  <tr className="text-left text-[11px] font-black uppercase tracking-[0.18em]">
+                    <th className="px-6 py-5">Candidate</th>
+                    <th className="px-6 py-5">Job</th>
+                    <th className="px-6 py-5">Schedule</th>
+                    <th className="px-6 py-5">Mode</th>
+                    <th className="px-6 py-5">Status</th>
+                    <th className="px-6 py-5 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {interviews.map((item) => (
+                    <tr key={item._id} className="transition hover:bg-sky-50/40">
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-100 text-sky-600">
+                            <User size={18} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{item.jobseeker?.fullname || item.application?.applicant?.fullname || "N/A"}</p>
+                            <p className="text-xs text-slate-500">{item.jobseeker?.email || item.application?.applicant?.email || "No email"}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="space-y-1">
+                          <p className="font-bold text-slate-900">{item.job?.title || "N/A"}</p>
+                          <p className="inline-flex items-center gap-2 text-xs font-semibold text-sky-700">
+                            <Building2 size={12} />
+                            {item.company?.name || "No company"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="space-y-1 text-sm text-slate-600">
+                          <p className="inline-flex items-center gap-2"><Calendar size={14} className="text-sky-500" />{item.date}</p>
+                          <p className="inline-flex items-center gap-2"><Clock size={14} className="text-sky-500" />{item.time}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider ${
+                          item.mode === "online" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
+                        }`}>
+                          {item.mode === "online" ? <Video size={12} /> : <MapPin size={12} />}
+                          {item.mode || "offline"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider ${
+                          item.status === "reschedule_requested"
+                            ? "bg-amber-50 text-amber-700"
+                            : item.status === "completed"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-slate-100 text-slate-700"
+                        }`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center justify-center gap-2">
+                          {item.status === "reschedule_requested" && (
+                            <button
+                              onClick={() => handleApproveReschedule(item._id, item.suggestedDate, item.suggestedTime)}
+                              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black uppercase tracking-wider text-white transition hover:bg-emerald-700"
+                            >
+                              <CheckCircle2 size={14} />
+                              Approve
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteInterview(item._id)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-700 transition hover:bg-rose-100"
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ label, value, tone }) => {
+  const tones = {
+    sky: "from-sky-500/10 to-cyan-500/10 text-sky-700",
+    amber: "from-amber-500/10 to-orange-500/10 text-amber-700",
+    emerald: "from-emerald-500/10 to-green-500/10 text-emerald-700",
+  };
+
+  return (
+    <div className={`rounded-[1.75rem] border border-white/60 bg-gradient-to-br ${tones[tone]} p-5 shadow-sm`}>
+      <p className="text-[10px] font-black uppercase tracking-[0.22em] opacity-70">{label}</p>
+      <p className="mt-3 text-3xl font-black">{value}</p>
+    </div>
+  );
 };
 
 export default AdminInterviewList;

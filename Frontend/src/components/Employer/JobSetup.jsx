@@ -7,12 +7,11 @@ import {
   Select, SelectContent, SelectGroup, SelectItem,
   SelectTrigger, SelectValue
 } from '../ui/select';
-import axios from 'axios';
-import { JOB_API_END_POINT } from '@/utils/constant';
 import { toast } from 'sonner';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2, Briefcase, Building2, MapPin, FileText } from 'lucide-react';
 import RichTextEditor from '../RichTextEditor';
+import axiosInstance from '@/utils/axiosInstance';
 
 const JobSetup = () => {
   const params = useParams();
@@ -44,7 +43,7 @@ const JobSetup = () => {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const res = await axios.get(`${JOB_API_END_POINT}/get/${params.id}`, {
+        const res = await axiosInstance.get(`/job/get/${params.id}`, {
           withCredentials: true
         });
         if (res.data.success) {
@@ -144,12 +143,11 @@ const JobSetup = () => {
       formattedData.jobType = formattedData.jobType.trim();
 
       // ⭐ API CALL
-      const res = await axios.put(
-        `${JOB_API_END_POINT}/update/${params.id}`,
+      const res = await axiosInstance.put(
+        `/job/update/${params.id}`,
         formattedData,
         {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true
+          headers: { "Content-Type": "application/json" }
         }
       );
 

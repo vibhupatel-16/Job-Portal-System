@@ -43,7 +43,7 @@ const standardSlots = ["10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM
 
     try {
         // Backend se busy slots mangwayein
-        const res = await axiosInstance.get(`${INTERVIEW_API_END_POINT}/booked-slots?date=${selectedDate}`);
+        const res = await axiosInstance.get(`/interview/booked-slots?date=${selectedDate}`);
         if (res.data.success) {
             setBookedSlots(res.data.bookedTimes);
         }
@@ -55,7 +55,7 @@ const standardSlots = ["10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM
   // ================= SCHEDULE INTERVIEW =================
   const scheduleInterview = async () => {
     try {
-      await axiosInstance.post("/employer/interviews", {
+      await axiosInstance.post("/interview/interviews", {
         applicationId: selectedApp._id,
         ...interviewData,
       });

@@ -5,10 +5,9 @@ import { Input } from './ui/input'
 import { Button } from './ui/button'
 import { Loader2 } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
-import axios from 'axios'
+import axiosInstance from '@/utils/axiosInstance'
 import { setUser } from '@/redux/authSlice'
 import { toast } from 'sonner'
-import { USER_API_END_POINT } from '@/utils/constant'
 
 const UpdateProfileDialog = ({open, setOpen}) => {
     const [loading, setLoading] = useState(false);
@@ -51,11 +50,10 @@ const [input, setInput] = useState({
 
         try {
           setLoading(true)
-  const res = await axios.post(`${USER_API_END_POINT}/profile/update`, formData, {
+  const res = await axiosInstance.post(`/user/profile/update`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
-    },
-    withCredentials: true
+    }
   });
 
   console.log("Response from backend:", res.data); // ✅ backend response check karo

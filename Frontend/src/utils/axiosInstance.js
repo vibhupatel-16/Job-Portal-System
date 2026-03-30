@@ -1,7 +1,10 @@
 import axios from "axios";
+import { baseURL } from "./constant";
+import store from "@/redux/store";
+import { logout } from "@/redux/authSlice";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api/v1",
+  baseURL: baseURL,
   withCredentials: true, // cookies send + receive
 });
 
@@ -19,8 +22,9 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      store.dispatch(logout());
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      localStorage.removeItem("persist:root");
     }
     return Promise.reject(error);
   }

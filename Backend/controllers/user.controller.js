@@ -170,13 +170,16 @@ export const login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    };
+
     return res.status(200)
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: true,      
-        sameSite: "None",
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      })
+      .cookie("token", token, cookieOptions)
       .json({
         message: `Welcome back ${user.fullname}`,
         token,
@@ -198,8 +201,15 @@ export const login = async (req, res) => {
 // ---------------- LOGOUT ----------------
 export const logout = async (req, res) => {
   try {
+    const isProduction = process.env.NODE_ENV === "production";
+
     return res.status(200)
-      .cookie("token", "", { maxAge: 0 })
+      .cookie("token", "", {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "None" : "Lax",
+        expires: new Date(0),
+      })
       .json({
         message: "Logged out successfully",
         success: true

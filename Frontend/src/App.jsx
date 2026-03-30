@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import {  useSelector } from "react-redux";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
 
@@ -51,10 +51,11 @@ import JobSeekerDashboard from "./components/Jobseeker/JobSeekerDashboard";
 import JobSeekerLayout from "./components/dashboard/JobSeekerLayout";
 import SavedJobs from "./components/SavedJobs";
 import FAQSection from "./components/shared/FAQSection";
+import { baseURL } from "./utils/constant";
 
 
 // Global Socket Instance (Export if needed in other components)
-export const socket = io("http://localhost:8000", {
+export const socket = io(baseURL, {
   withCredentials: true,
   autoConnect: false, // Login ke baad connect karenge
 });

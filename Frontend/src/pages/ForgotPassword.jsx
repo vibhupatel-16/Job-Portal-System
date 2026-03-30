@@ -1,12 +1,10 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import Navbar from '@/components/shared/Navbar'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import axios from 'axios'
-import { USER_API_END_POINT } from '@/utils/constant'
 import { toast } from 'sonner'
+import axiosInstance from '@/utils/axiosInstance'
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("")
@@ -14,7 +12,7 @@ const ForgotPassword = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${USER_API_END_POINT}/forgot-password`, { email });
+      const res = await axiosInstance.post(`/user/forgot-password`, { email });
       if (res.data.success) {
         toast.success(res.data.message);
       }

@@ -2,8 +2,10 @@ import React from 'react';
 import LatestJobCards from './LatestJobCards';
 import { useSelector } from 'react-redux';
 
+const EMPTY_JOBS = [];
+
 const LatestJobs = () => {
-  const homeJobs = useSelector(store => store.job?.homeJobs || []);
+  const homeJobs = useSelector((store) => store.job?.homeJobs ?? EMPTY_JOBS);
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:py-16">

@@ -1,15 +1,14 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Label } from '../ui/label'
-import { Input } from '../ui/input'
-import { Button } from '../ui/button'
-import { Link, useNavigate } from 'react-router-dom'
-import axiosInstance from '@/utils/axiosInstance'
-import { USER_API_END_POINT } from '@/utils/constant'
-import { toast } from 'sonner'
-import { useDispatch, useSelector } from 'react-redux'
-import { setLoading, setUser } from '@/redux/authSlice'
-import { Loader2 } from 'lucide-react'
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { Link, useNavigate } from 'react-router-dom';
+import axiosInstance from '@/utils/axiosInstance';
+import { toast } from 'sonner';
+import { useDispatch, useSelector } from 'react-redux';
+import { setLoading, setUser } from '@/redux/authSlice';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const [input, setInput] = useState({
@@ -17,7 +16,7 @@ const Login = () => {
     password: ""
   });
 
-  const { loading } = useSelector(store => store.auth);
+  const { loading } = useSelector((store) => store.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -32,7 +31,7 @@ const Login = () => {
       dispatch(setLoading(true));
 
       const res = await axiosInstance.post(
-        `${USER_API_END_POINT}/login`,
+        `/user/login`,
         input,
         {
           headers: { "Content-Type": "application/json" },
@@ -41,25 +40,24 @@ const Login = () => {
       );
 
       if (res.data.success) {
+        const meRes = await axiosInstance.get(`/user/me`);
 
-        // Save token
-        // localStorage.setItem("token", res.data.token);
+        if (!meRes.data.success || !meRes.data.user) {
+          toast.error("Login succeeded but session was not created.");
+          return;
+        }
 
-        // Save user in Redux
-        dispatch(setUser(res.data.user));
-
+        const verifiedUser = meRes.data.user;
+        dispatch(setUser(verifiedUser));
         toast.success(res.data.message);
 
-        // ⭐ If admin → admin panel
-        if (res.data.role === "admin") {
+        if (verifiedUser.role === "admin") {
           navigate("/admin/panel");
           return;
         }
 
-        // ⭐ Else normal user → homepage
         navigate("/");
       }
-
     } catch (error) {
       console.log(error);
       toast.error(error.response?.data?.message || "Login failed");
@@ -70,11 +68,10 @@ const Login = () => {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50/50 to-purple-50 p-4 relative overflow-hidden">
-      {/* Decorative Blob */}
       <div className="absolute top-1/4 -left-20 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40"></div>
       <div className="absolute bottom-1/4 -right-20 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40"></div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
@@ -112,7 +109,7 @@ const Login = () => {
                 value={input.password}
                 name="password"
                 onChange={changeEventHandler}
-                placeholder="••••••••"
+                placeholder="........"
                 required
                 className="h-12 bg-white/50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl px-4 transition-all"
               />
@@ -134,7 +131,7 @@ const Login = () => {
 
           <div className='flex justify-center mt-6'>
             <span className='text-sm text-gray-500 font-medium'>
-              Don’t have an account?{" "}
+              Don't have an account?{" "}
               <Link to="/signup" className='text-indigo-600 font-bold hover:underline transition-all'>
                 Sign up
               </Link>
@@ -143,7 +140,7 @@ const Login = () => {
         </form>
       </motion.div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

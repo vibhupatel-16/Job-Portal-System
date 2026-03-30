@@ -36,9 +36,9 @@ const AdminPanel = () => {
     const loadData = async () => {
       try {
         const [statsRes, appsRes, jobsRes] = await Promise.all([
-           axiosInstance.get(ADMIN_STATS_URL, { withCredentials: true }),
-           axiosInstance.get("/admin/applications", { withCredentials: true }),
-           axiosInstance.get("/admin/jobs", { withCredentials: true })
+           axiosInstance.get(ADMIN_STATS_URL, ),
+           axiosInstance.get("/admin/applications", ),
+           axiosInstance.get("/admin/jobs", )
         ]);
 
         const fetchedStats = statsRes.data.stats;

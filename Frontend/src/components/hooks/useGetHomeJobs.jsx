@@ -1,6 +1,5 @@
 import { setHomeJobs } from "@/redux/jobSlice";
-import axios from "axios";
-import { JOB_API_END_POINT } from "@/utils/constant";
+import axiosInstance from "@/utils/axiosInstance";
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 
@@ -9,12 +8,19 @@ const useGetHomeJobs = () => {
 
   useEffect(() => {
     const fetchJobs = async () => {
-      const res = await axios.get(`${JOB_API_END_POINT}/get?page=1&limit=50`);
-      dispatch(setHomeJobs(res.data.jobs));
+      try {
+        const res = await axiosInstance.get(`/job/get`, {
+          params: { page: 1, limit: 50 },
+        });
+        dispatch(setHomeJobs(res.data.jobs || []));
+      } catch (error) {
+        console.log("Failed to fetch home jobs", error);
+        dispatch(setHomeJobs([]));
+      }
     };
 
     fetchJobs();
-  }, []);
+  }, [dispatch]);
 };
 
 export default useGetHomeJobs;

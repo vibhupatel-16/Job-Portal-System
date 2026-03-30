@@ -11,6 +11,5 @@ router.route("/status/:id/update").post(isAuthenticated, updateStatus);
 router.route("/analytics").get(isAuthenticated, getAnalyticsData);
 
 router.route("/status/:id/ai-scan").get(isAuthenticated, getAiMatchScore);
-router.get("/notifications", isAuthenticated, getNotifications);
 router.get("/:id/questions", isAuthenticated, generateInterviewQuestions);
 export default router;

@@ -39,7 +39,7 @@ const CategoryCarousal = () => {
 
   const searchJobHandler = (cat) => {
     dispatch(setSearchedQuery(cat.label));
-    dispatch(setFilter({ location: "", salary: "", experience: "" }));
+    dispatch(setFilter({ location: "", title: "", salary: "", experience: "" }));
     navigate("/browse");
   };
 

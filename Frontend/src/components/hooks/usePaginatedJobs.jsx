@@ -1,45 +1,44 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useSelector } from "react-redux";
-import { JOB_API_END_POINT } from "../../utils/constant";
+import axiosInstance from "@/utils/axiosInstance";
 
-const usePaginatedJobs = (page = 1, limit = 6) => {
+const usePaginatedJobs = (page = 1, limit = 5) => {
+  const { searchedQuery, filters } = useSelector((state) => state.job);
+
   const [jobs, setJobs] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // ⭐ Get Redux Filters
-  const { searchedQuery, filter } = useSelector((store) => store.job);
-
   useEffect(() => {
-    const loadJobs = async () => {
+    const fetchJobs = async () => {
       try {
         setLoading(true);
 
-        const res = await axios.get(`${JOB_API_END_POINT}/get`, {
+        const response = await axiosInstance.get(`/job/get`, {
           params: {
+            keyword: searchedQuery || "",
+            location: filters.location || "",
+            title: filters.title || "",
+            salary: filters.salary || "",
+            experience: filters.experience || "",
             page,
             limit,
-            // Map Redux to backend expected query params
-            keyword: searchedQuery || undefined,
-            location: filter?.location || undefined,
-            title: filter?.title || undefined, // Used in backend query.$or typically if it matches keyword, but wait... Redux `filter` has `title` mapped to Industry in FilterCard
-            salary: filter?.salary || undefined,
           },
         });
 
-        setJobs(res.data.jobs || []);
-        setTotalPages(res.data.totalPages || 1);
-
+        setJobs(response.data.jobs || []);
+        setTotalPages(response.data.totalPages || 1);
       } catch (err) {
-        console.log("JOBS API ERROR:", err);
+        console.log("API Error:", err);
+        setJobs([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     };
 
-    loadJobs();
-  }, [page, limit, searchedQuery, filter]);
+    fetchJobs();
+  }, [page, limit, searchedQuery, filters]);
 
   return { jobs, totalPages, loading };
 };

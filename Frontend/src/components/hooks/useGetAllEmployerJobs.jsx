@@ -1,7 +1,6 @@
 
 import { setAllEmployerJob } from '@/redux/jobSlice'
-import { JOB_API_END_POINT } from '@/utils/constant'
-import axios from 'axios'
+import axiosInstance from '@/utils/axiosInstance'
 import React, { useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 
@@ -10,7 +9,7 @@ const useGetAllEmployerJobs = () => {
      useEffect(()=>{
         const fetchAllEmployerJobs = async ()=>{
          try{
-            const res = await axios.get(`${JOB_API_END_POINT}/getadminjobs`, {withCredentials:true});
+            const res = await axiosInstance.get(`/job/getadminjobs`, );
             if(res.data.success) {
                dispatch(setAllEmployerJob(res.data.jobs));
             }

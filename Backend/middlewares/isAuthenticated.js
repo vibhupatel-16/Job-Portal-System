@@ -6,8 +6,6 @@ const isAuthenticated = async (req, res, next) => {
     // 1️⃣ Token get from cookie or authorization header
     let token = req.cookies?.token;
     // console.log("token is---> ",token);
-    
-    
 
     if (!token && req.headers.authorization) {
       token = req.headers.authorization.replace("Bearer ", "");
@@ -16,7 +14,7 @@ const isAuthenticated = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         message: "Please login first",
-        success: false
+        success: false,
       });
     }
 
@@ -28,14 +26,14 @@ const isAuthenticated = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({
         message: "User not found",
-        success: false
+        success: false,
       });
     }
 
     if (user.isBlocked) {
       return res.status(403).json({
-        message: "Aapka account admin dwara block kar diya gaya hai.",
-        success: false
+        message: "Account is blocked.",
+        success: false,
       });
     }
 
@@ -45,7 +43,6 @@ const isAuthenticated = async (req, res, next) => {
     req.userRole = user.role;
 
     next();
-
   } catch (error) {
     console.log("Auth error:", error);
     return res.status(401).json({

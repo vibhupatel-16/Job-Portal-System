@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { INTERVIEW_API_END_POINT } from '@/utils/constant';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Video, MapPin, Calendar, Clock, Timer, Building2, Send, X } from "lucide-react";
 import { toast } from 'sonner'; 
 import ViewFeedbackModal from './ViewFeedbackModal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+import axiosInstance from '@/utils/axiosInstance';
+import {motion } from "framer-motion";
 
 
 const JobseekerInterviews = () => {
@@ -55,9 +55,9 @@ const handleDateChange = async (e) => {
             // Hum employerId nikalenge selected interview se
             const employerId = selectedInterview?.scheduledBy?._id || selectedInterview?.scheduledBy;
             
-            const res = await axios.get(
-                `${INTERVIEW_API_END_POINT}/booked-slots?date=${selectedDate}&employerId=${employerId}`, 
-                { withCredentials: true }
+            const res = await   axiosInstance.get(
+                `/interview/booked-slots?date=${selectedDate}&employerId=${employerId}`, 
+                
             );
 
             if (res.data.success) {
@@ -71,18 +71,19 @@ const handleDateChange = async (e) => {
     }
 };
   
+const fetchList = async () => {
+    try {
+        const res = await axiosInstance.get(`/interview/my-interviews`);
+        if (res.data.success) {
+            setInterviews(res.data.interviews || []);
+        }
+    } catch (error) {
+        console.error("Error fetching your interviews", error);
+    }
+};
+
 useEffect(() => {
-        const fetchMyInterviews = async () => {
-            try {
-                const res = await axios.get(`${INTERVIEW_API_END_POINT}/my-interviews`, { withCredentials: true });
-                if (res.data.success) {
-                    setInterviews(res.data.interviews);
-                }
-            } catch (error) {
-                console.error("Error fetching your interviews", error);
-            }
-        };
-        fetchMyInterviews();
+        fetchList();
     }, []);
 
    // --- ⭐ FIXED HANDLER FOR RESCHEDULE ---
@@ -93,14 +94,14 @@ const handleRescheduleSubmit = async () => {
     }
 
     try {
-        const res = await axios.post(`${INTERVIEW_API_END_POINT}/reschedule-request`, 
+        const res = await axiosInstance.post(`/interview/reschedule-request`, 
             { 
                 interviewId: selectedInterview?._id, 
                 suggestedDate: rescheduleData.preferredDate, // Backend key se match kiya
                 suggestedTime: rescheduleData.preferredTime, // Backend key se match kiya
                 reason: rescheduleData.reason 
             }, 
-            { withCredentials: true }
+            
         );
 
         if (res.data.success) {
@@ -195,7 +196,7 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
 const handleViewFeedback = async (interviewId) => {
     try {
         // Employer side ki tarah hum interviewId route mein bhej rahe hain
-        const res = await axios.get(`${INTERVIEW_API_END_POINT}/feedback/${interviewId}`, { withCredentials: true });
+        const res = await axiosInstance.get(`/interview/feedback/${interviewId}`, );
         
         if (res.data.success) {
             setSelectedFeedback(res.data.feedback);
@@ -303,7 +304,7 @@ const handleViewFeedback = async (interviewId) => {
                                         ) : 
                                         (
                                             <Badge className={`${
-                                                item.status === 'Scheduled' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 
+                                                item.status === 'scheduled' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 
                                                 'bg-orange-50 text-orange-700 border-orange-200'
                                             } border font-bold text-[10px] uppercase tracking-widest px-3 py-1`}>
                                                 {item.status}

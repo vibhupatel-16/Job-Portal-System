@@ -1,29 +1,31 @@
-import React, { useState } from "react";
-import Navbar from "./shared/Navbar";
+import React, { useEffect, useState } from "react";
 import FilterCard from "./FilterCard";
 import Job from "../components/Job";
-import Pagination from "../components/Pagination"; // <-- Add this
-import usePaginatedJobs from "./hooks/usePaginatedJobs"; // <-- Add hook
+import Pagination from "../components/Pagination";
+import usePaginatedJobs from "./hooks/usePaginatedJobs";
+import { useDispatch } from "react-redux";
+import { setFilter, setSearchedQuery } from "@/redux/jobSlice";
 
 const Jobs = () => {
   const [page, setPage] = useState(1);
-  const limit = 6; // 3 columns × 2 rows
+  const limit = 6;
+  const dispatch = useDispatch();
 
-  // ⭐ Using your reusable API hook
   const { jobs, totalPages, loading } = usePaginatedJobs(page, limit);
+
+  useEffect(() => {
+    dispatch(setSearchedQuery(""));
+    dispatch(setFilter({ location: "", title: "", salary: "", experience: "" }));
+  }, [dispatch]);
 
   return (
     <div>
-      {/* <Navbar /> */}
-
       <div className="max-w-7xl mx-auto mt-5">
         <div className="flex gap-5">
-          {/* Sidebar Filters */}
           <div className="w-[20%]">
             <FilterCard />
           </div>
 
-          {/* Jobs List */}
           <div className="flex-1 h-[88vh] overflow-y-auto pb-5">
             {loading ? (
               <p className="text-center text-lg mt-10">Loading Jobs...</p>
@@ -39,7 +41,6 @@ const Jobs = () => {
               </div>
             )}
 
-            {/* ⭐ Pagination Component */}
             <Pagination page={page} totalPages={totalPages} setPage={setPage} />
           </div>
         </div>
