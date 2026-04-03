@@ -1,6 +1,13 @@
 // backend/utils/emailTemplates.js
 
-export const jobPostingTemplate = (title, location, jobType, experience, salary, description) => `
+export const jobPostingTemplate = (
+  title,
+  location,
+  jobType,
+  experience,
+  salary,
+  description,
+) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -55,7 +62,7 @@ export const jobPostingTemplate = (title, location, jobType, experience, salary,
             <div style="margin-bottom: 30px;">
                 <h3 style="margin: 0 0 15px 0; color: #0f172a; font-size: 16px;">Description:</h3>
                 <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0;">
-                     ${description.length > 300 ? description.substring(0, 300) + '...' : description}
+                     ${description.length > 300 ? description.substring(0, 300) + "..." : description}
                 </p>
             </div>
 
@@ -77,20 +84,25 @@ export const jobPostingTemplate = (title, location, jobType, experience, salary,
 </html>
 `;
 
-export const applicationStatusTemplate = (applicantName, jobTitle, status, statusColor) => {
-    let headerText = "Application Update";
-    let subHeaderText = "Updates regarding your application process.";
-    let headerBgColor = "#8b5cf6"; // Default purple
-    let alertBoxHtml = "";
-    let nextStepsHtml = "";
-    
-    // Status Logic Routing
-    if (status === "shortlisted") {
-        headerText = "Application Update";
-        subHeaderText = "Great news about your application!";
-        headerBgColor = "#8b5cf6"; // Purple
-        
-        alertBoxHtml = `
+export const applicationStatusTemplate = (
+  applicantName,
+  jobTitle,
+  status,
+  statusColor,
+) => {
+  let headerText = "Application Update";
+  let subHeaderText = "Updates regarding your application process.";
+  let headerBgColor = "#8b5cf6"; // Default purple
+  let alertBoxHtml = "";
+  let nextStepsHtml = "";
+
+  // Status Logic Routing
+  if (status === "shortlisted") {
+    headerText = "Application Update";
+    subHeaderText = "Great news about your application!";
+    headerBgColor = "#8b5cf6"; // Purple
+
+    alertBoxHtml = `
             <div style="background-color: #fdf5ff; border-left: 4px solid #a855f7; border-radius: 4px; padding: 20px; margin: 25px 0;">
                 <div style="display: flex; align-items: flex-start;">
                     <svg style="width: 24px; height: 24px; color: #a855f7; margin-right: 12px; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -102,7 +114,7 @@ export const applicationStatusTemplate = (applicantName, jobTitle, status, statu
             </div>
         `;
 
-        nextStepsHtml = `
+    nextStepsHtml = `
             <div style="background-color: #f8fafc; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
                 <h3 style="margin: 0 0 15px 0; color: #0f172a; font-size: 16px;">Next Steps</h3>
                 <p style="color: #475569; font-size: 14px; margin: 0 0 10px 0;">1. Our recruitment team will review your profile further.</p>
@@ -111,33 +123,31 @@ export const applicationStatusTemplate = (applicantName, jobTitle, status, statu
             </div>
             <p style="color: #4b5563; font-size: 14px; line-height: 1.6;">Our recruitment team will contact you within <b>3-5 business days</b> to schedule the next contact.</p>
         `;
+  } else if (status === "accepted") {
+    headerText = "Offer Accepted";
+    subHeaderText = "Welcome to the team!";
+    headerBgColor = "#16a34a"; // Green
 
-    } else if (status === "accepted") {
-        headerText = "Offer Accepted";
-        subHeaderText = "Welcome to the team!";
-        headerBgColor = "#16a34a"; // Green
-        
-        alertBoxHtml = `
+    alertBoxHtml = `
             <div style="background-color: #f0fdf4; border: 1px solid #16a34a; border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center;">
                 <svg style="width: 48px; height: 48px; color: #16a34a; margin: 0 auto 15px auto; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <h2 style="margin: 0 0 10px 0; color: #166534; font-size: 22px;">Welcome Aboard!</h2>
                 <p style="margin: 0; color: #15803d; font-size: 15px; line-height: 1.5;">We're excited to have you join our team and look forward to working with you.</p>
             </div>
         `;
+  } else if (status === "rejected") {
+    headerText = "Application Status";
+    subHeaderText = "An update regarding your profile.";
+    headerBgColor = "#475569"; // Slate gray
 
-    } else if (status === "rejected") {
-        headerText = "Application Status";
-        subHeaderText = "An update regarding your profile.";
-        headerBgColor = "#475569"; // Slate gray
-        
-        alertBoxHtml = `
+    alertBoxHtml = `
             <div style="background-color: #f8fafc; border-left: 4px solid #64748b; border-radius: 4px; padding: 20px; margin: 25px 0;">
                 <p style="margin: 0; color: #334155; font-size: 15px; line-height: 1.6;">Thank you for your time. After careful consideration, we have decided to move forward with other candidates whose profiles more closely match our current needs for the <b>${jobTitle}</b> role.</p>
             </div>
         `;
-    }
+  }
 
-    return `
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -160,9 +170,9 @@ export const applicationStatusTemplate = (applicantName, jobTitle, status, statu
         <div style="padding: 30px;">
             <p style="font-size: 16px; color: #4b5563; margin-top: 0;">Dear ${applicantName},</p>
             
-            ${status === 'accepted' ? `<p style="font-size: 15px; color: #4b5563; line-height: 1.6;">Congratulations! We are thrilled to confirm that <b>your job application has been accepted</b> and you will be moving to the final onboarding stage for the <b>${jobTitle}</b> role.</p>` : ''}
+            ${status === "accepted" ? `<p style="font-size: 15px; color: #4b5563; line-height: 1.6;">Congratulations! We are thrilled to confirm that <b>your job application has been accepted</b> and you will be moving to the final onboarding stage for the <b>${jobTitle}</b> role.</p>` : ""}
             
-            ${status === 'shortlisted' ? `<p style="font-size: 15px; color: #4b5563; line-height: 1.6;">We are pleased to inform you that after careful review of all applications, <b>you have been shortlisted</b> for the position of <b>${jobTitle}</b>.</p>` : ''}
+            ${status === "shortlisted" ? `<p style="font-size: 15px; color: #4b5563; line-height: 1.6;">We are pleased to inform you that after careful review of all applications, <b>you have been shortlisted</b> for the position of <b>${jobTitle}</b>.</p>` : ""}
 
             ${alertBoxHtml}
             ${nextStepsHtml}
@@ -186,13 +196,28 @@ export const applicationStatusTemplate = (applicantName, jobTitle, status, statu
     `;
 };
 
-export const interviewScheduleTemplate = (applicantName, jobTitle, companyName, date, time, mode, meetLink, calendarUrl, resumeUrl, isReschedule = false) => {
-    const headerText = isReschedule ? "Reschedule Approved" : "Interview Invitation";
-    const subHeaderText = isReschedule ? "Your new interview details." : "You've been invited to an interview!";
-    const headerBgColor = isReschedule ? "#0ea5e9" : "#6366f1"; // Blue or Indigo
-    const accentColor = isReschedule ? "#0284c7" : "#4f46e5";
+export const interviewScheduleTemplate = (
+  applicantName,
+  jobTitle,
+  companyName,
+  date,
+  time,
+  mode,
+  meetLink,
+  calendarUrl,
+  resumeUrl,
+  isReschedule = false,
+) => {
+  const headerText = isReschedule
+    ? "Reschedule Approved"
+    : "Interview Invitation";
+  const subHeaderText = isReschedule
+    ? "Your new interview details."
+    : "You've been invited to an interview!";
+  const headerBgColor = isReschedule ? "#0ea5e9" : "#6366f1"; // Blue or Indigo
+  const accentColor = isReschedule ? "#0284c7" : "#4f46e5";
 
-    return `
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -215,9 +240,11 @@ export const interviewScheduleTemplate = (applicantName, jobTitle, companyName, 
         <div style="padding: 30px;">
             <p style="font-size: 16px; color: #4b5563; margin-top: 0;">Dear ${applicantName},</p>
             <p style="font-size: 15px; color: #4b5563; line-height: 1.6; margin-bottom: 25px;">
-                ${isReschedule 
-                    ? `Your request to reschedule the interview for the <b>${jobTitle}</b> position at <b>${companyName}</b> has been approved.` 
-                    : `We are pleased to invite you to an interview for the <b>${jobTitle}</b> position at <b>${companyName}</b>.`}
+                ${
+                  isReschedule
+                    ? `Your request to reschedule the interview for the <b>${jobTitle}</b> position at <b>${companyName}</b> has been approved.`
+                    : `We are pleased to invite you to an interview for the <b>${jobTitle}</b> position at <b>${companyName}</b>.`
+                }
             </p>
             
             <div style="background-color: #f8fafc; border-radius: 8px; padding: 25px; margin-bottom: 25px; border-left: 4px solid ${headerBgColor};">
@@ -240,21 +267,33 @@ export const interviewScheduleTemplate = (applicantName, jobTitle, companyName, 
 
             <!-- Action Area -->
             <div style="text-align: center; margin-top: 35px; margin-bottom: 20px;">
-                ${mode === "online" && meetLink ? `
+                ${
+                  mode === "online" && meetLink
+                    ? `
                     <a href="${meetLink}" style="background-color: ${accentColor}; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; display: inline-block; margin-bottom: 15px;">
                         Join Virtual Interview
                     </a>
-                ` : ""}
+                `
+                    : ""
+                }
                 
-                ${calendarUrl ? `<br/><a href="${calendarUrl}" style="color: ${accentColor}; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid ${accentColor}; padding: 10px 20px; border-radius: 6px; display: inline-block;">
+                ${
+                  calendarUrl
+                    ? `<br/><a href="${calendarUrl}" style="color: ${accentColor}; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid ${accentColor}; padding: 10px 20px; border-radius: 6px; display: inline-block;">
                     Add to Google Calendar
-                </a>` : ''}
+                </a>`
+                    : ""
+                }
 
                 <!-- RESUME LINK INJECTION -->
-                ${resumeUrl ? `<div style="margin-top: 25px; padding-top: 20px; border-top: 1px dotted #cbd5e1;">
+                ${
+                  resumeUrl
+                    ? `<div style="margin-top: 25px; padding-top: 20px; border-top: 1px dotted #cbd5e1;">
                     <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">Reference the candidate's active profile:</p>
                     <a href="${resumeUrl}" style="color: #6366f1; text-decoration: underline; font-size: 14px; font-weight: 600;">View Candidate Resume</a>
-                </div>` : ''}
+                </div>`
+                    : ""
+                }
 
             </div>
         </div>
@@ -312,6 +351,140 @@ export const forgotPasswordTemplate = (userName, resetUrl) => `
             <p style="color: #94a3b8; font-size: 12px; margin: 0;">
                 Security Alert: Never share this link with anyone.
             </p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+export const supportTicketConfirmationTemplate = (
+  userName,
+  ticketId,
+  message,
+) => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; padding: 20px; margin: 0; color: #374151;">
+    <div style="max-width: 600px; background-color: #ffffff; margin: 0 auto; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb;">
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 40px 30px; text-align: center; color: white;">
+            <div style="background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+                <svg style="width: 32px; height: 32px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">Support Request Received</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 14px;">Ticket ID: #${ticketId.toString().toUpperCase()}</p>
+        </div>
+
+        <div style="padding: 40px 30px;">
+            <p style="font-size: 16px; font-weight: 600; color: #111827; margin-top: 0;">Hi ${userName},</p>
+            <p style="font-size: 15px; color: #4b5563; line-height: 1.6; margin-bottom: 30px;">
+                Thank you for reaching out to **Nexforge Support**. We've successfully received your message and our team is already looking into it.
+            </p>
+            
+            <div style="background-color: #f8fafc; border-radius: 12px; padding: 25px; border: 1px solid #f1f5f9; margin-bottom: 30px;">
+                <h4 style="margin: 0 0 10px 0; color: #6366f1; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800;">Your Message Summary:</h4>
+                <p style="margin: 0; color: #334155; font-size: 14px; font-style: italic; line-height: 1.6;">"${message}"</p>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; line-height: 1.6; text-align: center;">
+                Our average response time is <b>within 24 hours</b>. You will receive another email once our support specialist replies to your query.
+            </p>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 25px; text-align: center; border-top: 1px solid #f1f5f9;">
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} Nexforge Technology | Dharma Infosystem
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+export const supportTicketReplyTemplate = (userName, ticketId, adminReply) => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; padding: 20px; margin: 0; color: #374151;">
+    <div style="max-width: 600px; background-color: #ffffff; margin: 0 auto; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb;">
+        <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 40px 30px; text-align: center; color: white;">
+            <div style="background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+                <svg style="width: 32px; height: 32px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+            </div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 800;">Response to Your Request</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 14px;">Ticket Reference: #${ticketId.toString().toUpperCase()}</p>
+        </div>
+
+        <div style="padding: 40px 30px;">
+            <p style="font-size: 16px; font-weight: 600; color: #111827; margin-top: 0;">Hi ${userName},</p>
+            <p style="font-size: 15px; color: #4b5563; line-height: 1.6;">
+                Our support team has reviewed your request. Please find our response below:
+            </p>
+            
+            <div style="background-color: #ecfdf5; border-radius: 12px; padding: 25px; border: 1px solid #d1fae5; margin: 25px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #059669; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800;">Admin Response:</h4>
+                <p style="margin: 0; color: #064e3b; font-size: 15px; line-height: 1.6; font-weight: 500;">${adminReply}</p>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+                If you have further questions, feel free to reply to this email or visit your dashboard.
+            </p>
+
+            <div style="text-align: center; margin-top: 35px;">
+                <a href="http://localhost:5173/jobseeker/dashboard" style="background-color: #059669; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);">
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 25px; text-align: center; border-top: 1px solid #f1f5f9;">
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} Nexforge Support Team
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+export const supportTicketStatusUpdateTemplate = (
+  userName,
+  ticketId,
+  previousStatus,
+  newStatus,
+) => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f5f3ff 0%, #faf9ff 100%); padding: 20px; margin: 0;">
+    <div style="max-width: 600px; background-color: #ffffff; margin: 0 auto; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(124, 58, 237, 0.15); border: 1px solid #e9d5ff;">
+        <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #d946ef 100%); padding: 40px 30px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 900;">Support Ticket Status Updated</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 14px;">Ticket ID: #${ticketId.toString().slice(-8).toUpperCase()}</p>
+        </div>
+
+        <div style="padding: 35px 30px;">
+            <p style="font-size: 16px; font-weight: 600; color: #111827; margin-top: 0;">Hi ${userName},</p>
+            <p style="font-size: 15px; color: #4b5563; line-height: 1.7;">Your support ticket status has changed from <strong>${previousStatus}</strong> to <strong>${newStatus}</strong>.</p>
+            <p style="font-size: 14px; color: #6b7280; margin-top: 16px;">We are continuing to work on your request and will update you if there are more changes.</p>
+
+            <div style="text-align:center; margin-top: 28px;">
+                <a href="http://localhost:5173" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: #fff; padding: 14px 30px; border-radius: 10px; text-decoration: none; font-weight: 700;">View Support Ticket</a>
+            </div>
+        </div>
+
+        <div style="background: linear-gradient(90deg, #f3e8ff 0%, #faf5ff 100%); padding: 20px; text-align: center; border-top: 1px solid #e9d5ff;">
+            <p style="color: #7c3aed; font-size: 12px; margin: 0;">Nexforge Support Team</p>
+            <p style="color: #a89fbf; font-size: 11px; margin: 5px 0 0 0;">© ${new Date().getFullYear()} Nexforge | Empowering Careers Through Intelligent Matching</p>
         </div>
     </div>
 </body>

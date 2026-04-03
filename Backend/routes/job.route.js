@@ -6,6 +6,6 @@ import { getAdminJobs, getAllJobs, getJobById, postJob, updateJob } from "../con
  router.route("/post").post(isAuthenticated, postJob);
  router.route("/get").get( getAllJobs);
  router.route("/getadminjobs").get(isAuthenticated,getAdminJobs);
- router.route("/get/:id").get(isAuthenticated, getJobById);
+ router.route("/get/:id").get(getJobById); // public access for job details
  router.route("/update/:id").put(isAuthenticated, updateJob);
  export default router;

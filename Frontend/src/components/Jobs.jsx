@@ -15,7 +15,7 @@ const Jobs = () => {
 
   useEffect(() => {
     dispatch(setSearchedQuery(""));
-    dispatch(setFilter({ location: "", title: "", salary: "", experience: "" }));
+    dispatch(setFilter({ category: "", experience: "", jobType: "", salary: "" }));
   }, [dispatch]);
 
   return (

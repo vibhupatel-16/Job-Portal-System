@@ -128,6 +128,7 @@ const ScheduledInterviews = () => {
                 <TableHead className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Date & Time</TableHead>
                 <TableHead className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Mode</TableHead>
                 <TableHead className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Meeting</TableHead>
+                <TableHead className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Status</TableHead>
                 <TableHead className="text-center text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -196,6 +197,18 @@ const ScheduledInterviews = () => {
                         {item.mode === 'online' ? 'Link Pending' : 'In-Person'}
                       </span>
                     )}
+                  </TableCell>
+
+                  <TableCell>
+                    <Badge className={`${
+                      item.status === 'scheduled' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                      item.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      item.status === 'cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                      item.status === 'reschedule_requested' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-gray-50 text-gray-700 border-gray-200'
+                    } border font-bold text-[10px] uppercase tracking-widest px-3 py-1`}>
+                      {item.status.replace('_', ' ')}
+                    </Badge>
                   </TableCell>
 
                   <TableCell className="text-center">

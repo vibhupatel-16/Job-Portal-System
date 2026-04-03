@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -6,10 +6,12 @@ import {
   FaApple, FaGooglePlay, FaArrowRight, FaMapMarkerAlt,
   FaEnvelope, FaPhoneAlt, FaGlobe,
 } from "react-icons/fa";
+import SupportModal from "./SupportModal";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const { user } = useSelector(store => store.auth);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
   // Dynamic routing maps
   const getDynamicLinks = () => {
@@ -17,7 +19,7 @@ const Footer = () => {
       return [
         { label: "Browse Jobs", path: "/browse" },
         { label: "Register Account", path: "/signup" },
-        { label: "Employer Login", path: "/login" },
+        { label: "Employer Login", path: "/employer-login" },
         { label: "Support & FAQ", path: "/faq" },
       ];
     }
@@ -33,7 +35,7 @@ const Footer = () => {
 
     // Default to Jobseeker (student)
     return [
-      { label: "Browse Jobs", path: "/browse" },
+      { label: "Browse Jobs", path: "/jobs" },
       { label: "My Applications", path: "/jobseeker/dashboard" },
       { label: "My Interviews", path: "/jobseeker/interviews" },
       { label: "Jobseeker FAQ", path: "/jobseeker/faq" },
@@ -43,56 +45,61 @@ const Footer = () => {
   const dynamicLinks = getDynamicLinks();
 
   return (
-    <footer className="bg-[#05070A] text-gray-400 py-20 mt-20 font-sans selection:bg-orange-500 selection:text-white relative overflow-hidden">
-      {/* Background Decorative Element */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full"></div>
+    <footer className="bg-gradient-to-b from-[#1a1f2e] via-[#232b3a] to-[#1a1f2e] text-gray-400 py-16 mt-20 font-sans selection:bg-orange-500 selection:text-white relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/8 blur-[120px] rounded-full"></div>
+      <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-purple-600/8 blur-[120px] rounded-full"></div>
       
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-16 pb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 pb-8">
           
           {/* Column 1: Brand & Mission */}
-          <div className="lg:col-span-4 space-y-8">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-tr from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-xl shadow-orange-900/20 rotate-3">
-                <span className="text-white font-black text-2xl tracking-tighter">J</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-white tracking-tighter leading-none">
-                  JOB<span className="text-orange-500">PORTAL</span>
-                </h2>
-                <span className="text-[10px] text-gray-600 font-bold tracking-[0.3em] uppercase">Next-Gen Hiring</span>
-              </div>
+          <div className="lg:col-span-4 space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight text-white leading-snug">
+                <span className="text-[#7C3AED]">Nex</span>
+                <span className="bg-gradient-to-r from-[#FDE68A] via-[#FB923C] to-[#F97316] bg-clip-text text-transparent">Forge</span>
+              </h2>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mt-1">NEXT-GEN HIRING PLATFORM</p>
             </div>
-            
-            <p className="text-sm leading-relaxed text-gray-500 font-medium max-w-xs">
-              Empowering careers through intelligent matching. Join 2M+ professionals finding their dream roles daily.
+
+            <p className="text-sm leading-relaxed text-gray-300 font-medium max-w-sm">
+              Empowering careers through intelligent job matching. Connect with thousands of opportunities and build your future with us.
             </p>
 
-            <div className="flex gap-3">
+            {/* Social Links */}
+            <div className="flex gap-4">
               {[
-                { Icon: FaLinkedinIn, link: "#", color: "hover:bg-blue-700" },
-                { Icon: FaTwitter, link: "#", color: "hover:bg-sky-500" },
-                { Icon: FaInstagram, link: "#", color: "hover:bg-pink-600" },
-                { Icon: FaFacebookF, link: "#", color: "hover:bg-blue-600" }
+                { Icon: FaLinkedinIn, link: "https://in.linkedin.com/company/nexforge-technology-pvt-ltd", color: "hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-700/50" },
+                
               ].map((item, idx) => (
-                <a key={idx} href={item.link} className={`w-10 h-10 rounded-xl bg-gray-900/50 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 border border-gray-800/50 ${item.color}`}>
-                  <item.Icon size={16} />
+                <a 
+                  key={idx} 
+                  href={item.link} 
+                  target="_blank"
+                  rel="noopener noreferrer" 
+                  className={`w-11 h-11 rounded-lg bg-gray-900/60 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 border border-gray-800/50 hover:border-gray-700 transform hover:scale-110 ${item.color}`}
+                >
+                  <item.Icon size={18} />
                 </a>
               ))}
             </div>
           </div>
 
           {/* Column 2: Quick Links */}
-          <div className="lg:col-span-2 space-y-6">
-            <h4 className="text-white font-bold text-xs uppercase tracking-[0.2em] border-l-2 border-orange-500 pl-3">Platform</h4>
-            <ul className="space-y-4 text-sm font-semibold">
+          <div className="lg:col-span-3 space-y-6">
+            <h4 className="text-white font-bold text-sm uppercase tracking-[0.15em] border-l-3 border-orange-500 pl-4">Platform</h4>
+            <ul className="space-y-3 text-sm">
               {dynamicLinks.map((link, i) => (
                <li key={i}>
-                 <Link to={link.path} className="hover:text-orange-500 transition-colors flex items-center gap-2 group">
-                   <FaArrowRight size={10} className="opacity-0 group-hover:opacity-100 -ml-4 group-hover:ml-0 transition-all"/> 
-                   {link.label}
+                 <Link 
+                   to={link.path} 
+                   className="text-gray-400 hover:text-orange-500 transition-all duration-300 flex items-center gap-2 group hover:translate-x-1"
+                 >
+                   <FaArrowRight size={11} className="opacity-0 group-hover:opacity-100 -ml-3 group-hover:ml-0 transition-all"/> 
+                   <span>{link.label}</span>
                  </Link>
                </li>
               ))}
@@ -101,74 +108,85 @@ const Footer = () => {
 
           {/* Column 3: Contact Details */}
           <div className="lg:col-span-3 space-y-6">
-            <h4 className="text-white font-bold text-xs uppercase tracking-[0.2em] border-l-2 border-orange-500 pl-3">Contact Support</h4>
-            <div className="space-y-5 text-sm font-medium">
+            <h4 className="text-white font-bold text-sm uppercase tracking-[0.15em] border-l-3 border-orange-500 pl-4">Get In Touch</h4>
+            <div className="space-y-4 text-sm">
+              {/* Location */}
               <div className="flex items-start gap-4 group">
-                <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform"><FaMapMarkerAlt size={14}/></div>
-                <span className="text-gray-500">Titanium Square, S.G. Highway,<br/>Surat, Gujarat - 395009</span>
+                <div className="w-10 h-10 rounded-lg bg-gray-900/70 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform border border-gray-800 flex-shrink-0">
+                  <FaMapMarkerAlt size={16}/>
+                </div>
+                <div className="pt-1">
+                  <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Location</p>
+                  <a 
+                    href="https://www.google.com/maps/search/?api=1&query=Aries+Galleria+Vasna+Main+Road+Vadodara" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-orange-400 transition-colors leading-relaxed text-xs"
+                  >
+                    502/503 Aries Galleria<br/>
+                    Near Taksh Complex, Vasna Main Road<br/>
+                    Vadodara, Gujarat - 390007
+                  </a>
+                </div>
               </div>
+
+              {/* Email */}
               <div className="flex items-center gap-4 group">
-                <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform"><FaEnvelope size={14}/></div>
-                <a href="mailto:hello@jobportal.com" className="text-gray-500 hover:text-white transition-colors">hello@jobportal.com</a>
-              </div>
-              <div className="flex items-center gap-4 group">
-                <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform"><FaPhoneAlt size={14}/></div>
-                <span className="text-gray-500">+91 98765 43210</span>
+                <div className="w-10 h-10 rounded-lg bg-gray-900/70 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform border border-gray-800 flex-shrink-0">
+                  <FaEnvelope size={16}/>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Email</p>
+                  <a 
+                    href="mailto:nexforgetechnology@gmail.com" 
+                    className="text-gray-400 hover:text-orange-400 transition-colors text-xs"
+                  >
+                    nexforgetechnology@gmail.com
+                  </a>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Column 4: App Download */}
-          <div className="lg:col-span-3 space-y-6">
-            <h4 className="text-white font-bold text-xs uppercase tracking-[0.2em] border-l-2 border-orange-500 pl-3">Mobile Ecosystem</h4>
-            <p className="text-xs text-gray-600 leading-relaxed font-medium">Experience seamless job hunting on the go. Download our official apps.</p>
-            <div className="flex flex-col gap-3">
-              <button className="flex items-center gap-4 bg-gray-900/50 border border-gray-800 p-3 rounded-2xl hover:bg-orange-600 hover:border-orange-600 group transition-all duration-500">
-                <FaApple size={28} className="text-white" />
-                <div className="text-left">
-                  <p className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-orange-100">Coming soon on</p>
-                  <p className="text-sm font-black text-white">App Store</p>
-                </div>
-              </button>
-              <button className="flex items-center gap-4 bg-gray-900/50 border border-gray-800 p-3 rounded-2xl hover:bg-orange-600 hover:border-orange-600 group transition-all duration-500">
-                <FaGooglePlay size={24} className="text-white" />
-                <div className="text-left">
-                  <p className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-orange-100">Download for</p>
-                  <p className="text-sm font-black text-white">Google Play</p>
-                </div>
-              </button>
-            </div>
-          </div>
+   
 
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-10 border-t border-gray-900 flex flex-col md:flex-row justify-between items-center gap-8">
+        <div className="pt-12 border-t border-gray-900/50 flex flex-col md:flex-row justify-between items-center gap-6">
           
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 bg-gray-900/50 px-4 py-2 rounded-full border border-gray-800">
+            <div className="flex items-center gap-2 bg-gray-900/40 px-4 py-2 rounded-full border border-gray-800/40 hover:border-green-500/30 transition-all duration-300">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">System Live</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">System Live</span>
             </div>
-            <p className="text-[11px] font-bold text-gray-600">© {currentYear} JOBPORTAL INDIA</p>
+            <p className="text-xs font-semibold text-gray-600">© {currentYear} Nexforge. All Rights Reserved.</p>
           </div>
 
-          <div className="flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest text-gray-500">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Cookies</a>
-            <div className="flex items-center gap-2 text-gray-700">
-              <FaGlobe />
-              <span>EN-IN</span>
-            </div>
-          </div>
+        <div className="flex gap-6">
+  <Link to="/privacy-policy" className="hover:text-orange-400 transition-colors duration-300">Privacy Policy</Link>
+  <Link to="/terms" className="hover:text-orange-400 transition-colors duration-300">Terms of Service</Link>
+  <Link to="/cookies" className="hover:text-orange-400 transition-colors duration-300">Cookie Policy</Link>
+  <button
+    onClick={() => setIsSupportModalOpen(true)}
+    className="hover:text-orange-400 transition-colors duration-300 cursor-pointer"
+  >
+    Contact Support
+  </button>
+</div>
 
         </div>
 
       </div>
+
+      {/* Support Modal */}
+      <SupportModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+      />
     </footer>
   );
 };

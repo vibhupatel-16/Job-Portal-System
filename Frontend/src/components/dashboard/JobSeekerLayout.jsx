@@ -3,6 +3,7 @@ import { DashboardLayout } from "./DashboardLayout";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import TestimonialFeedbackForm from "../shared/TestimonialFeedbackForm";
 import { MessageSquareHeart } from "lucide-react";
+import { Outlet } from "react-router-dom";
 
 const jobSeekerSidebarItems = [
   { label: "Dashboard", path: "/jobseeker/dashboard", icon: "LayoutDashboard" },
@@ -12,12 +13,12 @@ const jobSeekerSidebarItems = [
   { label: "FAQ & Support", path: "/jobseeker/faq", icon: "HelpCircle" },
 ];
 
-export function JobSeekerLayout({ children }) {
+export function JobSeekerLayout() {
   const [showTestimonialModal, setShowTestimonialModal] = useState(false);
 
   return (
     <DashboardLayout sidebarItems={jobSeekerSidebarItems} title="Job Seeker">
-      {children}
+      {<Outlet/>}
       
       {/* Floating Action Button for Testimonial */}
       <button 

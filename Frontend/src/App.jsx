@@ -42,6 +42,7 @@ import ManageApplications from "./components/Admin/ManageApplications";
 import AdminCompanyCreate from "./components/Admin/AdminCompanyCreate";
 import AdminCompanyUpdate from "./components/Admin/AdminCompanyUpdate";
 import ManageTestimonials from "./components/Admin/ManageTestimonials";
+import ManageSupportTickets from "./components/Admin/ManageSupportTickets";
 
 // Interviews
 import ScheduledInterviews from "./components/Employer/ScheduleInterviews";
@@ -52,10 +53,16 @@ import JobSeekerLayout from "./components/dashboard/JobSeekerLayout";
 import SavedJobs from "./components/SavedJobs";
 import FAQSection from "./components/shared/FAQSection";
 import { baseURL } from "./utils/constant";
+import VerifyOtp from "./components/auth/VerifyOtp";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import CookiePolicy from "./pages/CookiePolicy";
+import ContactSupport from "./pages/ContactSupport";
+import JobSeekerProtectedRoute from "./components/JobSeeekerProtectedRoute";
 
 
 // Global Socket Instance (Export if needed in other components)
-export const socket = io(baseURL, {
+export const socket = io("http://192.168.1.21:8000", {
   withCredentials: true,
   autoConnect: false, // Login ke baad connect karenge
 });
@@ -69,6 +76,7 @@ const appRouter = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/login", element: <Login /> },
       { path: "/signup", element: <Signup /> },
+      { path:"/verify-otp", element:<VerifyOtp />} ,
       { path: "/employer-login", element: <EmployerLogin /> },
       { path: "/employer/signup", element: <EmployerSignup /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
@@ -78,9 +86,26 @@ const appRouter = createBrowserRouter([
       { path: "/description/:id", element: <JobDescription /> },
       { path: "/browse", element: <Browse /> },
       { path: "/profile", element: <Profile /> },
+        { path: "/saved-jobs", element: <SavedJobs /> },
+      {
+        path: "/jobseeker",
+        element: (
+          <JobSeekerProtectedRoute>
+            <JobSeekerLayout />
+          </JobSeekerProtectedRoute>
+        ),
+        children: [
+    {index: true, element: <Navigate to="dashboard" replace/>},
+    { path: "dashboard", element: <JobSeekerDashboard /> },
+    { path: "saved-jobs", element: <SavedJobs /> },
+    { path: "interviews", element: <JobseekerInterviews /> },
+    { path: "faq", element: <FAQSection /> },
 
-      { path: "/saved-jobs", element: <SavedJobs /> },
-
+        ]
+      },
+      
+       
+      
       // Employer Routes (with sidebar layout)
       {
         path: "/employer",
@@ -99,8 +124,12 @@ const appRouter = createBrowserRouter([
           { path: "faq", element: <FAQSection /> },
         ],
       },
-
-      // Admin Routes (with sidebar layout)
+      { path: "/privacy-policy", element: <PrivacyPolicy /> },
+      { path: "/terms", element: <TermsOfService /> },
+      { path: "/cookies", element: <CookiePolicy /> },
+      { path: "/contact-support", element: <ContactSupport /> },
+      { path: "/faq", element: <FAQSection /> },
+     
       {
         path: "/admin",
         element: (
@@ -121,43 +150,26 @@ const appRouter = createBrowserRouter([
           { path: "applications", element: <ManageApplications /> },
           { path: "testimonials", element: <ManageTestimonials /> },
           { path: "interview-list", element: <AdminInterviewList /> },
-        ],
-      },
-
-      // Job Seeker Dashboard (with sidebar layout)
-      {
-        path: "/jobseeker/dashboard",
-        element: (
-          <JobSeekerLayout>
-            <JobSeekerDashboard />
-          </JobSeekerLayout>
-        ),
-      },
-      {
-        path: "/jobseeker/faq",
-        element: (
-          <JobSeekerLayout>
-            <FAQSection />
-          </JobSeekerLayout>
-        ),
-      },
-      { path: "/jobseeker/interviews", element: <JobseekerInterviews /> },
-      { path: "/faq", element: <FAQSection /> }
-      
-      
+          { path: "support", element: <ManageSupportTickets /> },
+          
+          { path: "faq", element: <FAQSection /> },
+          {path:"privacy-policy", element: <PrivacyPolicy/>},
+          {path:"terms", element: <TermsOfService/>},
+          {path:"cookies", element: <CookiePolicy/>}
     ],
   },
-]);
+  
+]}]);
 
 function App() {
   const { user } = useSelector((store) => store.auth);
 
   useEffect(() => {
     if (user) {
-      // 1. Socket Connect karein
+      // 1. Socket Connect
       socket.connect();
 
-      // 2. User ko private room mein join karwayein (for direct notifications)
+      // 2. (for direct notifications)
       socket.emit("join", user._id);
 
       // 3. Listen for global or private notifications
@@ -168,7 +180,7 @@ function App() {
         });
       });
 
-      // 4. New Job notification (agar postJob mein emit kiya hai)
+      // 4. New Job notification
       socket.on("newJob", (data) => {
         toast.info(`New Job Posted: ${data.title}`);
       });

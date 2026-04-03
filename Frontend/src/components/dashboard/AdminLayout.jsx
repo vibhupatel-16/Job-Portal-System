@@ -10,6 +10,7 @@ const adminSidebarItems = [
   { label: "Manage Applications", path: "/admin/applications", icon: "ClipboardList" },
   { label: "Manage Testimonials", path: "/admin/testimonials", icon: "MessageSquare" },
   { label: "Interview List", path: "/admin/interview-list", icon: "Calendar" },
+  { label: "Support Tickets", path: "/admin/support", icon: "MessageSquare" },
 ];
 
 export function AdminLayout({ children }) {

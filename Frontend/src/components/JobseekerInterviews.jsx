@@ -193,19 +193,21 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
     );
 };
 
-const handleViewFeedback = async (interviewId) => {
+const handleCancelInterview = async (interviewId) => {
+    if (!confirm("Are you sure you want to cancel this interview? This action cannot be undone.")) return;
+    
     try {
-        // Employer side ki tarah hum interviewId route mein bhej rahe hain
-        const res = await axiosInstance.get(`/interview/feedback/${interviewId}`, );
-        
+        const res = await axiosInstance.delete(`/interview/interview/${interviewId}`);
         if (res.data.success) {
-            setSelectedFeedback(res.data.feedback);
-            setFeedbackOpen(true);
+            toast.success("Interview cancelled successfully");
+            fetchList(); // Refresh the list
         }
     } catch (error) {
-        toast.error(error.response?.data?.message || "Feedback results pending");
+        toast.error(error.response?.data?.message || "Failed to cancel interview");
     }
 };
+        
+
 
     return (
         <div className='min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-blue-50 py-10 relative overflow-hidden'>
@@ -295,6 +297,11 @@ const handleViewFeedback = async (interviewId) => {
                                                 </button>
                                             </div>
                                         ) : 
+                                        item.status === "cancelled" ? (
+                                            <Badge className="bg-red-50 text-red-700 border border-red-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
+                                                Cancelled
+                                            </Badge>
+                                        ) :
                                         new Date(`${item.date.split('T')[0]}T${item.time}`).getTime() < new Date().getTime() ? (
                                             <div className="flex flex-col gap-1 items-start">
                                                 <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1 animate-pulse">
@@ -330,6 +337,15 @@ const handleViewFeedback = async (interviewId) => {
                                             >
                                                 <Clock size={14} /> Reschedule
                                             </button>
+
+                                            {item.status !== "cancelled" && (
+                                                <button 
+                                                    onClick={() => handleCancelInterview(item._id)}
+                                                    className="inline-flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
+                                                >
+                                                    <X size={14} /> Cancel
+                                                </button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>

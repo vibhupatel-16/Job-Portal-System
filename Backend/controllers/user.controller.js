@@ -29,7 +29,11 @@ export const register = async (req, res) => {
 
     // Password hash
     const hashedPassword = await bcrypt.hash(password, 10);
+    // 1. Generate 6-digit OTP
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
+   // 2. Set Expiry (e.g., 10 minutes)
+   const otpExpire = new Date(Date.now() + 10 * 60 * 1000);
     // User create WITHOUT touching other profile fields
     await User.create({
       fullname,
@@ -37,11 +41,19 @@ export const register = async (req, res) => {
       phoneNumber,
       password: hashedPassword,
       role,
+      otp: generatedOtp,      
+      otpExpire: otpExpire,    
+      isVerified: false,
       profile: {
         // ✅ FIX: photoFile.path ko save karein jo Cloudinary ka URL hai
         profilePhoto: photoFile ? photoFile.path : "" 
       }
     });
+    await sendEmail({
+  email: email,
+  subject: "Verify your Account - Nexforge",
+  html: `<h1>Welcome!</h1><p>Your OTP for registration is: <b>${generatedOtp}</b>. It expires in 10 minutes.</p>`
+  });
 
     return res.status(201).json({
       message: "Account created successfully",
@@ -155,7 +167,12 @@ export const login = async (req, res) => {
         success: false
       });
     }
-
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: "Your email is not verified. Please check your mail for OTP.",
+        success: false
+      });
+    }
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
       return res.status(400).json({
@@ -163,6 +180,7 @@ export const login = async (req, res) => {
         success: false
       });
     }
+    
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
@@ -223,6 +241,41 @@ export const logout = async (req, res) => {
   }
 };
 
+// ---------------- VERIFY OTP ----------------
+export const verifyEmail = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required", success: false });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found", success: false });
+    }
+
+    // Check if OTP matches and is not expired
+    if (user.otp !== otp || user.otpExpire < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP", success: false });
+    }
+
+    // Mark as verified and clear OTP fields
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpire = undefined;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Email verified successfully! You can now login.",
+      success: true
+    });
+  } catch (error) {
+    console.error("Verification error:", error);
+    return res.status(500).json({ message: "Internal server error", success: false });
+  }
+};
 // ---------------- UPDATE PROFILE ----------------
 // export const updateProfile = async (req, res) => {
 //   try {

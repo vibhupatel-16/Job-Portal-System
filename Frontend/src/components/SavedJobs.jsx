@@ -55,6 +55,12 @@ const SavedJobs = () => {
 };
   // ================= QUICK APPLY (Updated Logic) =================
   const applyJob = async (jobId) => {
+    if (!user?.profile?.resume) {
+      toast.error("Please upload your resume in your profile before applying.");
+      navigate('/profile');
+      return;
+    }
+
     try {
       // Endpoint ko aapke constants ke hisaab se check karein
       const res = await axiosInstance.get(`/application/apply/${jobId}`);

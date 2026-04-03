@@ -84,7 +84,7 @@ const EmployerSignup = () => {
       });
 
       if (res.data.success) {
-        navigate('/employer-login'); // ✅ Employer login page par jaayega
+        navigate('/verify-otp', { state: { email: input.email } });
         toast.success(res.data.message);
       }
     } catch (error) {

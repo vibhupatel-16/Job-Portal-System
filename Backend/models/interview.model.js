@@ -39,41 +39,44 @@ const interviewSchema = new mongoose.Schema(
       type: String,
     },
     scheduledBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true 
-},
-scheduledByRole: {
-    type: String,
-    enum: ['admin', 'employer'],
-    required: true
-},
- status: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    scheduledByRole: {
+      type: String,
+      enum: ["admin", "employer"],
+      required: true,
+    },
+    status: {
       type: String,
       enum: ["scheduled", "completed", "cancelled", "reschedule_requested"], // "reschedule_requested" add kiya
       default: "scheduled",
     },
 
+    suggestedDate: {
+      type: String,
+    },
+    suggestedTime: {
+      type: String,
+    },
+    rescheduleReason: {
+      type: String,
+    },
 
-    suggestedDate: { 
-      type: String 
+    duration: {
+      type: Number,
+      default: 45,
     },
-    suggestedTime: { 
-      type: String 
+    rescheduleCount: {
+      type: Number,
+      default: 0,
     },
-    rescheduleReason: { 
-      type: String
-    },
-    // interview.model.js mein ye field add karein
-duration: {
-    type: Number,
-    default: 45 // Maan lijiye har interview 45 mins ka hai
-},
-  
-reminderSent24h: { type: Boolean, default: false },
-reminderSent1h: { type: Boolean, default: false },
+
+    reminderSent24h: { type: Boolean, default: false },
+    reminderSent1h: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const Interview = mongoose.model("Interview", interviewSchema);

@@ -14,7 +14,7 @@ export const postJob = async (req, res) => {
       jobType,
       experience,
       position,
-      companyId
+      companyId,
     } = req.body;
 
     const userId = req.id;
@@ -33,7 +33,7 @@ export const postJob = async (req, res) => {
     ) {
       return res.status(400).json({
         message: "Something is missing",
-        success: false
+        success: false,
       });
     }
 
@@ -48,7 +48,7 @@ export const postJob = async (req, res) => {
       experienceLevel: experience,
       position,
       company: companyId,
-      created_by: userId
+      created_by: userId,
     });
 
     //  FIND ALL JOB SEEKERS
@@ -66,27 +66,25 @@ export const postJob = async (req, res) => {
           jobType,
           experience,
           salary,
-          description
-        )
+          description,
+        ),
       });
-
     }
 
     return res.status(201).json({
       message: "Job created successfully ",
       job,
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.log("POST JOB ERROR:", error);
     return res.status(500).json({
       message: "Internal server error",
-      success: false
+      success: false,
     });
   }
 };
-//job seeker 
+//job seeker
 // export const getAllJobs = async (req,res)=>{
 //     try{
 //         const keyword = req.query.keyword || "";
@@ -117,10 +115,10 @@ export const postJob = async (req, res) => {
 export const getAllJobs = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
-    const location = req.query.location || "";
+    const category = req.query.category || "";
     const salary = req.query.salary || "";
     const experience = req.query.experience || "";
-    const title = req.query.title || ""; // <-- Added to support Industry filter
+    const jobType = req.query.jobType || "";
 
     //  Pagination params
     const page = Number(req.query.page) || 1;
@@ -136,45 +134,50 @@ export const getAllJobs = async (req, res) => {
         { description: { $regex: keyword, $options: "i" } },
       ];
     }
-    
-    // Support Industry (Title) filter from Frontend
-    if (title) {
-      // If we already have an $or (from keyword), it will be combined with this title regex by MongoDB implicitly via AND, 
-      // but to be safe, we just set title explicitly if keyword isn't overriding it entirely, 
-      // or we just add it to the query object.
-      query.title = { $regex: title, $options: "i" };
+
+    // Category filter (replaces old title filter)
+    if (category) {
+      query.title = { $regex: category, $options: "i" };
     }
 
-    //  ADDITIONAL FILTERS 
-    if (location) {
-      query.location = { $regex: location, $options: "i" };
+    // Job Type filter
+    if (jobType) {
+      query.jobType = { $regex: jobType, $options: "i" };
     }
 
-
-
-    if (salary) {
-      // Adjust numerical logic. The DB likely stores LPA as small numbers (e.g., 5, 12) or large (500000).
-      // Filter choices: "0-3LPA", "3-6LPA", "6-10LPA"
-      // We will check for BOTH small digit format and large digit format.
-      let min = 0, max = 0;
-      if (salary === "0-3LPA") { min = 0; max = 3; }
-      if (salary === "3-6LPA") { min = 3; max = 6; }
-      if (salary === "6-10LPA") { min = 6; max = 15; } // Extended max to cover "up to 10+"
-
-      query.$or = query.$or || [];
-      query.$or.push({ 
-        $and: [ { salary: { $gte: min } }, { salary: { $lte: max } } ] // Match 3, 5 format
-      }, {
-        $and: [ { salary: { $gte: min * 100000 } }, { salary: { $lte: max * 100000 } } ] // Match 300000, 500000 format
-      });
-    }
-
-
-
+    // Experience filter - handle range strings
     if (experience) {
-      query.experienceLevel = Number(experience);
+      if (experience === "0-1 years") {
+        query.experienceLevel = { $gte: 0, $lte: 1 };
+      } else if (experience === "1-3 years") {
+        query.experienceLevel = { $gte: 1, $lte: 3 };
+      } else if (experience === "3-5 years") {
+        query.experienceLevel = { $gte: 3, $lte: 5 };
+      } else if (experience === "5+ years") {
+        query.experienceLevel = { $gte: 5 };
+      }
     }
 
+    // Salary filter
+    if (salary) {
+      let min = 0,
+        max = 0;
+      if (salary === "0-3LPA") {
+        min = 0;
+        max = 3;
+      } else if (salary === "3-6LPA") {
+        min = 3;
+        max = 6;
+      } else if (salary === "6-10LPA") {
+        min = 6;
+        max = 10;
+      } else if (salary === "10-15+LPA") {
+        min = 10;
+        max = 100;
+      } // High upper limit for 10+
+
+      query.salary = { $gte: min, $lte: max };
+    }
 
     //  total count
     const totalJobs = await Job.countDocuments(query);
@@ -200,35 +203,32 @@ export const getAllJobs = async (req, res) => {
       currentPage: page,
       success: true,
     });
-
   } catch (error) {
     console.log(error);
   }
 };
 
-
-//job seeker 
+//job seeker
 export const getJobById = async (req, res) => {
   try {
     const jobId = req.params.id;
     const job = await Job.findById(jobId).populate({
-      path: "applications"
+      path: "applications",
     });
     if (!job) {
       return res.status(404).json({
         message: "jobs not found",
-        success: false
-      })
-    };
+        success: false,
+      });
+    }
     return res.status(200).json({
       job,
-      success: true
-    })
-
+      success: true,
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-}
+};
 //how many create jobs by admin
 
 export const getAdminJobs = async (req, res) => {
@@ -236,34 +236,32 @@ export const getAdminJobs = async (req, res) => {
     const adminId = req.id;
 
     const jobs = await Job.find({ created_by: adminId })
-      .sort({ createdAt: -1 })  //  latest jobs first
-      .populate("company")      //  company details
+      .sort({ createdAt: -1 }) //  latest jobs first
+      .populate("company") //  company details
       .populate({
-        path: "applications",   //  applicants
+        path: "applications", //  applicants
         options: { sort: { createdAt: -1 } }, // latest applicants first
         populate: [
           { path: "applicant" }, // applicant details
-          { path: "job" }        // job title for each applicant
-        ]
+          { path: "job" }, // job title for each applicant
+        ],
       });
 
     if (!jobs) {
       return res.status(404).json({
         message: "No jobs found",
-        success: false
+        success: false,
       });
     }
 
     return res.status(200).json({
       jobs, // Now each job has: recent applications + populated job + applicant
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.log(error);
   }
 };
-
 
 export const updateJob = async (req, res) => {
   try {
@@ -296,7 +294,8 @@ export const updateJob = async (req, res) => {
 
     if (req.body.salary !== undefined) updateData.salary = req.body.salary;
 
-    if (req.body.location !== undefined) updateData.location = req.body.location;
+    if (req.body.location !== undefined)
+      updateData.location = req.body.location;
 
     if (req.body.jobType !== undefined) updateData.jobType = req.body.jobType;
 
@@ -320,7 +319,6 @@ export const updateJob = async (req, res) => {
       success: true,
       job: updatedJob,
     });
-
   } catch (error) {
     console.log("UPDATE ERROR:", error.message);
 
@@ -336,22 +334,28 @@ export const getRecommendedJobs = async (req, res) => {
     const userId = req.id; // Assuming middleware se user id mil rahi hai
     const user = await User.findById(userId);
 
-    if (!user || user.role !== 'jobseeker') {
-      return res.status(404).json({ message: "User not found or not a jobseeker", success: false });
+    if (!user || user.role !== "jobseeker") {
+      return res
+        .status(404)
+        .json({ message: "User not found or not a jobseeker", success: false });
     }
 
     const userSkills = user.profile.skills;
 
-    // Logic: Agar user ke paas skills hain, toh match karo, 
+    // Logic: Agar user ke paas skills hain, toh match karo,
     // nahi toh latest jobs dikhao
     let query = {};
     if (userSkills && userSkills.length > 0) {
       query = {
         $or: [
-          { requirements: { $in: userSkills.map(skill => new RegExp(skill, 'i')) } },
-          { title: { $in: userSkills.map(skill => new RegExp(skill, 'i')) } }
+          {
+            requirements: {
+              $in: userSkills.map((skill) => new RegExp(skill, "i")),
+            },
+          },
+          { title: { $in: userSkills.map((skill) => new RegExp(skill, "i")) } },
         ],
-        status: 'approved' // Sirf approved jobs
+        status: "approved", // Sirf approved jobs
       };
     }
 
@@ -362,11 +366,10 @@ export const getRecommendedJobs = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      recommendedJobs
+      recommendedJobs,
     });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal server error", success: false });
   }
-}
+};

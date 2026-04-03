@@ -1,29 +1,61 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, Search, ShieldCheck, Zap, Bell, MessageCircle, Briefcase, Building2, CreditCard, HelpCircle, Users } from 'lucide-react';
+import { ChevronDown, Search, ShieldCheck, Zap, Bell, MessageCircle, Briefcase, Building2, CreditCard, HelpCircle, Users, Calendar, Bookmark, Clock, CheckCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 const jobseekerFaqs = [
   { category: "Applications", q: "How do I find jobs that match my skills?", a: "Our smart AI analyzes your profile skills and matches them with active job requirements. You can see these under 'Recommended Jobs' on your dashboard.", icon: <Zap className="text-yellow-500" size={20} /> },
   { category: "Applications", q: "How can I track my job applications?", a: "Go to your dashboard. You can see whether your application is 'Pending', 'Shortlisted', 'Accepted', or 'Rejected' in real-time.", icon: <ShieldCheck className="text-green-500" size={20} /> },
+  { category: "Applications", q: "Can I apply to multiple jobs at once?", a: "Yes, you can browse and apply to as many jobs as you want. Each application is tracked separately in your dashboard.", icon: <Briefcase className="text-blue-500" size={20} /> },
+  { category: "Applications", q: "What happens after I apply to a job?", a: "Employers will review your application. If shortlisted, you'll receive a notification. You can track all updates in your dashboard.", icon: <Bell className="text-orange-500" size={20} /> },
   { category: "Interviews", q: "What should I do if I can't attend a scheduled interview?", a: "Go to the 'My Interviews' tab from your sidebar. If an interview is scheduled, you can click on 'Request Reschedule' to instantly notify the employer to pick a different time.", icon: <MessageCircle className="text-pink-500" size={20} /> },
   { category: "Interviews", q: "How do I join an online interview?", a: "When an employer schedules an interview, a Google Meet link will be generated. You can find the 'Join Platform' link directly in your 'My Interviews' section on the scheduled date.", icon: <Zap className="text-indigo-500" size={20} /> },
+  { category: "Interviews", q: "Can I cancel a scheduled interview?", a: "Yes, you can cancel your own interviews from the 'My Interviews' section. This will notify the employer and admin immediately.", icon: <ShieldCheck className="text-red-500" size={20} /> },
+  { category: "Interviews", q: "How do I reschedule an interview?", a: "In your 'My Interviews' section, click 'Request Reschedule' and suggest a new date/time. The employer will approve or deny your request.", icon: <Calendar className="text-purple-500" size={20} /> },
   { category: "Account", q: "Can I see notifications while I was offline?", a: "Yes! Any updates regarding your applications or new job matches are saved in your account. Just click the Bell icon in the navbar.", icon: <Bell className="text-blue-500" size={20} /> },
+  { category: "Account", q: "How do I reset my password?", a: "Click 'Forgot Password' on the login page. Enter your email and follow the reset instructions sent to your inbox.", icon: <ShieldCheck className="text-green-500" size={20} /> },
+  { category: "Account", q: "Can I delete my account?", a: "Account deletion is not available yet. Please contact support if you need to deactivate your account.", icon: <Users className="text-gray-500" size={20} /> },
   { category: "Profile", q: "What should I do if my skills are not matching any jobs?", a: "We recommend updating your profile with specific keywords like 'React.js', 'Node.js', or 'Tailwind CSS'. The more specific your skills, the better our recommendation engine works.", icon: <Search className="text-purple-500" size={20} /> },
   { category: "Profile", q: "How do I update my Resume?", a: "Go to 'My Profile' and click the Edit (Pen) icon. You can upload a new PDF or Document format resume which employers will see when you apply.", icon: <Briefcase className="text-indigo-500" size={20} /> },
-  { category: "Saved Jobs", q: "Can I save a job to apply later?", a: "Yes, you can click the 'Bookmark' icon on any job card. You can view all your bookmarked jobs in the 'Saved Jobs' section from the sidebar.", icon: <ShieldCheck className="text-emerald-500" size={20} /> }
+  { category: "Profile", q: "What information should I include in my profile?", a: "Include your skills, experience level, preferred location, and salary expectations. A complete profile increases your chances of getting matched with relevant jobs.", icon: <Users className="text-teal-500" size={20} /> },
+  { category: "Saved Jobs", q: "Can I save a job to apply later?", a: "Yes, you can click the 'Bookmark' icon on any job card. You can view all your bookmarked jobs in the 'Saved Jobs' section from the sidebar.", icon: <ShieldCheck className="text-emerald-500" size={20} /> },
+  { category: "Saved Jobs", q: "How many jobs can I save?", a: "You can save unlimited jobs. They remain saved until you remove them or apply to them.", icon: <Bookmark className="text-blue-500" size={20} /> },
+  { category: "Support", q: "How do I contact support?", a: "Go to 'Contact Support' from the footer or navbar. Fill out the form with your issue and our team will respond within 24 hours.", icon: <MessageCircle className="text-indigo-500" size={20} /> },
+  { category: "Support", q: "What types of issues can I report?", a: "You can report technical issues, account problems, application concerns, or general feedback. Our support team handles all platform-related matters.", icon: <HelpCircle className="text-purple-500" size={20} /> },
+  { category: "Support", q: "How long does it take to get a response?", a: "We aim to respond to all support tickets within 24 hours during business days. Urgent issues are prioritized.", icon: <Clock className="text-orange-500" size={20} /> },
+  { category: "General", q: "Is the platform free to use?", a: "Yes, job seekers can browse and apply to jobs for free. Employers can post jobs during our current free access period.", icon: <CreditCard className="text-green-500" size={20} /> },
+  { category: "General", q: "How do I browse jobs without logging in?", a: "You can view job listings and details without an account, but you'll need to log in to apply or save jobs.", icon: <Search className="text-blue-500" size={20} /> },
+  { category: "General", q: "What browsers are supported?", a: "The platform works best on modern browsers like Chrome, Firefox, Safari, and Edge. Mobile browsers are also supported.", icon: <Zap className="text-yellow-500" size={20} /> }
 ];
 
 const employerFaqs = [
   { category: "Getting Started", q: "How do I create and post a new job?", a: "First, ensure you have registered a Company. Then go to 'My Jobs', click 'New Job', select your company, and fill out the role details (Title, Description, Requirements, Salary).", icon: <Briefcase className="text-blue-500" size={20} /> },
+  { category: "Getting Started", q: "How do I register my company?", a: "Go to 'My Companies' and click 'Register Company'. Fill in your company details, logo, and description. Once approved by admin, you can post jobs.", icon: <Building2 className="text-indigo-500" size={20} /> },
+  { category: "Getting Started", q: "What information do I need to post a job?", a: "Job title, description, requirements, salary, location, experience level, and position count. The more detailed your posting, the better candidates you'll attract.", icon: <Briefcase className="text-green-500" size={20} /> },
   { category: "Applicants", q: "Where can I see who applied to my jobs?", a: "Go to 'My Jobs' and click the 'Applicants' button on any active job. This opens the Manage Applicants table to see everyone who applied.", icon: <Users className="text-indigo-500" size={20} /> },
   { category: "Applicants", q: "How does the AI Resume Screening work?", a: "When a candidate applies, our Google Gemini AI scans their resume against your job description and automatically generates a 'Match Score' along with suggested interview questions.", icon: <Zap className="text-yellow-500" size={20} /> },
+  { category: "Applicants", q: "Can I view candidate resumes?", a: "Yes, in the applicants table, click the 'View Details' icon to see the candidate's resume, cover letter, and AI match report.", icon: <Search className="text-purple-500" size={20} /> },
+  { category: "Applicants", q: "How do I shortlist or reject candidates?", a: "Use the status dropdown in the applicants table. You can update individual candidates or bulk select multiple ones.", icon: <ShieldCheck className="text-green-500" size={20} /> },
   { category: "Hiring", q: "Can I bulk reject or shortlist candidates?", a: "Yes, you can use the checkboxes in the Manage Applicants table to select multiple candidates and update their statuses simultaneously.", icon: <Users className="text-emerald-500" size={20} /> },
   { category: "Hiring", q: "How do I view a candidate's actual resume?", a: "In the applicants table, click the 'Eye' icon next to a candidate. This will open a detailed modal showing their raw resume, cover letter, and full AI Match Report.", icon: <Search className="text-purple-500" size={20} /> },
+  { category: "Hiring", q: "What does the match score mean?", a: "The AI calculates how well the candidate's skills and experience match your job requirements. Higher scores indicate better matches.", icon: <Zap className="text-orange-500" size={20} /> },
   { category: "Interviews", q: "How do I schedule an interview?", a: "Once you change an applicant's status to 'Accepted', a 'Schedule Interview' button will appear for them. You can click it to pick a date and time.", icon: <MessageCircle className="text-pink-500" size={20} /> },
   { category: "Interviews", q: "How do I connect my Google Meet automatically?", a: "Click the 'Connect Google Meet' button on your dashboard. Once authenticated, the system will auto-generate meeting links when you schedule online interviews.", icon: <Zap className="text-yellow-500" size={20} /> },
+  { category: "Interviews", q: "Can I cancel a scheduled interview?", a: "Yes, you can cancel interviews from the 'Interview List' section. This will notify the candidate and admin immediately.", icon: <ShieldCheck className="text-red-500" size={20} /> },
+  { category: "Interviews", q: "How do I approve interview reschedule requests?", a: "In your 'Interview List', look for interviews with 'Reschedule Requested' status. Click 'Approve' to accept the candidate's suggested time.", icon: <CheckCircle className="text-green-500" size={20} /> },
+  { category: "Interviews", q: "How do I submit interview feedback?", a: "After an interview is completed, go to your 'Interview List' and click 'Feedback' on the completed interview to submit ratings and comments.", icon: <MessageCircle className="text-blue-500" size={20} /> },
   { category: "Analytics", q: "What does 'Skills in Demand' show on my Dashboard?", a: "The Skills in Demand chart scans all candidates who have applied to your jobs and highlights their most common skills. This helps you understand the talent pool applying to you.", icon: <Building2 className="text-teal-500" size={20} /> },
-  { category: "Billing", q: "Are there any charges for posting jobs?", a: "Currently, you can post unlimited jobs and manage candidates entirely for free during our early access period.", icon: <CreditCard className="text-red-500" size={20} /> }
+  { category: "Analytics", q: "How can I track my job performance?", a: "Your dashboard shows application counts, interview schedules, and completion rates for all your posted jobs.", icon: <Briefcase className="text-indigo-500" size={20} /> },
+  { category: "Account", q: "How do I manage multiple companies?", a: "You can register multiple companies under your account. Switch between them when posting jobs or viewing applicants.", icon: <Building2 className="text-purple-500" size={20} /> },
+  { category: "Account", q: "Can I delete a job posting?", a: "Job deletion is not available yet. You can edit job details or contact support if you need to remove a posting.", icon: <ShieldCheck className="text-gray-500" size={20} /> },
+  { category: "Billing", q: "Are there any charges for posting jobs?", a: "Currently, you can post unlimited jobs and manage candidates entirely for free during our early access period.", icon: <CreditCard className="text-red-500" size={20} /> },
+  { category: "Billing", q: "Will there be paid features in the future?", a: "We're committed to keeping core features free. Premium features like advanced analytics may be introduced later.", icon: <CreditCard className="text-orange-500" size={20} /> },
+  { category: "Support", q: "How do I contact support?", a: "Go to 'Contact Support' from the footer or navbar. Fill out the form with your issue and our team will respond within 24 hours.", icon: <MessageCircle className="text-indigo-500" size={20} /> },
+  { category: "Support", q: "What if I have issues with candidate applications?", a: "Contact support with specific details about the issue. Our team can help troubleshoot application processing problems.", icon: <HelpCircle className="text-purple-500" size={20} /> },
+  { category: "Support", q: "How do I report a technical issue?", a: "Use the 'Contact Support' form and select 'Technical Issue' as the category. Include screenshots and steps to reproduce the problem.", icon: <ShieldCheck className="text-red-500" size={20} /> },
+  { category: "General", q: "Is there a mobile app?", a: "Currently, the platform is web-based and works on all mobile browsers. A dedicated mobile app may be available in the future.", icon: <Zap className="text-blue-500" size={20} /> },
+  { category: "General", q: "How secure is my data?", a: "We use industry-standard encryption and security measures. Your data is protected and never shared with third parties without consent.", icon: <ShieldCheck className="text-green-500" size={20} /> }
 ];
 
 const FAQSection = () => {
@@ -182,9 +214,9 @@ const FAQSection = () => {
             Can't find the answer you're looking for? Don't hesitate to reach out to our dedicated support team.
           </p>
           
-          <button className="bg-white text-gray-900 px-8 py-3.5 rounded-xl font-bold hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm group-hover:bg-indigo-50">
+          <Link to="/contact-support" className="bg-white text-gray-900 px-8 py-3.5 rounded-xl font-bold hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm group-hover:bg-indigo-50 inline-block">
             Contact Support
-          </button>
+          </Link>
         </div>
 
       </div>

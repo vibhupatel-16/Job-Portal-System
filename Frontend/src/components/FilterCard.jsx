@@ -9,11 +9,11 @@ const filterdata = [
   {
     filterType: "Location",
     key: "location",
-    array: ["Pune", "Bangalore", "Ahmedabad", "Baroda", "Delhi", "Mumbai", "Hyderabad", "Noida"],
+    array: ["Pune", "Bangalore", "Ahmedabad", "Baroda"],
   },
   {
-    filterType: "Industry",
-    key: "title", // IMPORTANT
+    filterType: "Category",
+    key: "category",
     array: [
       "Full Stack Developer",
       "Frontend Developer",
@@ -24,9 +24,14 @@ const filterdata = [
     ],
   },
   {
-    filterType: "Salary",
-    key: "salary",
-    array: ["0-3LPA", "3-6LPA", "6-10LPA", "10-15+LPA"],
+    filterType: "Experience",
+    key: "experience",
+    array: ["0-1 years", "1-3 years", "3-5 years", "5+ years"],
+  },
+  {
+    filterType: "Job Type",
+    key: "jobType",
+    array: ["Full-Time", "Part-Time", "Internship", "Contract"],
   },
 ];
 

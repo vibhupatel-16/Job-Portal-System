@@ -64,7 +64,10 @@ notifications: [
     }
 ],
   resetPasswordToken: String,
-  resetPasswordExpire: Date
+  resetPasswordExpire: Date,
+  isVerified: { type: Boolean, default: false },
+  otp: String,                                   
+  otpExpire: Date                                
 
 }, { timestamps: true });
 

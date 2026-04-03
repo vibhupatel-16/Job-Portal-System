@@ -6,7 +6,8 @@ import {
   register, 
   resetPassword, 
   updateProfile,
-  recordProfileView
+  recordProfileView,
+  verifyEmail
 } from '../controllers/user.controller.js';
 
 import isAuthenticated from '../middlewares/isAuthenticated.js';
@@ -17,6 +18,9 @@ const router = express.Router();
 
 // Register user
 router.post("/register", upload, register);
+
+// Verify Email via OTP (Naya Route)
+router.post("/verify-email", verifyEmail);
 
 // Login
 router.post("/login", login);

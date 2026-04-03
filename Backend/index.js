@@ -16,6 +16,7 @@ import adminRoute from "./routes/admin.route.js";
 
 import interviewRoute from "./routes/interview.route.js";
 import savedJobRoute from "./routes/savedJob.route.js";
+import supportRoute from "./routes/support.route.js";
 import "./utils/cronJobs.js";
 import testimonialRoute from "./routes/testimonial.route.js";
 
@@ -71,6 +72,7 @@ app.use("/api/v1/admin", adminRoute);
 
 app.use("/api/v1/interview", interviewRoute);
 app.use("/api/v1/user", savedJobRoute);
+app.use("/api/v1/support", supportRoute);
 
 app.use("/api/v1/testimonials", testimonialRoute);
 

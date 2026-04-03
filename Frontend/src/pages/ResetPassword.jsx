@@ -29,7 +29,7 @@ const ResetPassword = () => {
     }
 
     // Industry Standard Validation
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
     if (!passwordRegex.test(password)) {
       toast.error("Password must be at least 8 chars, include an uppercase, lowercase, number, and special character.");
       return;

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Avatar, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { LogOut, User2, Briefcase, Bell, Calendar, Bookmark, ChevronDown, HelpCircle, PlusCircle, Building2, ListChecks } from 'lucide-react';
+import { LogOut, User2, Briefcase, Bell, Calendar, Bookmark, ChevronDown, ChevronLeft, ChevronRight, HelpCircle, PlusCircle, Building2, ListChecks, Menu, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ function Navbar() {
     const user = useSelector((store) => store.auth.user);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -65,19 +66,56 @@ function Navbar() {
         }
     };
 
-    const handleNotificationClick = async (notifId) => {
+    const normalizeInterviewNotificationLink = (link) => {
+        if (!link) return null;
+        if (link === "/admin/interviews") return "/admin/interview-list";
+        if (link === "/employer/interviews") return "/employer/interview-list";
+        if (link === "/jobseeker/interviews") return "/jobseeker/interviews";
+        return link;
+    };
+
+    const handleNotificationClick = async (notification) => {
         try {
-            const res = await axiosInstance.delete(`/interview/notifications/${notifId}`);
+            // Mark this specific notification as read
+            const res = await axiosInstance.put(`/interview/notifications/${notification._id}/mark-read`);
             if (res.data.success) {
-                setNotifications(notifications.filter(n => n._id !== notifId));
-                setUnreadCount(prev => Math.max(0, prev - 1));
-                if (user.role === 'jobseeker') navigate("/jobseeker/interviews");
-                else if (user.role === 'employer') navigate("/employer/interview-list");
-                else navigate('/admin/interview-list');
+                // Remove clicked notification from list / mark as read
+                setNotifications(notifications.filter(n => n._id !== notification._id));
+                if (!notification.isRead) setUnreadCount(prev => Math.max(0, prev - 1));
+
+                // Navigate to the appropriate page based on notification link
+                const targetLink = normalizeInterviewNotificationLink(notification.link);
+                if (targetLink) {
+                    navigate(targetLink);
+                } else {
+                    // Fallback based on notification type
+                    switch (notification.type) {
+                        case 'SUPPORT':
+                            navigate('/contact-support');
+                            break;
+                        case 'INTERVIEW_SCHEDULED':
+                        case 'INTERVIEW_CANCELLED':
+                            navigate('/jobseeker/interviews');
+                            break;
+                        case 'JOB_APPLIED':
+                            navigate('/jobseeker/dashboard');
+                            break;
+                        case 'STATUS_UPDATED':
+                            navigate('/profile');
+                            break;
+                        default:
+                            navigate('/jobseeker/dashboard');
+                    }
+                }
             }
         } catch (error) {
             console.log(error);
-            navigate(user.role === 'jobseeker' ? "/jobseeker/interviews" : "/employer/interview-list");
+            // Still navigate even if marking as read fails
+            if (notification.link) {
+                navigate(notification.link);
+            } else {
+                navigate('/contact-support');
+            }
         }
     };
 
@@ -97,21 +135,47 @@ function Navbar() {
     return (
         <div className="bg-white shadow-sm sticky top-0 z-50">
             <div className="flex justify-between items-center mx-auto max-w-7xl h-16 px-4">
-                {/* Left Logo */}
-                <div>
-                   <h1 className="text-2xl font-bold tracking-tight">
-            <span className="text-[#7C3AED]">Nex</span>
-            <span className="text-[#1F2937]">Forge</span>
-        </h1>
+                {/* Navigation arrows + Logo */}
+                <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-1">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-2 rounded-full hover:bg-gray-100 transition"
+                            title="Go Back"
+                        >
+                            <ChevronLeft size={18} className="text-gray-600" />
+                        </button>
+                        <button
+                            onClick={() => navigate(1)}
+                            className="p-2 rounded-full hover:bg-gray-100 transition"
+                            title="Go Forward"
+                        >
+                            <ChevronRight size={18} className="text-gray-600" />
+                        </button>
+                    </div>
+                    <Link to="/" className="flex items-center gap-2">
+                        <img 
+                            src="../logo.png" 
+                            alt="NexForge Logo" 
+                            className="h-10 sm:h-12 w-auto object-contain" 
+                        />
+                    </Link>
                 </div>
 
-                {/* Middle Menu */}
-                <div className="flex items-center gap-12">
+                {/* Middle Menu - Desktop Only */}
+                <div className="hidden md:flex items-center gap-12">
                     <ul className='flex font-medium items-center gap-6'>
                         <li><Link to="/" className="hover:text-[#6A38C2] transition font-medium">Home</Link></li>
 
                         {/* --- CONDITION 1: EMPLOYER MENU --- */}
-                        {user && user.role === 'employer' ? (
+                        {user && user.role === 'admin' ? (
+                            <>
+                                <li><Link to="/admin/panel" className="hover:text-[#6A38C2] transition font-medium">Dashboard</Link></li>
+                                <li><Link to="/browse" className="hover:text-[#6A38C2] transition font-medium">Browse</Link></li>
+                                <li><Link to="/admin/interview-list" className="hover:text-[#6A38C2] transition font-medium">Interviews</Link></li>
+                                
+                            </>
+                        ) : user && user.role === 'employer' ? (
                             <>
                                 {/* Companies Dropdown */}
                                 <li className='relative group py-4'>
@@ -172,8 +236,66 @@ function Navbar() {
                     </ul>
                 </div>
 
-                {/* Right Section */}
-                <div className="flex items-center gap-2">
+                {/* Mobile Menu Button - Visible on mobile only */}
+                <div className="md:hidden flex items-center gap-2">
+                    {user && (
+                        <Popover onOpenChange={(open) => open && markAsReadHandler()}>
+                            <PopoverTrigger asChild>
+                                <div className="relative cursor-pointer p-2 hover:bg-gray-100 rounded-full transition">
+                                    <Bell size={20} className="text-gray-600" />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72 p-0 shadow-lg border-none rounded-xl overflow-hidden">
+                                <div className="bg-gray-50 p-3 border-b">
+                                    <h3 className="font-bold text-sm">Notifications</h3>
+                                </div>
+                                <div className="max-h-[400px] overflow-y-auto">
+                                    {notifications.length === 0 ? (
+                                        <p className="p-10 text-center text-gray-400 text-sm">No notifications yet</p>
+                                    ) : (
+                                        notifications.map((notif) => (
+                                            <div key={notif._id} onClick={() => handleNotificationClick(notif)} className={`p-4 border-b hover:bg-gray-100 transition cursor-pointer ${!notif.isRead ? 'bg-blue-50/50' : ''}`}>
+                                                <div className="flex gap-3 items-start">
+                                                    <div className="bg-blue-100 text-blue-600 p-2 rounded-full h-fit">
+                                                        <Calendar size={16} />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-semibold text-gray-800">{notif.title}</p>
+                                                        <p className="text-xs text-gray-600 leading-relaxed">{notif.message}</p>
+                                                    </div>
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setNotifications(notifications.filter(n => n._id !== notif._id));
+                                                        if (!notif.isRead) setUnreadCount(prev => Math.max(0, prev - 1));
+                                                    }} className="text-gray-400 hover:text-gray-600 ml-2">
+                                                        &times;
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                <Link to={user.role === 'employer' ? "/employer/interview-list" : "/jobseeker/interviews"} className="block text-center p-3 text-sm text-blue-600 font-medium hover:bg-gray-50 border-t">
+                                    View all interviews
+                                </Link>
+                            </PopoverContent>
+                        </Popover>
+                    )}
+                    <button 
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition"
+                    >
+                        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
+                </div>
+
+                {/* Right Section - Desktop Only */}
+                <div className="hidden md:flex items-center gap-2">
                     {user && user.role === "jobseeker" && (
                         <div onClick={() => navigate("/saved-jobs")} className="relative cursor-pointer p-2 hover:bg-gray-100 rounded-full transition group" title="Saved Jobs">
                             <Bookmark size={22} className="text-gray-600 group-hover:text-[#6A38C2]" />
@@ -206,15 +328,22 @@ function Navbar() {
                                         <p className="p-10 text-center text-gray-400 text-sm">No notifications yet</p>
                                     ) : (
                                         notifications.map((notif) => (
-                                            <div key={notif._id} onClick={() => handleNotificationClick(notif._id)} className={`p-4 border-b hover:bg-gray-100 transition cursor-pointer ${!notif.isRead ? 'bg-blue-50/50' : ''}`}>
-                                                <div className="flex gap-3">
+                                            <div key={notif._id} onClick={() => handleNotificationClick(notif)} className={`p-4 border-b hover:bg-gray-100 transition cursor-pointer ${!notif.isRead ? 'bg-blue-50/50' : ''}`}>
+                                                <div className="flex gap-3 items-start">
                                                     <div className="bg-blue-100 text-blue-600 p-2 rounded-full h-fit">
                                                         <Calendar size={16} />
                                                     </div>
-                                                    <div>
+                                                    <div className="flex-1">
                                                         <p className="text-sm font-semibold text-gray-800">{notif.title}</p>
                                                         <p className="text-xs text-gray-600 leading-relaxed">{notif.message}</p>
                                                     </div>
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setNotifications(notifications.filter(n => n._id !== notif._id));
+                                                        if (!notif.isRead) setUnreadCount(prev => Math.max(0, prev - 1));
+                                                    }} className="text-gray-400 hover:text-gray-600 ml-2">
+                                                        &times;
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))
@@ -285,6 +414,53 @@ function Navbar() {
                     )}
                 </div>
             </div>
+
+            {/* Mobile Menu Dropdown */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden bg-white border-t border-gray-100 max-h-96 overflow-y-auto">
+                    <div className="px-4 py-4 space-y-2">
+                        <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Home</Link>
+
+                        {user && user.role === 'employer' ? (
+                            <>
+                                <Link to="/employer/companies" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">My Companies</Link>
+                                <Link to="/employer/companies/create" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Register Company</Link>
+                                <Link to="/employer/jobs" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">My Jobs</Link>
+                                <Link to="/employer/jobs/create" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Post New Job</Link>
+                                <Link to="/employer/interview-list" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Interviews</Link>
+                                <Link to="/employer/faq" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">FAQ</Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/jobs" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">All Jobs</Link>
+                                <Link to="/saved-jobs" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Saved Jobs</Link>
+                                {user && <Link to="/jobseeker/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Dashboard</Link>}
+                                <Link to="/browse" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Browse</Link>
+                                {user && <Link to="/jobseeker/interviews" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">My Interviews</Link>}
+                                <Link to="/faq" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">FAQ</Link>
+                            </>
+                        )}
+
+                        <div className="border-t border-gray-100 my-2"></div>
+
+                        {!user ? (
+                            <div className="space-y-2">
+                                <Link to="/employer-login" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Employer Login</Link>
+                                <Link to="/employer/signup" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Employer Sign Up</Link>
+                                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Login</Link>
+                                <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 bg-[#6A38C2] text-white hover:bg-[#4f1ea5] rounded-lg transition font-medium text-sm text-center">Sign Up</Link>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {user.role === "jobseeker" && (
+                                    <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">My Profile</Link>
+                                )}
+                                <button onClick={logoutHandler} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 rounded-lg transition font-medium text-sm">Logout</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

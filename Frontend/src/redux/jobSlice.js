@@ -11,10 +11,10 @@ const jobSlice = createSlice({
     allAppliedJobs: [],
     searchedQuery: "",
     filters: {
-      location: "",
-      title: "",
+      category: "",
+      experience: "",
+      jobType: "",
       salary: "",
-      experience: ""
     },
   },
 
@@ -61,7 +61,7 @@ export const {
   setSearchJobByText,
   setAllAppliedJobs,
   setSearchedQuery,
-  setFilter
+  setFilter,
 } = jobSlice.actions;
 
 export default jobSlice.reducer;

@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Briefcase, Building2, MapPin, FileText } from 'lucide-react';
 import RichTextEditor from '../RichTextEditor';
 import axiosInstance from '@/utils/axiosInstance';
+import useGetAllCompanies from '../hooks/useGetAllCompanies';
 
 const PostJob = () => {
   const [input, setInput] = useState({
@@ -30,6 +31,9 @@ const PostJob = () => {
   const { companies } = useSelector(store => store.company);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  // Load companies when component mounts
+  useGetAllCompanies();
 
   const changeEventHandler = (e) => {
     const { name, value } = e.target;

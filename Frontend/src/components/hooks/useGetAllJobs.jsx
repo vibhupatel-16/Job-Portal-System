@@ -17,8 +17,8 @@ const usePaginatedJobs = (page = 1, limit = 5) => {
         const response = await axiosInstance.get(`/job/get`, {
           params: {
             keyword: searchedQuery || "",
-            location: filters.location || "",
-            title: filters.title || "",
+            category: filters.category || "",
+            jobType: filters.jobType || "",
             salary: filters.salary || "",
             experience: filters.experience || "",
             page,

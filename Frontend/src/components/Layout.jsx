@@ -11,7 +11,6 @@ const Layout = () => {
       <div className="min-h-screen">
         <Outlet />   {/* ⭐ Yaha pe children pages render honge */}
       </div>
-
       <Footer />
     </>
   );

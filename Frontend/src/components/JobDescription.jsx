@@ -16,6 +16,12 @@ const JobDescription = () => {
   const [isApplied, setIsApplied] = useState(false);
 
   const applyJobHandler = async () => {
+    if (!user?.profile?.resume) {
+      toast.error("Please upload your resume in your profile before applying.");
+      navigate('/profile');
+      return;
+    }
+
     try {
       const res = await axiosInstance.get(
         `/application/apply/${jobId}`,

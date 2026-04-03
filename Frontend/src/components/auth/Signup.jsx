@@ -89,7 +89,7 @@ const Signup = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        navigate('/login');
+       navigate('/verify-otp', { state: { email: input.email } });
       }
     } catch (error) {
       console.log(error);

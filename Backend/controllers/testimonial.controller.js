@@ -1,4 +1,4 @@
-import { Testimonial } from "../models/Testimonial.model.js";
+import { Testimonial } from "../models/testimonial.model.js";
 
 const normalizeRole = (role) => (role || "").toString().trim().toLowerCase();
 
@@ -20,19 +20,33 @@ export const submitTestimonial = async (req, res) => {
     const cleanRating = validateRating(rating);
 
     if (!cleanContent) {
-      return res.status(400).json({ success: false, message: "Content is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Content is required" });
     }
     if (!cleanRating) {
-      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Rating must be between 1 and 5" });
     }
     if (!["jobseeker", "employer"].includes(userRole)) {
-      return res.status(403).json({ success: false, message: "Only Jobseeker/Employer can submit testimonial" });
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "Only Jobseeker/Employer can submit testimonial",
+        });
     }
 
     // One per user (simple rule)
     const existing = await Testimonial.findOne({ user: userId });
     if (existing) {
-      return res.status(400).json({ success: false, message: "You have already shared your feedback!" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "You have already shared your feedback!",
+        });
     }
 
     const newTestimonial = await Testimonial.create({
@@ -50,7 +64,9 @@ export const submitTestimonial = async (req, res) => {
       testimonialId: newTestimonial._id,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    return res
+      .status(500)
+      .json({ success: false, message: "Server Error", error: error.message });
   }
 };
 
@@ -99,11 +115,13 @@ export const approveTestimonial = async (req, res) => {
     const testimonial = await Testimonial.findByIdAndUpdate(
       id,
       { status: "approved", isApproved: true },
-      { new: true }
+      { new: true },
     );
 
     if (!testimonial) {
-      return res.status(404).json({ message: "Testimonial not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Testimonial not found", success: false });
     }
 
     return res.status(200).json({
