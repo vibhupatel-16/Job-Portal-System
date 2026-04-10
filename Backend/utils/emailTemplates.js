@@ -22,14 +22,14 @@ export const jobPostingTemplate = (
                 <svg style="width: 28px; height: 28px; color: white; margin-right: 12px; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; display: inline-block; vertical-align: middle;">New Job Opportunity</h1>
             </div>
-            <p style="color: #e0e7ff; margin: 0; font-size: 16px;">We're Hiring: ${title}</p>
+            <p style="color: #e0e7ff; margin: 0; font-size: 16px;">Nexforge is hiring: ${title}</p>
         </div>
 
         <!-- Body -->
         <div style="padding: 30px;">
             <p style="font-size: 16px; color: #4b5563; margin-top: 0;">Dear Candidate,</p>
             <p style="font-size: 15px; color: #4b5563; line-height: 1.6; margin-bottom: 30px;">
-                We are excited to announce an opening for a <b>${title}</b> position at our company. We believe your skills and experience would be a perfect fit for our dynamic team.
+                We are excited to announce an opening for a <b>${title}</b> position at <b>Nexforge</b>. We believe your skills and experience would be a strong fit for our team.
             </p>
             
             <!-- Details Box -->
@@ -62,7 +62,22 @@ export const jobPostingTemplate = (
             <div style="margin-bottom: 30px;">
                 <h3 style="margin: 0 0 15px 0; color: #0f172a; font-size: 16px;">Description:</h3>
                 <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0;">
-                     ${description.length > 300 ? description.substring(0, 300) + "..." : description}
+                                         ${
+                                           (description || "").replace(
+                                             /dharma\s*infosystem/gi,
+                                             "Nexforge",
+                                           ).length > 300
+                                             ? (description || "")
+                                                 .replace(
+                                                   /dharma\s*infosystem/gi,
+                                                   "Nexforge",
+                                                 )
+                                                 .substring(0, 300) + "..."
+                                             : (description || "").replace(
+                                                 /dharma\s*infosystem/gi,
+                                                 "Nexforge",
+                                               )
+                                         }
                 </p>
             </div>
 
@@ -76,7 +91,7 @@ export const jobPostingTemplate = (
         <!-- Footer -->
         <div style="background-color: #f1f5f9; padding: 25px; text-align: center; border-top: 1px solid #e2e8f0;">
             <p style="color: #64748b; font-size: 13px; margin: 0 0 8px 0;">
-                © ${new Date().getFullYear()} JobPortal Inc. | All rights reserved
+                © ${new Date().getFullYear()} Nexforge. All rights reserved.
             </p>
         </div>
     </div>
@@ -396,7 +411,7 @@ export const supportTicketConfirmationTemplate = (
 
         <div style="background-color: #f9fafb; padding: 25px; text-align: center; border-top: 1px solid #f1f5f9;">
             <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-                © ${new Date().getFullYear()} Nexforge Technology | Dharma Infosystem
+                © ${new Date().getFullYear()} Nexforge Technology
             </p>
         </div>
     </div>

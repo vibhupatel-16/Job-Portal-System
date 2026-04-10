@@ -15,12 +15,25 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_REDIRECT_URI,
 );
 
+const parseInterviewDateTime = (dateStr, timeStr) => {
+  if (!dateStr || !timeStr) return null;
+
+  let normalizedDate = dateStr;
+  const dateParts = dateStr.split("-");
+  if (dateParts.length === 3 && dateParts[0].length === 2) {
+    normalizedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+  }
+
+  const parsed = new Date(`${normalizedDate} ${timeStr}`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 // ⭐ 1. Google Auth URL Generator
 export const getGoogleAuthUrl = (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
-    scope: ["https://www.googleapis.com/auth/calendar.events"],
+    scope: ["https://www.googleapis.com/auth/calendar"],
   });
   return res.status(200).json({ url, success: true });
 };
@@ -34,8 +47,6 @@ export const googleCallback = async (req, res) => {
     console.log("👉 YOUR_REFRESH_TOKEN:", tokens.refresh_token);
 
     if (tokens.refresh_token) {
-      // Success hone par seedha Employer Dashboard par redirect karein
-      // Taaki URL se '?code=...' hat jaye aur refresh karne par error na aaye
       return res.redirect(
         `http://localhost:5173/employer/dashboard?auth=success`,
       );
@@ -46,7 +57,7 @@ export const googleCallback = async (req, res) => {
     }
   } catch (error) {
     console.error("Token Error:", error.message);
-    // Error hone par bhi dashboard par bhej dein error message ke sath
+
     return res.redirect(`http://localhost:5173/employer/dashboard?auth=failed`);
   }
 };
@@ -128,10 +139,9 @@ export const scheduleInterview = async (req, res) => {
         .status(404)
         .json({ message: "Application not found", success: false });
 
-    // ⭐ PREVENT DOUBLE SCHEDULING: Check if interview already exists for this application
     const existingInterview = await Interview.findOne({
       application: applicationId,
-      status: { $in: ["scheduled", "reschedule_requested"] }, // Only check active interviews
+      status: { $in: ["scheduled", "reschedule_requested"] },
     });
 
     if (existingInterview) {
@@ -263,7 +273,7 @@ export const scheduleInterview = async (req, res) => {
 
 export const getJobseekerInterviews = async (req, res) => {
   try {
-    const userId = req.id; 
+    const userId = req.id;
 
     const interviews = await Interview.find({ jobseeker: userId })
       .populate("company")
@@ -280,6 +290,89 @@ export const getJobseekerInterviews = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to fetch interviews" });
+  }
+};
+
+export const markInterviewJoined = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.id?.toString();
+
+    const interview = await Interview.findById(id);
+    if (!interview) {
+      return res
+        .status(404)
+        .json({ message: "Interview not found", success: false });
+    }
+
+    if (!["scheduled", "reschedule_requested"].includes(interview.status)) {
+      return res.status(400).json({
+        message: `Interview status is ${interview.status}. Joining is not allowed now.`,
+        success: false,
+      });
+    }
+
+    const interviewDateTime = parseInterviewDateTime(
+      interview.date,
+      interview.time,
+    );
+    if (!interviewDateTime) {
+      return res.status(400).json({
+        message: "Interview date/time is invalid.",
+        success: false,
+      });
+    }
+
+    const now = new Date();
+    const allowEarlyWindowMs = 30 * 60 * 1000;
+    const interviewEndMs =
+      interviewDateTime.getTime() + (interview.duration || 45) * 60 * 1000;
+
+    if (now.getTime() < interviewDateTime.getTime() - allowEarlyWindowMs) {
+      return res.status(400).json({
+        message: "You can join only within 30 minutes before the interview.",
+        success: false,
+      });
+    }
+
+    if (now.getTime() > interviewEndMs) {
+      return res.status(400).json({
+        message: "Interview window has already passed.",
+        success: false,
+      });
+    }
+
+    const isJobseeker = interview.jobseeker.toString() === userId;
+    const isInterviewer = interview.scheduledBy.toString() === userId;
+    const isAdmin = req.user?.role === "admin";
+
+    if (!isJobseeker && !isInterviewer && !isAdmin) {
+      return res.status(403).json({
+        message: "You are not authorized to join this interview.",
+        success: false,
+      });
+    }
+
+    if (isJobseeker) {
+      interview.joinedByJobseeker = true;
+      interview.jobseekerJoinedAt = now;
+    } else {
+      interview.joinedByInterviewer = true;
+      interview.interviewerJoinedAt = now;
+    }
+
+    await interview.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Join attendance recorded.",
+      interview,
+    });
+  } catch (error) {
+    console.error("Mark join error:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to mark interview join.", success: false });
   }
 };
 
@@ -301,8 +394,7 @@ export const getScheduledInterviewsByCreator = async (req, res) => {
         match: { created_by: userId },
       })
       .populate("company")
-      // ⭐ Change: select '_id' agar aapko sirf ID chahiye,
-      // ya poora object rehne dein par frontend par access sahi karein
+
       .populate("scheduledBy", "_id fullname email")
       .sort({ createdAt: -1 });
 
@@ -320,10 +412,8 @@ export const getScheduledInterviewsByCreator = async (req, res) => {
   }
 };
 
-// interview.controller.js mein add karein
 export const getAllInterviewsForAdmin = async (req, res) => {
   try {
-    // Admin ke liye koi filter nahi, bas saara data populate karke nikalna hai
     const interviews = await Interview.find()
       .populate({
         path: "application",
@@ -332,7 +422,7 @@ export const getAllInterviewsForAdmin = async (req, res) => {
       .populate("jobseeker", "fullname email")
       .populate("job", "title")
       .populate("company", "name")
-      .sort({ createdAt: -1 }); // Naye interviews upar dikhenge
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -344,14 +434,13 @@ export const getAllInterviewsForAdmin = async (req, res) => {
   }
 };
 
-// 1. Saari notifications fetch karna (For Bell Icon List)
 export const getNotifications = async (req, res) => {
   try {
     const userId = req.id; // Logged-in user ID
 
     const notifications = await Notification.find({ recipient: userId })
-      .sort({ createdAt: -1 }) // Latest notifications upar
-      .limit(20); // Last 20 notifications dikhayenge
+      .sort({ createdAt: -1 })
+      .limit(20);
 
     return res.status(200).json({
       success: true,
@@ -363,12 +452,10 @@ export const getNotifications = async (req, res) => {
   }
 };
 
-// 2. Notification ko "Read" mark karna (Jab user bell icon click kare)
 export const markAsRead = async (req, res) => {
   try {
     const userId = req.id;
 
-    // Saari unread notifications ko read mark kar dena
     await Notification.updateMany(
       { recipient: userId, isRead: false },
       { $set: { isRead: true } },
@@ -384,7 +471,6 @@ export const markAsRead = async (req, res) => {
   }
 };
 
-// 2.5. Single notification ko "Read" mark karna (Jab user specific notification click kare)
 export const markNotificationAsRead = async (req, res) => {
   try {
     const userId = req.id;
@@ -415,7 +501,6 @@ export const markNotificationAsRead = async (req, res) => {
   }
 };
 
-// 3. Single notification delete karna (Optional)
 export const deleteNotification = async (req, res) => {
   try {
     const notificationId = req.params.id;
@@ -426,6 +511,25 @@ export const deleteNotification = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Error deleting notification" });
+  }
+};
+
+export const clearAllNotifications = async (req, res) => {
+  try {
+    const userId = req.id;
+
+    await Notification.deleteMany({ recipient: userId });
+
+    return res.status(200).json({
+      success: true,
+      message: "All notifications cleared",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to clear notifications",
+    });
   }
 };
 
@@ -525,11 +629,10 @@ export const approveReschedule = async (req, res) => {
 
     const endDateTime = new Date(startDateTime.getTime() + 30 * 60000);
 
-    // ⭐ CHANGE 1: Variable names ko theek karein (formattedDate/formattedTime create karein)
     const formattedDate = new Date(newDate)
       .toLocaleDateString("en-GB")
       .replace(/\//g, "-");
-    const formattedTime = newTime; // Yeh "12:00 PM" format mein hi hai
+    const formattedTime = newTime;
 
     // 2. Google OAuth & Event Update
     oauth2Client.setCredentials({
@@ -558,7 +661,7 @@ export const approveReschedule = async (req, res) => {
       conferenceDataVersion: 1,
     });
 
-    const newMeetingLink = response.data.hangoutLink; // ⭐ CHANGE 2: Is variable ko define karein (email mein use ho raha hai)
+    const newMeetingLink = response.data.hangoutLink;
 
     // 3. Database Update
     interview.date = formattedDate;
@@ -569,7 +672,7 @@ export const approveReschedule = async (req, res) => {
     interview.rescheduleCount += 1; // Increment reschedule count
     await interview.save();
 
-    // 6. Notification save (formattedDate aur formattedTime use karein)
+    // 6. Notification save
     await Notification.create({
       recipient: interview.jobseeker._id,
       sender: userId,
@@ -593,7 +696,6 @@ export const approveReschedule = async (req, res) => {
       true,
     );
 
-    // ⭐ FIX 2: Ensure email is sent to the populated email field
     await sendEmail({
       email: interview.jobseeker.email, // Ab yeh available hoga populate ki wajah se
       subject: `Reschedule Approved: ${interview.job?.title || "Interview"}`,
@@ -620,8 +722,9 @@ export const deleteInterview = async (req, res) => {
     const userId = req.id;
     const userRole = req.user.role;
 
-    // Interview fetch karein
-    const interview = await Interview.findById(interviewId).populate('jobseeker').populate('scheduledBy');
+    const interview = await Interview.findById(interviewId)
+      .populate("jobseeker")
+      .populate("scheduledBy");
 
     if (!interview) {
       return res
@@ -629,22 +732,24 @@ export const deleteInterview = async (req, res) => {
         .json({ message: "Interview not found", success: false });
     }
 
-    // ⭐ SECURITY LOGIC UPDATE:
-    // 1. Agar user Admin hai toh delete kar sakta hai.
-    // 2. Agar user Employer hai, toh wo TABHI delete kar sakta hai jab usne khud schedule kiya ho.
-    // 3. Agar user Jobseeker hai, toh wo TABHI cancel kar sakta hai jab wo khud ka interview ho.
     const isOwner = interview.scheduledBy._id.toString() === userId.toString();
-    const isJobseeker = interview.jobseeker._id.toString() === userId.toString();
+    const isJobseeker =
+      interview.jobseeker._id.toString() === userId.toString();
 
     if (userRole !== "admin" && !isOwner && !isJobseeker) {
       return res.status(403).json({
-        message: "You can only cancel interviews that you have scheduled or applied for.",
+        message:
+          "You can only cancel interviews that you have scheduled or applied for.",
         success: false,
       });
     }
 
     // Update status to cancelled instead of deleting
-    await Interview.findByIdAndUpdate(interviewId, { status: "cancelled" }, { new: true });
+    await Interview.findByIdAndUpdate(
+      interviewId,
+      { status: "cancelled" },
+      { new: true },
+    );
 
     // Determine who cancelled and send appropriate notifications
     let cancellerType = userRole;
@@ -670,7 +775,10 @@ export const deleteInterview = async (req, res) => {
         type: "STATUS_UPDATED",
         title: "Interview Cancelled",
         message: `The interview with ${interview.jobseeker.fullname} has been cancelled by the ${cancellerType}.`,
-        link: interview.scheduledBy.role === "admin" ? "/admin/interview-list" : "/employer/interview-list",
+        link:
+          interview.scheduledBy.role === "admin"
+            ? "/admin/interview-list"
+            : "/employer/interview-list",
       });
     }
 
@@ -699,7 +807,7 @@ export const deleteInterview = async (req, res) => {
 
 export const submitFeedback = async (req, res) => {
   try {
-    const { interviewId } = req.params; // Backend route :id use kar raha hai
+    const { interviewId } = req.params;
     const { ratings, comment, recommendation } = req.body;
     const interviewerId = req.id;
 
@@ -750,17 +858,16 @@ export const submitFeedback = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    console.log(error); // Ab aapko console mein validation error nahi dikhegi
+    console.log(error);
     res
       .status(500)
       .json({ message: "Error submitting feedback", success: false });
   }
 };
 
-// interview.controller.js mein niche add karein
 export const getFeedbackByInterviewId = async (req, res) => {
   try {
-    const { interviewId } = req.params; // Route se interviewId le rahe hain
+    const { interviewId } = req.params;
 
     const feedback = await Feedback.findOne({ interviewId }).populate(
       "interviewerId",
@@ -788,9 +895,6 @@ export const getBookedSlots = async (req, res) => {
   try {
     const { date, employerId: queryEmployerId } = req.query;
 
-    // ⭐ Priority logic:
-    // 1. Agar query mein employerId hai (Jobseeker side se), toh woh use karein.
-    // 2. Agar nahi hai, toh req.id use karein (Employer side se).
     const targetEmployerId = queryEmployerId || req.id;
 
     if (!targetEmployerId) {

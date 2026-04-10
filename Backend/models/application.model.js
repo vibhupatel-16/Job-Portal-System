@@ -10,7 +10,7 @@ const applicationSchema = new mongooes.Schema({
         ref:'User',
         required: true
     },
-   // application.model.js mein update karein
+   
 statusHistory: [
     {
         status: String,

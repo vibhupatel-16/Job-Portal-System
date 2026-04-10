@@ -27,7 +27,7 @@ export const toggleUserStatus = async (req, res) => {
         return res.status(400).json({ message: "Admin cannot be blocked" });
     }
 
-    user.isBlocked = !user.isBlocked; // Toggle: true ko false, false ko true
+    user.isBlocked = !user.isBlocked; 
     await user.save();
 
     res.status(200).json({

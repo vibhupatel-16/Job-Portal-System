@@ -84,7 +84,7 @@ const FeaturedJobs = () => {
         <Button
           variant="outline"
           className="rounded-full border-indigo-200 text-indigo-600 hover:bg-indigo-50"
-          onClick={() => navigate("/browse")}
+          onClick={() => navigate("/jobs")}
         >
           <Briefcase className="h-4 w-4 mr-2" />
           View all jobs

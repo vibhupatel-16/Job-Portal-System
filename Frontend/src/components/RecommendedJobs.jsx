@@ -6,7 +6,6 @@ import { Avatar, AvatarImage } from './ui/avatar'
 import { useNavigate } from 'react-router-dom'
 
 const RecommendedJobs = () => {
-    // ⚠️ DHAYAN DEIN: homeJobs use karein kyunki useGetHomeJobs wahi set kar raha hai
     const { homeJobs } = useSelector(store => store.job); 
     const { user } = useSelector(store => store.auth);
     const navigate = useNavigate();
@@ -14,8 +13,6 @@ const RecommendedJobs = () => {
     if (!user) return null;
 
     const userSkills = user?.profile?.skills || [];
-    
-    // Logic: homeJobs par filter lagayein
     let recommendedJobs = homeJobs?.filter(job => {
         return job.requirements.some(req => 
             userSkills.some(skill => 
@@ -23,11 +20,7 @@ const RecommendedJobs = () => {
             )
         );
     }).slice(0, 6);
-
-    // Agar matching jobs nahi mili toh khali array ki jagah latest homeJobs dikhao (Fallback)
     const displayJobs = recommendedJobs?.length > 0 ? recommendedJobs : homeJobs?.slice(0, 6);
-
-    // Agar abhi bhi data nahi hai toh null return karo
     if (!displayJobs || displayJobs.length === 0) return null;
 
     return (

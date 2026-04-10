@@ -88,7 +88,7 @@
 .rich-text-content img {
   display: inline-block;
   vertical-align: middle;
-  margin-right: 8px; /* icons ke beech gap */
-  width: 32px;       /* optional: icon size fix */
+  margin-right: 8px; 
+  width: 32px;      
   height: auto;
 }

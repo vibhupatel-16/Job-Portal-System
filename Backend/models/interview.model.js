@@ -50,7 +50,13 @@ const interviewSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["scheduled", "completed", "cancelled", "reschedule_requested"], // "reschedule_requested" add kiya
+      enum: [
+        "scheduled",
+        "completed",
+        "cancelled",
+        "reschedule_requested",
+        "missed",
+      ],
       default: "scheduled",
     },
 
@@ -75,6 +81,14 @@ const interviewSchema = new mongoose.Schema(
 
     reminderSent24h: { type: Boolean, default: false },
     reminderSent1h: { type: Boolean, default: false },
+
+    // Attendance tracking: used to finalize interview outcome automatically.
+    joinedByJobseeker: { type: Boolean, default: false },
+    joinedByInterviewer: { type: Boolean, default: false },
+    jobseekerJoinedAt: { type: Date },
+    interviewerJoinedAt: { type: Date },
+    completionSummary: { type: String },
+    completionNotified: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

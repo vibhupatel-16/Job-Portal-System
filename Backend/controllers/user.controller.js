@@ -8,22 +8,38 @@ import { forgotPasswordTemplate } from "../utils/emailTemplates.js";
 export const register = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, password, role } = req.body;
-   const photoFile = req.files?.profilePhoto?.[0];
+    const photoFile = req.files?.profilePhoto?.[0];
 
     // Validation
     if (!fullname || !email || !phoneNumber || !password || !role) {
       return res.status(400).json({
         message: "Something is missing",
-        success: false
+        success: false,
       });
     }
 
-    // Existing user check
-    let existingUser = await User.findOne({ email });
+    // Existing user check (Email or Phone Number)
+    let existingUser = await User.findOne({
+      $or: [{ email }, { phoneNumber }],
+    });
+
     if (existingUser) {
+      // Determine which field is already taken
+      const isEmailTaken = existingUser.email === email;
+      const isPhoneTaken = existingUser.phoneNumber === phoneNumber;
+
+      let errorMessage = "";
+      if (isEmailTaken && isPhoneTaken) {
+        errorMessage = "User already exists with this email and phone number";
+      } else if (isEmailTaken) {
+        errorMessage = "User already exists with this email";
+      } else {
+        errorMessage = "User already exists with this phone number";
+      }
+
       return res.status(400).json({
-        message: "User already exists with this email",
-        success: false
+        message: errorMessage,
+        success: false,
       });
     }
 
@@ -32,8 +48,8 @@ export const register = async (req, res) => {
     // 1. Generate 6-digit OTP
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
-   // 2. Set Expiry (e.g., 10 minutes)
-   const otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+    // 2. Set Expiry (e.g., 10 minutes)
+    const otpExpire = new Date(Date.now() + 10 * 60 * 1000);
     // User create WITHOUT touching other profile fields
     await User.create({
       fullname,
@@ -41,35 +57,32 @@ export const register = async (req, res) => {
       phoneNumber,
       password: hashedPassword,
       role,
-      otp: generatedOtp,      
-      otpExpire: otpExpire,    
+      otp: generatedOtp,
+      otpExpire: otpExpire,
       isVerified: false,
       profile: {
-        // ✅ FIX: photoFile.path ko save karein jo Cloudinary ka URL hai
-        profilePhoto: photoFile ? photoFile.path : "" 
-      }
+      
+        profilePhoto: photoFile ? photoFile.path : "",
+      },
     });
     await sendEmail({
-  email: email,
-  subject: "Verify your Account - Nexforge",
-  html: `<h1>Welcome!</h1><p>Your OTP for registration is: <b>${generatedOtp}</b>. It expires in 10 minutes.</p>`
-  });
+      email: email,
+      subject: "Verify your Account - Nexforge",
+      html: `<h1>Welcome!</h1><p>Your OTP for registration is: <b>${generatedOtp}</b>. It expires in 10 minutes.</p>`,
+    });
 
     return res.status(201).json({
       message: "Account created successfully",
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       message: "Internal server error",
-      success: false
+      success: false,
     });
   }
 };
-
-
 
 // ---------------- LOGIN ----------------
 // export const login = async (req, res) => {
@@ -146,17 +159,15 @@ export const register = async (req, res) => {
 //   }
 // };
 
-
 export const login = async (req, res) => {
   // console.log(req.user);
   try {
     const { email, password } = req.body;
-    
 
     if (!email || !password) {
       return res.status(400).json({
         message: "Email and Password are required",
-        success: false
+        success: false,
       });
     }
 
@@ -164,28 +175,27 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         message: "Incorrect email or password",
-        success: false
+        success: false,
       });
     }
     if (!user.isVerified) {
       return res.status(403).json({
         message: "Your email is not verified. Please check your mail for OTP.",
-        success: false
+        success: false,
       });
     }
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
       return res.status(400).json({
         message: "Incorrect email or password",
-        success: false
+        success: false,
       });
     }
-    
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.SECRET_KEY,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     const isProduction = process.env.NODE_ENV === "production";
@@ -196,32 +206,32 @@ export const login = async (req, res) => {
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     };
 
-    return res.status(200)
+    return res
+      .status(200)
       .cookie("token", token, cookieOptions)
       .json({
         message: `Welcome back ${user.fullname}`,
         token,
         role: user.role,
         user,
-        success: true
+        success: true,
       });
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       message: "Internal server error",
-      success: false
+      success: false,
     });
   }
 };
-
 
 // ---------------- LOGOUT ----------------
 export const logout = async (req, res) => {
   try {
     const isProduction = process.env.NODE_ENV === "production";
 
-    return res.status(200)
+    return res
+      .status(200)
       .cookie("token", "", {
         httpOnly: true,
         secure: isProduction,
@@ -230,13 +240,13 @@ export const logout = async (req, res) => {
       })
       .json({
         message: "Logged out successfully",
-        success: true
+        success: true,
       });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       message: "Internal server error",
-      success: false
+      success: false,
     });
   }
 };
@@ -247,18 +257,24 @@ export const verifyEmail = async (req, res) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return res.status(400).json({ message: "Email and OTP are required", success: false });
+      return res
+        .status(400)
+        .json({ message: "Email and OTP are required", success: false });
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
     }
 
     // Check if OTP matches and is not expired
     if (user.otp !== otp || user.otpExpire < Date.now()) {
-      return res.status(400).json({ message: "Invalid or expired OTP", success: false });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired OTP", success: false });
     }
 
     // Mark as verified and clear OTP fields
@@ -269,11 +285,13 @@ export const verifyEmail = async (req, res) => {
 
     return res.status(200).json({
       message: "Email verified successfully! You can now login.",
-      success: true
+      success: true,
     });
   } catch (error) {
     console.error("Verification error:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
 // ---------------- UPDATE PROFILE ----------------
@@ -282,7 +300,6 @@ export const verifyEmail = async (req, res) => {
 //     const { fullname, email, phoneNumber, bio, skills } = req.body;
 //     const file = req.file;
 
-   
 //     let skillsArray;
 //     if(skills){
 //   user.profile.skills = skills.split(",");
@@ -305,7 +322,6 @@ export const verifyEmail = async (req, res) => {
 //     if(phoneNumber) user.phoneNumber = phoneNumber;
 //     if(bio) user.profile.bio = bio;
 //     if(skills) user.profile.skillsArray = skillsArray;
-   
 
 //     if (file) {
 //       user.profile.resume = file.path; // if resume upload implemented
@@ -337,7 +353,6 @@ export const verifyEmail = async (req, res) => {
 //   }
 // };
 
-
 export const updateProfile = async (req, res) => {
   try {
     const { fullname, email, phoneNumber, bio, skills } = req.body;
@@ -351,7 +366,7 @@ export const updateProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         message: "User not found",
-        success: false
+        success: false,
       });
     }
 
@@ -361,15 +376,15 @@ export const updateProfile = async (req, res) => {
     if (phoneNumber) user.phoneNumber = phoneNumber;
     if (bio) user.profile.bio = bio;
     if (skills) user.profile.skills = skills.split(",");
-if (resumeFile) {
-  const result = await cloudinary.uploader.upload(resumeFile.path, {
-    folder: "jobportal_uploads/resumes",
-    resource_type: "raw"
-  });
+    if (resumeFile) {
+      const result = await cloudinary.uploader.upload(resumeFile.path, {
+        folder: "jobportal_uploads/resumes",
+        resource_type: "raw",
+      });
 
-  user.profile.resume = result.secure_url;
-  user.profile.resumeOriginalName = resumeFile.originalname;
-}
+      user.profile.resume = result.secure_url;
+      user.profile.resumeOriginalName = resumeFile.originalname;
+    }
 
     // Profile photo
     if (photoFile) {
@@ -389,25 +404,23 @@ if (resumeFile) {
         skills: user.profile.skills,
         resume: user.profile.resume,
         resumeOriginalName: user.profile.resumeOriginalName,
-        profilePhoto: user.profile.profilePhoto
-      }
+        profilePhoto: user.profile.profilePhoto,
+      },
     };
 
     return res.status(200).json({
       message: "Profile updated successfully",
       user: updatedUser,
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.log("Update profile error:", error);
     return res.status(500).json({
       message: "Internal server error",
-      success: false
+      success: false,
     });
   }
 };
-
 
 // ---------------- FORGOT PASSWORD ----------------
 export const forgotPassword = async (req, res) => {
@@ -415,20 +428,27 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required", success: false });
+      return res
+        .status(400)
+        .json({ message: "Email is required", success: false });
     }
 
     //  Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
     }
 
     //  Generate secure reset token
     const resetToken = crypto.randomBytes(20).toString("hex");
 
     //  Store hashed token and expiry in DB
-    user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    user.resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
     user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
 
     await user.save({ validateBeforeSave: false });
@@ -443,23 +463,21 @@ export const forgotPassword = async (req, res) => {
     await sendEmail({
       email: user.email,
       subject: "Password Reset Request - JobPortal",
-      html: message
+      html: message,
     });
 
     return res.status(200).json({
       message: "Reset link sent to your email!",
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.error("Forgot password error:", error);
     return res.status(500).json({
       message: "Internal server error",
-      success: false
+      success: false,
     });
   }
 };
-
 
 /// ---------------- RESET PASSWORD ----------------
 export const resetPassword = async (req, res) => {
@@ -468,20 +486,27 @@ export const resetPassword = async (req, res) => {
     const { password } = req.body;
 
     if (!password) {
-      return res.status(400).json({ message: "Password is required", success: false });
+      return res
+        .status(400)
+        .json({ message: "Password is required", success: false });
     }
 
     //  Hash the token again to match the one in DB
-    const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
 
     //  Find user with valid token and non-expired link
     const user = await User.findOne({
       resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() }
+      resetPasswordExpire: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired reset token", success: false });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token", success: false });
     }
 
     //  Hash and update new password
@@ -496,13 +521,13 @@ export const resetPassword = async (req, res) => {
 
     return res.status(200).json({
       message: "Password reset successful! Please login again.",
-      success: true
+      success: true,
     });
   } catch (error) {
     console.error("Reset password error:", error);
     return res.status(500).json({
       message: "Internal server error",
-      success: false
+      success: false,
     });
   }
 };
@@ -518,19 +543,26 @@ export const recordProfileView = async (req, res) => {
     }
 
     const user = await User.findById(jobseekerId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     if (!user.profileViews) user.profileViews = [];
 
     user.profileViews.push({
       viewedAt: new Date(),
-      viewerId: viewerId
+      viewerId: viewerId,
     });
 
     await user.save();
-    return res.status(200).json({ success: true, message: "Profile view recorded" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Profile view recorded" });
   } catch (error) {
     console.error("Profile view error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };

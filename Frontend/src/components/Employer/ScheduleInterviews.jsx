@@ -95,6 +95,18 @@ const ScheduledInterviews = () => {
     }
   };
 
+  const markJoinAndOpen = async (interviewId, meetingLink) => {
+    try {
+      await axiosInstance.post(`/interview/interview/${interviewId}/join`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not mark join attendance");
+    }
+
+    if (meetingLink) {
+      window.open(meetingLink, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50 p-6 md:p-8">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -182,15 +194,13 @@ const ScheduledInterviews = () => {
 
                   <TableCell>
                     {item.mode === "online" && item.meetingLink ? (
-                      <a
-                        href={item.meetingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => markJoinAndOpen(item._id, item.meetingLink)}
                         className="inline-flex items-center gap-2 rounded-xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
                       >
                         <Video size={16} />
                         Join Meeting
-                      </a>
+                      </button>
                     ) : (
                       <span className="inline-flex items-center gap-2 text-sm text-slate-500">
                         <MapPin size={16} />

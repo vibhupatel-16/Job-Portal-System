@@ -63,7 +63,7 @@ const supportSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// Auto-update 'updatedAt' before saving
+
 supportSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();

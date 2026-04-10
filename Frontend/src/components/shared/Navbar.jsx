@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { logout } from '@/redux/authSlice';
 import { socket } from '@/App';
 import axiosInstance from '@/utils/axiosInstance';
+import { motion } from 'framer-motion';
 
 function Navbar() {
     const user = useSelector((store) => store.auth.user);
@@ -119,6 +120,32 @@ function Navbar() {
         }
     };
 
+    const clearAllNotificationsHandler = async () => {
+        try {
+            const res = await axiosInstance.delete(`/interview/notifications`);
+            if (res.data.success) {
+                setNotifications([]);
+                setUnreadCount(0);
+                toast.success(res.data.message || "All notifications cleared");
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to clear notifications");
+        }
+    };
+
+    const deleteSingleNotificationHandler = async (notification, e) => {
+        e.stopPropagation();
+        try {
+            const res = await axiosInstance.delete(`/interview/notifications/${notification._id}`);
+            if (res.data.success) {
+                setNotifications((prev) => prev.filter((n) => n._id !== notification._id));
+                if (!notification.isRead) setUnreadCount((prev) => Math.max(0, prev - 1));
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete notification");
+        }
+    };
+
     const logoutHandler = async () => {
         try {
             const res = await axiosInstance.get(`/user/logout`);
@@ -138,20 +165,28 @@ function Navbar() {
                 {/* Navigation arrows + Logo */}
                 <div className="flex items-center gap-3">
                     <div className="hidden sm:flex items-center gap-1">
-                        <button
+                        <motion.button
                             onClick={() => navigate(-1)}
-                            className="p-2 rounded-full hover:bg-gray-100 transition"
+                            className="p-2 rounded-full hover:bg-gray-100 transition shadow-lg hover:shadow-indigo-400/50 hover:shadow-2xl"
                             title="Go Back"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            <ChevronLeft size={18} className="text-gray-600" />
-                        </button>
-                        <button
-                            onClick={() => navigate(1)}
-                            className="p-2 rounded-full hover:bg-gray-100 transition"
-                            title="Go Forward"
-                        >
-                            <ChevronRight size={18} className="text-gray-600" />
-                        </button>
+                            <motion.div
+                                animate={{ 
+                                    boxShadow: [
+                                        `0 0 0 0 rgba(99, 102, 241, 0.7)`,
+                                        `0 0 0 10px rgba(99, 102, 241, 0)`,
+                                        `0 0 0 0 rgba(99, 102, 241, 0)`,
+                                    ]
+                                }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                                className="inline-block"
+                            >
+                                <ChevronLeft size={28} className="text-indigo-600 font-bold" />
+                            </motion.div>
+                        </motion.button>
+                    
                     </div>
                     <Link to="/" className="flex items-center gap-2">
                         <img 
@@ -208,7 +243,7 @@ function Navbar() {
                                         </Link>
                                     </div>
                                 </li>
-                                <li><Link to="/employer/interview-list" className="hover:text-[#6A38C2] transition font-medium">Interviews</Link></li>
+                                <li><Link to="/employer/dashboard" className="hover:text-[#6A38C2] transition font-medium">Dashboard</Link></li>
                             </>
                         ) : (
                             /* --- CONDITION 2: JOBSEEKER MENU --- */
@@ -268,11 +303,7 @@ function Navbar() {
                                                         <p className="text-sm font-semibold text-gray-800">{notif.title}</p>
                                                         <p className="text-xs text-gray-600 leading-relaxed">{notif.message}</p>
                                                     </div>
-                                                    <button onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setNotifications(notifications.filter(n => n._id !== notif._id));
-                                                        if (!notif.isRead) setUnreadCount(prev => Math.max(0, prev - 1));
-                                                    }} className="text-gray-400 hover:text-gray-600 ml-2">
+                                                    <button onClick={(e) => deleteSingleNotificationHandler(notif, e)} className="text-gray-400 hover:text-gray-600 ml-2">
                                                         &times;
                                                     </button>
                                                 </div>
@@ -280,9 +311,15 @@ function Navbar() {
                                         ))
                                     )}
                                 </div>
-                                <Link to={user.role === 'employer' ? "/employer/interview-list" : "/jobseeker/interviews"} className="block text-center p-3 text-sm text-blue-600 font-medium hover:bg-gray-50 border-t">
-                                    View all interviews
-                                </Link>
+                                {notifications.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={clearAllNotificationsHandler}
+                                        className="block w-full text-center p-3 text-sm text-red-600 font-medium hover:bg-red-50 border-t"
+                                    >
+                                        Clear all notifications
+                                    </button>
+                                )}
                             </PopoverContent>
                         </Popover>
                     )}
@@ -299,11 +336,6 @@ function Navbar() {
                     {user && user.role === "jobseeker" && (
                         <div onClick={() => navigate("/saved-jobs")} className="relative cursor-pointer p-2 hover:bg-gray-100 rounded-full transition group" title="Saved Jobs">
                             <Bookmark size={22} className="text-gray-600 group-hover:text-[#6A38C2]" />
-                            {user?.savedJobs?.length > 0 && (
-                                <span className="absolute top-1 right-1 bg-[#6A38C2] text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white">
-                                    {user?.savedJobs?.length}
-                                </span>
-                            )}
                         </div>
                     )}
                     
@@ -337,11 +369,7 @@ function Navbar() {
                                                         <p className="text-sm font-semibold text-gray-800">{notif.title}</p>
                                                         <p className="text-xs text-gray-600 leading-relaxed">{notif.message}</p>
                                                     </div>
-                                                    <button onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setNotifications(notifications.filter(n => n._id !== notif._id));
-                                                        if (!notif.isRead) setUnreadCount(prev => Math.max(0, prev - 1));
-                                                    }} className="text-gray-400 hover:text-gray-600 ml-2">
+                                                    <button onClick={(e) => deleteSingleNotificationHandler(notif, e)} className="text-gray-400 hover:text-gray-600 ml-2">
                                                         &times;
                                                     </button>
                                                 </div>
@@ -349,9 +377,15 @@ function Navbar() {
                                         ))
                                     )}
                                 </div>
-                                <Link to={user.role === 'employer' ? "/employer/interview-list" : "/jobseeker/interviews"} className="block text-center p-3 text-sm text-blue-600 font-medium hover:bg-gray-50 border-t">
-                                    View all interviews
-                                </Link>
+                                {notifications.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={clearAllNotificationsHandler}
+                                        className="block w-full text-center p-3 text-sm text-red-600 font-medium hover:bg-red-50 border-t"
+                                    >
+                                        Clear all notifications
+                                    </button>
+                                )}
                             </PopoverContent>
                         </Popover>
                     )}

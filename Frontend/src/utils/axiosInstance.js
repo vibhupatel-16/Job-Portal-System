@@ -1,10 +1,10 @@
 import axios from "axios";
-import { baseURL } from "./constant";
+import { baseAPIURL } from "./constant";
 import store from "@/redux/store";
 import { logout } from "@/redux/authSlice";
 
 const axiosInstance = axios.create({
-  baseURL: baseURL,
+  baseURL: baseAPIURL,
   withCredentials: true, // cookies send + receive
 });
 
@@ -27,7 +27,7 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem("persist:root");
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

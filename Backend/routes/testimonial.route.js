@@ -14,7 +14,7 @@ router.post("/submit/employer", isAuthenticated, checkRole("employer"), submitTe
 // Backward compatible
 router.post('/submit', isAuthenticated, submitTestimonial);
 
-// Admin routes: Testimonials manage karne ke liye
+
 router.get('/pending', isAuthenticated, checkRole("admin"), getPendingTestimonials); 
 router.put('/approve/:id', isAuthenticated, checkRole("admin"), approveTestimonial);
 router.delete('/delete/:id', isAuthenticated, checkRole("admin"), deleteTestimonial);

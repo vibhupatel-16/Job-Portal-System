@@ -26,10 +26,7 @@ const Testimonials = () => {
     const fetchTestimonials = async () => {
       try {
         setLoading(true);
-        // 1. URL check karein (index.js wali spelling: testinomial)
         const res = await axiosInstance.get("/testimonials/approved");
-        
-        // 2. Data check karein
         if (res.data.success && Array.isArray(res.data.testimonials)) {
           setTestimonials(res.data.testimonials);
         }
@@ -79,7 +76,7 @@ const Testimonials = () => {
 
               return (
               <motion.div
-                key={t._id || i} // Name ki jagah _id use karna better hai
+                key={t._id || i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}

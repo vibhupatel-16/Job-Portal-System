@@ -62,9 +62,9 @@ import JobSeekerProtectedRoute from "./components/JobSeeekerProtectedRoute";
 
 
 // Global Socket Instance (Export if needed in other components)
-export const socket = io("http://192.168.1.21:8000", {
+export const socket = io(baseURL, {
   withCredentials: true,
-  autoConnect: false, // Login ke baad connect karenge
+  autoConnect: false,
 });
 
 const appRouter = createBrowserRouter([

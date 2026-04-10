@@ -36,9 +36,9 @@ const Footer = () => {
     // Default to Jobseeker (student)
     return [
       { label: "Browse Jobs", path: "/jobs" },
-      { label: "My Applications", path: "/jobseeker/dashboard" },
-      { label: "My Interviews", path: "/jobseeker/interviews" },
-      { label: "Jobseeker FAQ", path: "/jobseeker/faq" },
+      {label: "View Applications", path: "/admin/applications"},
+      { label: "Interviews", path: "/admin/interview-list" },
+      { label: "Support & FAQ", path: "/faq" },
     ];
   };
 
@@ -123,6 +123,7 @@ const Footer = () => {
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-orange-400 transition-colors leading-relaxed text-xs"
                   >
+                    Nexforge<br/>
                     502/503 Aries Galleria<br/>
                     Near Taksh Complex, Vasna Main Road<br/>
                     Vadodara, Gujarat - 390007
@@ -138,13 +139,29 @@ const Footer = () => {
                 <div>
                   <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Email</p>
                   <a 
-                    href="mailto:nexforgetechnology@gmail.com" 
+                    href="mailto:info@nexforge.tech" 
                     className="text-gray-400 hover:text-orange-400 transition-colors text-xs"
                   >
-                    nexforgetechnology@gmail.com
+                    info@nexforge.tech
                   </a>
                 </div>
               </div>
+
+              {/* Phone Number (Newly Added) */}
+    <div className="flex items-center gap-4 group">
+      <div className="w-10 h-10 rounded-lg bg-gray-900/70 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform border border-gray-800 flex-shrink-0">
+        <FaPhoneAlt size={14}/>
+      </div>
+      <div>
+        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Call Us</p>
+        <a 
+          href="tel:+919876543210" 
+          className="text-gray-400 hover:text-orange-400 transition-colors text-xs font-medium"
+        >
+          +91 9624158696
+        </a>
+      </div>
+    </div>
             </div>
           </div>
 

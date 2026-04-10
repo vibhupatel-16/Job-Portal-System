@@ -15,6 +15,22 @@ const getShortText = (html, maxLength = 120) => {
   return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
 };
 
+const formatPostedTime = (createdAt) => {
+  if (!createdAt) return "Posted recently";
+
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return "Posted recently";
+
+  return `Posted on ${date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  })}`;
+};
+
 function LatestJobCards({ job }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -75,7 +91,7 @@ function LatestJobCards({ job }) {
     >
       <div className="flex items-center justify-between mb-4">
         <Badge variant="secondary" className="bg-gray-100/80 text-gray-500 hover:bg-gray-200 border-none px-3 py-1 text-xs font-semibold shadow-sm">
-          Recently Added
+          {formatPostedTime(job?.createdAt)}
         </Badge>
         <button
           onClick={handleToggleSave}

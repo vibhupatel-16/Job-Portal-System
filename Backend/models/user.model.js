@@ -12,7 +12,8 @@ const userSchema = new mongoose.Schema({
   },
   phoneNumber: {
     type: Number,
-    required: true
+    required: true,
+    unique: true
   },
   password: {
     type: String,
@@ -53,7 +54,7 @@ isBlocked: {
       viewerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
     }
   ],
-  // user.model.js mein add karein
+
 notifications: [
     {
         message: { type: String, required: true },

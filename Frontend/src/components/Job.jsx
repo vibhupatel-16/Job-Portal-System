@@ -26,7 +26,6 @@ const Job = ({ job }) => {
   // ================= SYNC SAVED STATUS =================
   useEffect(() => {
     if (user && user.savedJobs) {
-      // Check agar current job user ki savedJobs list mein hai
       const isAlreadySaved = user.savedJobs.some(id => 
         (typeof id === 'string' ? id === job?._id : id?._id === job?._id)
       );
@@ -56,8 +55,7 @@ const Job = ({ job }) => {
         if (res.data.success) {
           setSaved(false);
           toast.success("Job removed from bookmarks");
-          
-          // Redux update: Filter out the removed job ID
+        
           const updatedSavedJobs = user.savedJobs.filter(id => 
             (typeof id === 'string' ? id !== job?._id : id?._id !== job?._id)
           );

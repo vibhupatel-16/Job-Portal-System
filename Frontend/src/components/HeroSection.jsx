@@ -13,7 +13,7 @@ function HeroSection() {
 
   const searchJobHandler = () => {
     dispatch(setSearchedQuery(query));
-    dispatch(setFilter({ category: "", jobType: "", salary: "", experience: "" }));
+    dispatch(setFilter({ location: "", category: "", jobType: "", salary: "", experience: "" }));
     setTimeout(() => navigate("/browse"), 200);
   };
 
@@ -65,7 +65,7 @@ function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 shadow-xl rounded-2xl bg-white border border-gray-200/80 p-2 sm:pl-5 sm:pr-2 sm:py-2">
               <input
                 type="text"
-                placeholder="Job title, keywords, or company"
+                placeholder="Job title, Location, or Company"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && searchJobHandler()}

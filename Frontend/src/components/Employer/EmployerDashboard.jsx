@@ -107,7 +107,7 @@ const EmployerDashboard = () => {
     "02:00 PM", "03:00 PM", "04:00 PM", 
     "05:00 PM", "06:00 PM"
   ];
-const [selectedIds, setSelectedIds] = useState([]); // Multiple IDs store karne ke liye
+const [selectedIds, setSelectedIds] = useState([]); 
 const COLORS = ['#94a3b8', '#9333ea', '#16a34a', '#dc2626']; // Pending, Shortlisted, Accepted, Rejected
   useEffect(() => {
     fetchDashboardData();
@@ -138,14 +138,14 @@ const COLORS = ['#94a3b8', '#9333ea', '#16a34a', '#dc2626']; // Pending, Shortli
     }
   };
 
-  // Ek individual checkbox ko select karne ke liye
+ 
 const handleSelect = (id) => {
     setSelectedIds(prev => 
         prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
 };
 
-// Sabko ek saath select karne ke liye
+
 const handleSelectAll = (e) => {
     if (e.target.checked) {
         const currentIds = (showAllApplicants ? applications : applications.slice(0, 6)).map(app => app._id);
@@ -163,8 +163,8 @@ const handleBulkUpdate = async (newStatus) => {
         );
         await Promise.all(promises);
         toast.success(`${selectedIds.length} Candidates updated to ${newStatus}`);
-        setSelectedIds([]); // Selection clear karein
-        fetchDashboardData(); // Data refresh karein
+        setSelectedIds([]); 
+        fetchDashboardData(); 
     } catch (error) {
         toast.error("Bulk update failed");
     }
@@ -186,7 +186,7 @@ const handleBulkUpdate = async (newStatus) => {
     setInterviewData({ ...interviewData, date: selectedDate, time: "" });
 
     try {
-      // route.js mein path "/booked-slots" hai
+      
       const res = await axiosInstance.get(`/interview/booked-slots?date=${selectedDate}`, );
       if (res.data.success) {
         setBookedSlots(res.data.bookedTimes || []);
@@ -198,12 +198,12 @@ const handleBulkUpdate = async (newStatus) => {
 
   const scheduleInterview = async () => {
     try {
-        // Console log karke check karein ki data mil raha hai ya nahi
+        
         console.log("Selected App Data:", selectedApp);
 
         const res = await axiosInstance.post(`/interview/interviews`, {
             applicationId: selectedApp?._id,
-            jobseekerId: selectedApp?.applicant?._id, // Ye ID zaroori hai
+            jobseekerId: selectedApp?.applicant?._id, 
             date: interviewData.date,
             time: interviewData.time,
             mode: interviewData.mode,
@@ -215,7 +215,6 @@ const handleBulkUpdate = async (newStatus) => {
             setOpenInterview(false);
         }
     } catch (error) {
-        // Agar yahan error aa rahi hai, toh backend terminal dekhein
         console.error("Full Error Object:", error.response?.data);
         toast.error(error.response?.data?.message || "Scheduling failed");
     }
@@ -239,7 +238,7 @@ const handleAiScan = async (applicationId) => {
 };
 const handleGenerateQuestions = async (applicationId) => {
   try {
-    // Button par loading state dikhane ke liye aap ek loading state bhi use kar sakte hain
+    
     toast.loading("AI is generating questions...");
 
     const res = await axiosInstance.get(
@@ -250,7 +249,7 @@ const handleGenerateQuestions = async (applicationId) => {
     if (res.data.success) {
       toast.success("Questions generated successfully!");
       
-      // Local state update karein taaki UI par turant badlav dikhe
+     
       setApplications((prevApps) =>
         prevApps.map((app) =>
           app._id === applicationId 
@@ -259,7 +258,7 @@ const handleGenerateQuestions = async (applicationId) => {
         )
       );
       
-      // Optional: Questions dekhne ke liye modal automatically open kar sakte hain
+      
       const updatedApp = applications.find(a => a._id === applicationId);
       if(updatedApp) setSelectedApp({...updatedApp, interviewQuestions: res.data.questions});
     }
@@ -272,8 +271,6 @@ const handleGenerateQuestions = async (applicationId) => {
   }
 };
 const HiringFunnel = ({ applications }) => {
-  // Status wise data calculate karna
-  // EmployerDashboard.jsx ke andar HiringFunnel component mein:
 const total = applications.length;
 const shortlisted = applications.filter(app => app.status === 'shortlisted').length;
 const interviews = applications.filter(app => app.status === 'accepted').length;
@@ -482,7 +479,7 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
             <Header title="Manage Applicants" action={() => setShowAllApplicants(!showAllApplicants)} label={showAllApplicants ? "Show Less" : "View All"} />
           </div>
           <div className="overflow-x-auto">
-            {/* 1. Bulk Action Bar (Table ke theek upar add karein) */}
+            {/* 1. Bulk Action Bar*/}
 {selectedIds.length > 0 && (
     <div className="bg-purple-50 p-4 rounded-2xl mb-4 flex justify-between items-center border border-purple-100">
         <span className="text-xs font-black text-purple-700 uppercase tracking-widest">
@@ -551,7 +548,6 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
             >
               <Sparkles size={16} />
             </Button>
-            {/* View Button hamesha dikhega */}
             <Button size="icon" className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl border-none" onClick={() => { 
               setSelectedApp(app); 
               setShowViewModal(true); 
@@ -567,11 +563,10 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
               size="icon" 
               className={`rounded-xl border-none transition-all ${app.interviewQuestions?.length > 0 ? 'bg-orange-100 text-orange-600' : 'bg-orange-50 text-orange-400'}`}
               onClick={() => handleGenerateQuestions(app._id)}
-              disabled={!app.matchScore} // Score ke bina disabled rahega
+              disabled={!app.matchScore} 
             >
               <MessageSquare size={16} /> {/* Lucide icon */}
             </Button>
-            {/* CASE 1: Agar status PENDING hai -> Shortlist aur Reject dikhao */}
             {app.status === "pending" && (
               <>
                 <Button 
@@ -580,7 +575,7 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                   onClick={() => updateStatus(app._id, "shortlisted")}
                   title="Shortlist Candidate"
                 >
-                  <ListChecks size={16} /> {/* ListChecks icon use karein */}
+                  <ListChecks size={16} /> 
                 </Button>
                 <Button 
                   size="icon" 
@@ -592,8 +587,6 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                 </Button>
               </>
             )}
-
-            {/* CASE 2: Agar status SHORTLISTED hai -> Accept/Schedule dikhao */}
             {app.status === "shortlisted" && (
               <>
                 <Button 
@@ -614,8 +607,6 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                 </Button>
               </>
             )}
-
-            {/* CASE 3: Agar status ACCEPTED hai -> Calendar dikhao Interview ke liye */}
             {app.status === "accepted" && (
               <Button 
                 size="icon" 
@@ -647,8 +638,6 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
               <ProfileItem label="Email Address" value={selectedApp.applicant?.email} />
               <ProfileItem label="Job Position" value={selectedApp.job?.title} />
              <ProfileItem label="Current Status" value={selectedApp.status} isStatus />
-
-{/* ⭐ AI MATCH SCORE SECTION - Isse yahan add karein */}
 <div className="mt-6 p-5 bg-gradient-to-br from-purple-50 to-white border border-purple-100 rounded-[2rem] shadow-sm">
   <div className="flex justify-between items-center mb-4">
     <div>
@@ -710,8 +699,6 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
               className="w-full max-h-[400px] object-contain" 
             />
           )}
-          
-          {/* ⭐ Added a download/view link just in case iframe is blocked by browser */}
           <div className="p-3 bg-white border-t border-gray-100 text-center">
             <a 
               href={selectedApp.applicant.profile.resume} 
@@ -756,7 +743,7 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
             type="date" 
             className="border-2 border-gray-50 bg-gray-50 p-3 rounded-2xl w-full focus:border-purple-200 outline-none text-sm font-bold" 
             value={interviewData.date}
-            onChange={handleDateChange} // Humne pehle jo function banaya tha
+            onChange={handleDateChange}
           />
         </div>
 

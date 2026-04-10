@@ -11,6 +11,7 @@ const jobSlice = createSlice({
     allAppliedJobs: [],
     searchedQuery: "",
     filters: {
+      location: "",
       category: "",
       experience: "",
       jobType: "",

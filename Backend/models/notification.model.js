@@ -24,7 +24,7 @@ const notificationSchema = new mongoose.Schema(
     },
     title: { type: String, required: true },
     message: { type: String, required: true },
-    link: { type: String }, // User click karke direct page par ja sake
+    link: { type: String }, 
     isRead: { type: Boolean, default: false },
   },
   { timestamps: true },

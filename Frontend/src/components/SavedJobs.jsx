@@ -33,17 +33,11 @@ const SavedJobs = () => {
         const res = await axiosInstance.delete(`/user/saved-jobs/${jobId}`);
         
         if (res.data.success) {
-            // 1. Local state update (Page se card hatane ke liye)
             setJobs((prev) => prev.filter((job) => job._id !== jobId));
-
-            // 2. Redux State Update (Navbar icon update karne ke liye)
-            // User object ki copy banayein aur savedJobs array se ID remove karein
             const updatedUser = {
                 ...user,
                 savedJobs: user.savedJobs.filter(id => id !== jobId)
             };
-
-            // Redux store mein naya user object bhejien
             dispatch(setUser(updatedUser));
 
             toast.success("Job removed successfully");
@@ -62,13 +56,10 @@ const SavedJobs = () => {
     }
 
     try {
-      // Endpoint ko aapke constants ke hisaab se check karein
       const res = await axiosInstance.get(`/application/apply/${jobId}`);
       
       if (res.data.success) {
         toast.success("Applied successfully!");
-        
-        // UI Update: Local state mein is job ko "applied" mark karein
         setJobs(prevJobs => 
           prevJobs.map(job => 
             job._id === jobId 
@@ -162,7 +153,6 @@ const SavedJobs = () => {
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
                      <span className="text-[10px] font-bold px-2 py-1 rounded bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm">{job.salary || 'Salary Undisclosed'}</span>
-                     <span className="text-[10px] font-bold px-2 py-1 rounded bg-purple-50 text-purple-600 border border-purple-100 shadow-sm">{job.position} Positions</span>
                   </div>
                 </div>
 

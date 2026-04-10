@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -16,9 +16,16 @@ const EmployerLogin = () => {
     password: ""
   });
 
-  const { loading } = useSelector((store) => store.auth);
+  const { loading, user } = useSelector((store) => store.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (user) {
+      // If user is already logged in, redirect to home
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const changeEventHandler = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });

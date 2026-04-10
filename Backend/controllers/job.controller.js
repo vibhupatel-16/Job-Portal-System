@@ -1,7 +1,5 @@
 import { Job } from "../models/job.model.js";
-import { User } from "../models/user.model.js";
-import sendEmail from "../utils/sendEmail.js";
-import { jobPostingTemplate } from "../utils/emailTemplates.js";
+import { Company } from "../models/company.model.js";
 
 export const postJob = async (req, res) => {
   try {
@@ -51,28 +49,8 @@ export const postJob = async (req, res) => {
       created_by: userId,
     });
 
-    //  FIND ALL JOB SEEKERS
-    const users = await User.find({ role: "jobseeker" });
-
-    // 📧 SEND EMAIL TO JOB SEEKERS
-    for (const user of users) {
-      await sendEmail({
-        email: user.email,
-        subject: ` New Opening: ${title} Position at Job Portal`,
-        message: `A new job for ${title} is available in ${location}.`, // Plain text fallback
-        html: jobPostingTemplate(
-          title,
-          location,
-          jobType,
-          experience,
-          salary,
-          description,
-        ),
-      });
-    }
-
     return res.status(201).json({
-      message: "Job created successfully ",
+      message: "Job created and sent for admin approval",
       job,
       success: true,
     });
@@ -115,6 +93,7 @@ export const postJob = async (req, res) => {
 export const getAllJobs = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
+    const location = req.query.location || "";
     const category = req.query.category || "";
     const salary = req.query.salary || "";
     const experience = req.query.experience || "";
@@ -129,10 +108,21 @@ export const getAllJobs = async (req, res) => {
     const query = { status: "approved" };
 
     if (keyword) {
+      const matchingCompanies = await Company.find({
+        name: { $regex: keyword, $options: "i" },
+      }).select("_id");
+
       query.$or = [
         { title: { $regex: keyword, $options: "i" } },
         { description: { $regex: keyword, $options: "i" } },
+        { location: { $regex: keyword, $options: "i" } },
       ];
+
+      if (matchingCompanies.length > 0) {
+        query.$or.push({
+          company: { $in: matchingCompanies.map((company) => company._id) },
+        });
+      }
     }
 
     // Category filter (replaces old title filter)
@@ -140,9 +130,20 @@ export const getAllJobs = async (req, res) => {
       query.title = { $regex: category, $options: "i" };
     }
 
-    // Job Type filter
+    // Location filter
+    if (location) {
+      query.location = { $regex: location, $options: "i" };
+    }
+
+    // Job Type filter (supports Full-Time, Full Time, fulltime)
     if (jobType) {
-      query.jobType = { $regex: jobType, $options: "i" };
+      const normalizedJobTypePattern = jobType
+        .trim()
+        .replace(/[-\s]+/g, "[-\\s]*");
+      query.jobType = {
+        $regex: `^${normalizedJobTypePattern}$`,
+        $options: "i",
+      };
     }
 
     // Experience filter - handle range strings
@@ -331,7 +332,7 @@ export const updateJob = async (req, res) => {
 
 export const getRecommendedJobs = async (req, res) => {
   try {
-    const userId = req.id; // Assuming middleware se user id mil rahi hai
+    const userId = req.id; 
     const user = await User.findById(userId);
 
     if (!user || user.role !== "jobseeker") {
@@ -342,8 +343,7 @@ export const getRecommendedJobs = async (req, res) => {
 
     const userSkills = user.profile.skills;
 
-    // Logic: Agar user ke paas skills hain, toh match karo,
-    // nahi toh latest jobs dikhao
+   
     let query = {};
     if (userSkills && userSkills.length > 0) {
       query = {
@@ -355,14 +355,14 @@ export const getRecommendedJobs = async (req, res) => {
           },
           { title: { $in: userSkills.map((skill) => new RegExp(skill, "i")) } },
         ],
-        status: "approved", // Sirf approved jobs
+        status: "approved", 
       };
     }
 
     const recommendedJobs = await Job.find(query)
       .populate({ path: "company" })
       .sort({ createdAt: -1 })
-      .limit(6); // Sirf top 6 jobs dashboard ke liye
+      .limit(6); 
 
     return res.status(200).json({
       success: true,

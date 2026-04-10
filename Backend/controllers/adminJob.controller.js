@@ -1,6 +1,7 @@
 import { Job } from "../models/job.model.js";
 import sendEmail from "../utils/sendEmail.js";
 import { User } from "../models/user.model.js";
+import { jobPostingTemplate } from "../utils/emailTemplates.js";
 
 export const getAllJobsForAdmin = async (req, res) => {
   try {
@@ -29,8 +30,8 @@ export const getAllJobsForAdmin = async (req, res) => {
           from: "companies",
           localField: "company",
           foreignField: "_id",
-          as: "company"
-        }
+          as: "company",
+        },
       },
       { $unwind: "$company" },
 
@@ -39,25 +40,24 @@ export const getAllJobsForAdmin = async (req, res) => {
           from: "users",
           localField: "created_by",
           foreignField: "_id",
-          as: "created_by"
-        }
+          as: "created_by",
+        },
       },
       { $unwind: "$created_by" },
 
       { $match: query },
-      { $sort: { createdAt: -1 } }
+      { $sort: { createdAt: -1 } },
     ]);
 
     return res.status(200).json({
       success: true,
-      jobs
+      jobs,
     });
-
   } catch (error) {
     console.log("Admin get jobs error:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch jobs"
+      message: "Failed to fetch jobs",
     });
   }
 };
@@ -70,7 +70,7 @@ export const deleteJobByAdmin = async (req, res) => {
     if (!job) {
       return res.status(404).json({
         success: false,
-        message: "Job not found"
+        message: "Job not found",
       });
     }
 
@@ -78,18 +78,16 @@ export const deleteJobByAdmin = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Job deleted successfully"
+      message: "Job deleted successfully",
     });
   } catch (error) {
     console.log("Delete job error:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed"
+      message: "Failed",
     });
   }
 };
-
-// adminJob.controller.js mein
 
 // adminJob.controller.js
 
@@ -98,43 +96,56 @@ export const updateJobStatus = async (req, res) => {
     const { status } = req.body; // 'approved' or 'rejected'
     const jobId = req.params.id;
 
-    // 1. Job status update karein
-    const job = await Job.findByIdAndUpdate(jobId, { status }, { new: true }).populate('company');
+    const job = await Job.findByIdAndUpdate(
+      jobId,
+      { status },
+      { new: true },
+    ).populate("company");
     if (!job) return res.status(404).json({ message: "Job not found" });
 
     if (status === "approved") {
-      // 2. Sirf jobseekers ko dhundein
+     
       const users = await User.find({ role: "jobseeker" });
 
-      // 3. Notification Object taiyaar karein
+    
       const newNotification = {
-        message: `New Job Match: ${job.title} at ${job.company?.name || 'Top Company'}`,
-        type: 'job_alert',
+        message: `New Job Match: ${job.title} at ${job.company?.name || "Top Company"}`,
+        type: "job_alert",
         jobId: job._id,
         isRead: false,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
 
-      // 4. Sabhi users ke database mein notification save karein (Offline support ke liye)
-      // Isse unke 'Bell Icon' mein data dikhega jab wo online aayenge
       await User.updateMany(
-        { role: "jobseeker" }, 
-        { $push: { notifications: newNotification } }
+        { role: "jobseeker" },
+        { $push: { notifications: newNotification } },
       );
 
-      // 5. Aapka purana Email logic (as it is)
       for (const user of users) {
         await sendEmail({
           email: user.email,
           subject: `New Opening: ${job.title}`,
-          html: `<h1>${job.title} is now live!</h1>` 
+          message: `${job.title} is now live in ${job.location}.`,
+          html: jobPostingTemplate(
+            job.title,
+            job.location,
+            job.jobType,
+            job.experienceLevel,
+            job.salary,
+            job.description,
+          ),
         });
       }
     }
 
+    const responseMessage =
+      status === "approved"
+        ? "Job approved, users notified and notifications saved."
+        : `Job ${status} successfully.`;
+
     return res.status(200).json({
       success: true,
-      message: `Job ${status}, users notified and notifications saved.`,
+      message: responseMessage,
     });
   } catch (error) {
     console.log("Error in updateJobStatus:", error);

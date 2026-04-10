@@ -56,7 +56,7 @@ const [input, setInput] = useState({
     }
   });
 
-  console.log("Response from backend:", res.data); // ✅ backend response check karo
+  console.log("Response from backend:", res.data); 
 
   if (res.data.success) {
     dispatch(setUser(res.data.user));
@@ -71,7 +71,7 @@ finally{
   setLoading(false);
 }
 
-console.log("Updated input data:", input); // ✅ frontend form data check karo
+console.log("Updated input data:", input); 
 setOpen(false);
 
     }

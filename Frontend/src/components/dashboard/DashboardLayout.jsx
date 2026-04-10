@@ -1,6 +1,11 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import axiosInstance from "@/utils/axiosInstance";
+import { logout } from "@/redux/authSlice";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import {
   LayoutDashboard,
   Users,
@@ -14,6 +19,8 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronDown,
+  LogOut,
 } from "lucide-react";
 
 const iconMap = {
@@ -30,7 +37,24 @@ const iconMap = {
 
 export function DashboardLayout({ sidebarItems, children, title }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((store) => store.auth.user);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileExpanded, setProfileExpanded] = useState(false);
+
+  const logoutHandler = async () => {
+    try {
+      const res = await axiosInstance.get(`/user/logout`);
+      if (res.data.success) {
+        dispatch(logout());
+        navigate("/");
+        toast.success(res.data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Logout failed");
+    }
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex">
@@ -91,6 +115,47 @@ export function DashboardLayout({ sidebarItems, children, title }) {
               );
             })}
           </nav>
+
+          {/* User Profile Section */}
+          {user && (
+            <div className="border-t border-gray-200 mt-auto pt-3">
+              {/* Profile Header - Clickable */}
+              <button
+                onClick={() => setProfileExpanded(!profileExpanded)}
+                className="w-full px-3 py-3 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user?.profile?.profilePhoto || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt={user?.fullname} />
+                  </Avatar>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.fullname}</p>
+                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                  </div>
+                  <ChevronDown 
+                    size={18} 
+                    className={`text-gray-400 transition-transform duration-200 flex-shrink-0 ${profileExpanded ? 'rotate-180' : ''}`}
+                  />
+                </div>
+              </button>
+
+              {/* Expanded Details */}
+              {profileExpanded && (
+                <div className="px-3 py-2 border-t border-gray-100">
+                  <div className="mb-3 pb-2">
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                  <button
+                    onClick={logoutHandler}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 text-sm font-medium hover:bg-red-50 rounded-lg transition-all group"
+                  >
+                    <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 

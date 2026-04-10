@@ -1,8 +1,10 @@
 import express from "express";
 import {
+  clearAllNotifications,
   deleteNotification,
   getAllInterviewsForAdmin,
   getNotifications,
+  markInterviewJoined,
   markAsRead,
   markNotificationAsRead,
   scheduleInterview,
@@ -28,7 +30,7 @@ import { getBookedSlots } from "../controllers/interview.controller.js";
 
 const router = express.Router();
 
-// isAdmin ki jagah isAuthenticated + checkRole('admin') use karein
+
 router.post(
   "/interviews",
   isAuthenticated,
@@ -43,7 +45,7 @@ router.get(
   getScheduledInterviewsByCreator,
 );
 
-// interview.route.js mein
+
 router.get(
   "/admin/all-interviews",
   isAuthenticated,
@@ -60,6 +62,7 @@ router.put(
   isAuthenticated,
   markNotificationAsRead,
 );
+router.delete("/notifications", isAuthenticated, clearAllNotifications);
 router.delete("/notifications/:id", isAuthenticated, deleteNotification);
 
 // Is line ko routes mein add karein
@@ -72,8 +75,9 @@ router.post(
   approveReschedule,
 );
 
-// interview.route.js mein add karein
+
 router.route("/interview/:id").delete(isAuthenticated, deleteInterview);
+router.post("/interview/:id/join", isAuthenticated, markInterviewJoined);
 // ⭐ NEW GOOGLE AUTH ROUTES
 router.get(
   "/google/auth",
@@ -81,11 +85,11 @@ router.get(
   checkRole("admin", "employer"),
   getGoogleAuthUrl,
 );
-router.get("/google/callback", googleCallback); // Ye public rahega redirection ke liye
+router.get("/google/callback", googleCallback); 
 
 router.route("/:interviewId/feedback").post(isAuthenticated, submitFeedback);
 
-// interview.route.js mein ye line add karein
+
 router
   .route("/feedback/:interviewId")
   .get(isAuthenticated, getFeedbackByInterviewId);

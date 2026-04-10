@@ -42,7 +42,7 @@ const standardSlots = ["10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM
     setInterviewData({ ...interviewData, date: selectedDate });
 
     try {
-        // Backend se busy slots mangwayein
+      
         const res = await axiosInstance.get(`/interview/booked-slots?date=${selectedDate}`);
         if (res.data.success) {
             setBookedSlots(res.data.bookedTimes);
@@ -129,7 +129,7 @@ const standardSlots = ["10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM
               View
             </Button>
 
-            {/* Step 1: Agar status Pending hai, toh Shortlist ya Reject dikhao */}
+           
             {app.status === "pending" && (
               <>
                 <Button 
@@ -149,7 +149,7 @@ const standardSlots = ["10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM
               </>
             )}
 
-            {/* Step 2: Agar status Shortlisted hai, toh Schedule Interview (Accepted) dikhao */}
+           
             {app.status === "shortlisted" && (
               <Button
                 size="sm"
@@ -157,14 +157,14 @@ const standardSlots = ["10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM
                 onClick={() => {
                   setSelectedApp(app);
                   setShowInterviewModal(true); 
-                  // Note: Jab modal confirm ho tabhi status 'accepted' update karna
+                 
                 }}
               >
                 Schedule Interview
               </Button>
             )}
 
-            {/* Step 3: Agar already Accepted hai toh bas information dikhao */}
+            
             {app.status === "accepted" && (
               <span className="text-xs font-bold text-green-600 italic">Interview Fixed</span>
             )}

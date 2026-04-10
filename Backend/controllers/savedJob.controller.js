@@ -40,13 +40,13 @@ export const getSavedJobs = async (req, res) => {
     const user = await User.findById(req.user._id).populate({
       path: "savedJobs",
       populate: {
-        path: "company", // ✅ company populate (VERY IMPORTANT)
+        path: "company", 
       },
     });
 
     res.json({
       success: true,
-      jobs: user.savedJobs, // ✅ frontend yahi expect karega
+      jobs: user.savedJobs, 
     });
   } catch (error) {
     res.status(500).json({ message: "Fetch failed" });

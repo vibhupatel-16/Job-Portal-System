@@ -14,7 +14,6 @@ const FeedbackModal = ({ open, setOpen, interviewId, onFeedbackSubmit }) => {
     if (!comment) return toast.error("Please add a comment");
     try {
       setLoading(true);
-      // FeedbackModel.jsx mein handleSubmit ke andar
 const res = await axiosInstance.post(`/interview/${interviewId}/feedback`, 
     { ratings, comment, recommendation }, 
     

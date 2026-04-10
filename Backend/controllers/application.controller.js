@@ -47,7 +47,7 @@ export const getAiMatchScore = async (req, res) => {
     }
 
     // --- 🟢 NEW OPTIMIZATION START ---
-    // Faltu spaces aur characters hatayein taaki Tokens kam consume hon
+   
     const cleanResume = resumeText
       .replace(/\s+/g, " ")
       .trim()
@@ -85,7 +85,7 @@ export const getAiMatchScore = async (req, res) => {
         success: true,
       });
     } catch (aiErr) {
-      // Agar Quota 429 error aaye toh handle karein
+     
       console.error("🔥 AI Limit Reached:", aiErr.message);
       return res.status(429).json({
         message: "AI Limit reached. Please try after some time.",
@@ -129,7 +129,7 @@ export const applyJob = async (req, res) => {
       });
     }
 
-    // Ensure jobseeker has a resume uploaded before applying
+   
     const applicant = await User.findById(userId);
     if (!applicant || !applicant.profile?.resume) {
       return res.status(400).json({
@@ -183,7 +183,6 @@ export const getAppliedJobs = async (req, res) => {
   }
 };
 
-//admin dekhega kitne user ne apply ne kiya hai
 
 export const getApplicants = async (req, res) => {
   try {
@@ -287,11 +286,11 @@ export const getHiringStats = async (req, res) => {
   try {
     const employerId = req.id;
 
-    // 1. Saare jobs dhoondo jo is employer ne banaye hain
+   
     const jobs = await Job.find({ created_by: employerId });
     const jobIds = jobs.map((job) => job._id);
 
-    // 2. Un jobs ke saare applications fetch karein
+    
     const applications = await Application.find({ job: { $in: jobIds } });
 
     // 3. Status wise counting
@@ -310,23 +309,19 @@ export const getHiringStats = async (req, res) => {
   }
 };
 
-// application.controller.js mein ye function add karein
 export const getAnalyticsData = async (req, res) => {
   try {
     const employerId = req.id;
 
-    // 1. Employer ki saare jobs dhoondo
     const jobs = await Job.find({ created_by: employerId }).populate(
       "applications",
     );
 
-    // 2. Bar Chart Data (Job vs Applications)
     const jobPerformance = jobs.map((job) => ({
       name: job.title.length > 15 ? job.title.slice(0, 15) + "..." : job.title,
       count: job.applications.length,
     }));
 
-    // 3. Pie Chart Data (Status Distribution)
     const jobIds = jobs.map((j) => j._id);
     const allApps = await Application.find({ job: { $in: jobIds } });
 
@@ -377,7 +372,6 @@ export const markNotificationAsRead = async (req, res) => {
     const userId = req.id;
     const notificationId = req.params.id;
 
-    // Specific notification ko read mark karna
     const notification = await Notification.findOneAndUpdate(
       { _id: notificationId, recipient: userId },
       { $set: { isRead: true } },
@@ -416,7 +410,6 @@ export const generateInterviewQuestions = async (req, res) => {
         .status(404)
         .json({ message: "Application not found", success: false });
 
-    // Optimization: Resume aur Job details ko limit karein
     const cleanResume = (
       application.aiInsights || "Professional candidate"
     ).substring(0, 2000);

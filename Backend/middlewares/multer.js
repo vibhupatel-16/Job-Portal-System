@@ -32,13 +32,13 @@ fileFilter: (req, file, cb) => {
   const isRegisterRoute = req.originalUrl.includes("register"); // Signup check
 
   if (file.fieldname === "file") {
-    // 1. Agar Company Logo ya Signup Profile Photo hai -> Image allow karo
+    
     if (isCompanyRoute || isRegisterRoute) {
       if (!file.mimetype.startsWith("image/")) {
         return cb(new Error("Only images (jpg, png) allowed"), false);
       }
     } 
-    // 2. Sirf tab PDF maango jab ye register ya company route NA HO (e.g., Application submit)
+    
     else {
       if (file.mimetype !== "application/pdf") {
         return cb(new Error("Only PDF resume allowed"), false);
@@ -46,7 +46,7 @@ fileFilter: (req, file, cb) => {
     }
   }
   
-  // Baki validation (profilePhoto field ke liye)
+  
   if (file.fieldname === "profilePhoto") {
     if (!file.mimetype.startsWith("image/")) {
       return cb(new Error("Only image allowed for profile photo"), false);

@@ -4,9 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Video, MapPin, Calendar, Clock, Timer, Building2, Send, X } from "lucide-react";
 import { toast } from 'sonner'; 
 import ViewFeedbackModal from './ViewFeedbackModal';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import axiosInstance from '@/utils/axiosInstance';
-import {motion } from "framer-motion";
 
 
 const JobseekerInterviews = () => {
@@ -19,14 +18,13 @@ const JobseekerInterviews = () => {
 const [rescheduleData, setRescheduleData] = useState({ 
     reason: '', 
     preferredTime: '', 
-    preferredDate: '' // ⭐ Ye line add karein
+    preferredDate: '' 
 });
 
     const [feedbackOpen, setFeedbackOpen] = useState(false);
 const [selectedFeedback, setSelectedFeedback] = useState(null);
 
 const [bookedSlots, setBookedSlots] = useState([]);
-const [isSlotBusy, setIsSlotBusy] = useState(false);
 const WORKING_SLOTS = [
     "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", 
     "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM"
@@ -34,16 +32,6 @@ const WORKING_SLOTS = [
 
 
 const [availableSlots, setAvailableSlots] = useState([]);
-// Time ko AM/PM mein convert karne ke liye (Validation ke liye zaroori hai)
-const formatToAmPm = (dateTimeStr) => {
-    if (!dateTimeStr) return "";
-    const date = new Date(dateTimeStr);
-    return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-    });
-};
 
 
 const handleDateChange = async (e) => {
@@ -52,7 +40,7 @@ const handleDateChange = async (e) => {
 
     if (selectedDate) {
         try {
-            // Hum employerId nikalenge selected interview se
+           
             const employerId = selectedInterview?.scheduledBy?._id || selectedInterview?.scheduledBy;
             
             const res = await   axiosInstance.get(
@@ -61,8 +49,10 @@ const handleDateChange = async (e) => {
             );
 
             if (res.data.success) {
-                // Backend se aaye hue booked slots ko set karein
-                setBookedSlots(res.data.bookedTimes || []);
+               
+                const booked = res.data.bookedTimes || [];
+                setBookedSlots(booked);
+                setAvailableSlots(WORKING_SLOTS.filter((slot) => !booked.includes(slot)));
             }
         } catch (error) {
             console.error("Error fetching slots:", error);
@@ -88,7 +78,6 @@ useEffect(() => {
 
    // --- ⭐ FIXED HANDLER FOR RESCHEDULE ---
 const handleRescheduleSubmit = async () => {
-    // Backend suggestedDate aur suggestedTime mangta hai
     if(!rescheduleData.reason || !rescheduleData.preferredTime || !rescheduleData.preferredDate) {
         return toast.error("Please fill all details (Date, Time and Reason)");
     }
@@ -97,8 +86,8 @@ const handleRescheduleSubmit = async () => {
         const res = await axiosInstance.post(`/interview/reschedule-request`, 
             { 
                 interviewId: selectedInterview?._id, 
-                suggestedDate: rescheduleData.preferredDate, // Backend key se match kiya
-                suggestedTime: rescheduleData.preferredTime, // Backend key se match kiya
+                suggestedDate: rescheduleData.preferredDate,
+                suggestedTime: rescheduleData.preferredTime, 
                 reason: rescheduleData.reason 
             }, 
             
@@ -108,43 +97,11 @@ const handleRescheduleSubmit = async () => {
             toast.success("Request sent to employer!");
             setIsModalOpen(false);
             setRescheduleData({ reason: '', preferredTime: '', preferredDate: '' });
-            fetchList(); // List refresh karne ke liye
+            fetchList();
         }
     } catch (error) {
-        // console.error("Submit Error:", error.response?.data);
-        // toast.error(error.response?.data?.message || "Failed to send request");
+        toast.error(error.response?.data?.message || "Failed to send request");
     }
-};
-    const getGoogleCalendarLink = (item) => {
-        const baseUrl = "https://www.google.com/calendar/render?action=TEMPLATE";
-        const title = encodeURIComponent(`Interview: ${item.job.title} at ${item.company.name}`);
-        const details = encodeURIComponent(`Meeting Link: ${item.meetingLink || 'Check Portal'}`);
-        try {
-            const startStr = `${item.date}T${item.time}`;
-            const startDate = new Date(startStr).toISOString().replace(/-|:|\.\d\d\d/g, "");
-            const endDate = new Date(new Date(startStr).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, "");
-            return `${baseUrl}&text=${title}&dates=${startDate}/${endDate}&details=${details}&location=${encodeURIComponent(item.meetingLink || 'Office')}`;
-        } catch (error) {
-            return "#";
-        }
-    };
-
-    // Component ke andar (return se pehle) ise add karein:
-const formatDisplayDateTime = (dateTimeStr) => {
-    if (!dateTimeStr) return "";
-    const dateObj = new Date(dateTimeStr);
-    
-    // Date format: DD-MM-YYYY
-    const date = dateObj.toLocaleDateString('en-GB').replace(/\//g, '-');
-    
-    // Time format: hh:mm AM/PM
-    const time = dateObj.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: true 
-    });
-    
-    return `${date} | ${time}`;
 };
 
 const CountdownTimer = ({ targetDate, targetTime }) => {
@@ -155,8 +112,6 @@ const CountdownTimer = ({ targetDate, targetTime }) => {
             if (!targetDate || !targetTime) return;
 
             const now = new Date().getTime();
-            
-            // ⭐ DD-MM-YYYY ko YYYY-MM-DD mein convert karna taaki JS read kar sake
             let formattedDate = targetDate;
             if (targetDate.includes('-')) {
                 const parts = targetDate.split('-');
@@ -206,6 +161,30 @@ const handleCancelInterview = async (interviewId) => {
         toast.error(error.response?.data?.message || "Failed to cancel interview");
     }
 };
+
+const handleViewFeedback = async (interviewId) => {
+    try {
+        const res = await axiosInstance.get(`/interview/feedback/${interviewId}`);
+        if (res.data.success) {
+            setSelectedFeedback(res.data.feedback);
+            setFeedbackOpen(true);
+        }
+    } catch (error) {
+        toast.error(error.response?.data?.message || "Feedback is not available yet");
+    }
+};
+
+const markJoinAndOpen = async (interviewId, meetingLink) => {
+    try {
+        await axiosInstance.post(`/interview/interview/${interviewId}/join`);
+    } catch (error) {
+        toast.error(error.response?.data?.message || "Could not mark join attendance");
+    }
+
+    if (meetingLink) {
+        window.open(meetingLink, "_blank", "noopener,noreferrer");
+    }
+};
         
 
 
@@ -216,7 +195,7 @@ const handleCancelInterview = async (interviewId) => {
             <div className="absolute bottom-0 -right-20 w-[600px] h-[600px] bg-blue-200 rounded-full mix-blend-multiply filter blur-[128px] opacity-30 pointer-events-none"></div>
 
             <div className='max-w-6xl mx-auto px-4 sm:px-6 relative z-10'>
-                <motion.div
+                <Motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
@@ -229,9 +208,9 @@ const handleCancelInterview = async (interviewId) => {
                         My Scheduled Interviews
                     </h1>
                     <p className="mt-2 text-gray-500 font-medium ml-1">Track upcoming meetings and view recruiter feedback.</p>
-                </motion.div>
+                </Motion.div>
 
-                <motion.div 
+                <Motion.div 
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
@@ -247,7 +226,7 @@ const handleCancelInterview = async (interviewId) => {
                             </TableRow>
                         </TableHeader>
                         <TableBody className="divide-y divide-gray-50/50">
-                            {interviews.map((item, idx) => (
+                            {interviews.map((item) => (
                                 <TableRow key={item._id} className="hover:bg-indigo-50/30 transition-colors group">
                                     <TableCell className="py-5">
                                         <div className="flex items-start gap-4">
@@ -259,8 +238,8 @@ const handleCancelInterview = async (interviewId) => {
                                                 )}
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-gray-900 text-[15px]">{item.company.name}</h3>
-                                                <p className="text-xs font-semibold text-indigo-600 mt-1 uppercase tracking-widest">{item.job.title}</p>
+                                                <h3 className="font-bold text-gray-900 text-[15px]">{item.company?.name || "Company"}</h3>
+                                                <p className="text-xs font-semibold text-indigo-600 mt-1 uppercase tracking-widest">{item.job?.title || "Role"}</p>
                                             </div>
                                         </div>
                                     </TableCell>
@@ -287,8 +266,9 @@ const handleCancelInterview = async (interviewId) => {
                                         {item.status === "completed" ? (
                                             <div className="flex flex-col items-start gap-2">
                                                 <Badge className="bg-green-50 text-green-700 border border-green-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
-                                                    Evaluated
+                                                    Finished
                                                 </Badge>
+                                                {item.completionSummary && <p className="text-[10px] text-green-700">{item.completionSummary}</p>}
                                                 <button 
                                                     onClick={() => handleViewFeedback(item._id)}
                                                     className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1 rounded-full font-bold hover:bg-purple-100 transition-colors uppercase tracking-widest"
@@ -296,20 +276,18 @@ const handleCancelInterview = async (interviewId) => {
                                                     View Feedback
                                                 </button>
                                             </div>
-                                        ) : 
-                                        item.status === "cancelled" ? (
+                                        ) : item.status === "missed" ? (
+                                            <div className="flex flex-col items-start gap-2">
+                                                <Badge className="bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
+                                                    Missed
+                                                </Badge>
+                                                {item.completionSummary && <p className="text-[10px] text-amber-700">{item.completionSummary}</p>}
+                                            </div>
+                                        ) : item.status === "cancelled" ? (
                                             <Badge className="bg-red-50 text-red-700 border border-red-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
                                                 Cancelled
                                             </Badge>
-                                        ) :
-                                        new Date(`${item.date.split('T')[0]}T${item.time}`).getTime() < new Date().getTime() ? (
-                                            <div className="flex flex-col gap-1 items-start">
-                                                <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1 animate-pulse">
-                                                    Evaluating...
-                                                </Badge>
-                                            </div>
-                                        ) : 
-                                        (
+                                        ) : (
                                             <Badge className={`${
                                                 item.status === 'scheduled' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 
                                                 'bg-orange-50 text-orange-700 border-orange-200'
@@ -322,9 +300,9 @@ const handleCancelInterview = async (interviewId) => {
                                     <TableCell className="text-right pr-6">
                                         <div className="flex flex-col items-end gap-2">
                                             {item.mode === "online" && item.meetingLink ? (
-                                                <a href={item.meetingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                                <button onClick={() => markJoinAndOpen(item._id, item.meetingLink)} className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
                                                     <Video size={14} /> Join Now
-                                                </a>
+                                                </button>
                                             ) : (
                                                 <span className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-xs font-bold border border-gray-200">
                                                     <MapPin size={14} /> In-Person
@@ -333,12 +311,13 @@ const handleCancelInterview = async (interviewId) => {
 
                                             <button 
                                                 onClick={() => { setSelectedInterview(item); setIsModalOpen(true); }}
+                                                disabled={!['scheduled', 'reschedule_requested'].includes(item.status)}
                                                 className="inline-flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-600 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
                                             >
                                                 <Clock size={14} /> Reschedule
                                             </button>
 
-                                            {item.status !== "cancelled" && (
+                                            {!['cancelled', 'completed', 'missed'].includes(item.status) && (
                                                 <button 
                                                     onClick={() => handleCancelInterview(item._id)}
                                                     className="inline-flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
@@ -362,19 +341,19 @@ const handleCancelInterview = async (interviewId) => {
                             <p className="text-sm text-gray-500 mt-1">When an employer schedules an interview, it will appear here.</p>
                         </div>
                     )}
-                </motion.div>
+                </Motion.div>
             </div>
 
             {/* --- ⭐ RESCHEDULE MODAL --- */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <motion.div 
+                    <Motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md"
                     >
-                        <motion.div 
+                        <Motion.div 
                             initial={{ scale: 0.95, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             exit={{ scale: 0.95, y: -20, opacity: 0 }}
@@ -475,8 +454,8 @@ const handleCancelInterview = async (interviewId) => {
                                     </div>
                                 </div>
                             </div>
-                        </motion.div>
-                    </motion.div>
+                        </Motion.div>
+                    </Motion.div>
                 )}
             </AnimatePresence>
             <ViewFeedbackModal 

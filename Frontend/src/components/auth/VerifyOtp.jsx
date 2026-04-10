@@ -14,7 +14,7 @@ const VerifyOtp = () => {
     const navigate = useNavigate();
     const location = useLocation();
     
-    // Signup page se email nikalne ke liye
+   
     const email = location.state?.email;
 
     useEffect(() => {

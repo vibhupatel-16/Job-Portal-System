@@ -8,7 +8,7 @@ const feedbackSchema = new mongoose.Schema({
     },
     interviewerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Recruiter/Admin ki ID
+        ref: 'User', 
         required: true
     },
     jobseekerId: {
