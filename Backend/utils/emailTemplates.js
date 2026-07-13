@@ -54,7 +54,7 @@ export const jobPostingTemplate = (
                     </tr>
                     <tr>
                         <td style="padding: 8px 0; color: #475569; font-weight: 600;">Salary:</td>
-                        <td style="padding: 8px 0; color: #64748b;">₹${salary}</td>
+                        <td style="padding: 8px 0; color: #64748b;">${salary} LPA</td>
                     </tr>
                 </table>
             </div>

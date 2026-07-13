@@ -4,6 +4,7 @@ import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { Avatar, AvatarImage } from './ui/avatar'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 
 const RecommendedJobs = () => {
     const { homeJobs } = useSelector(store => store.job); 
@@ -37,17 +38,17 @@ const RecommendedJobs = () => {
             
             <div className='flex gap-4 overflow-x-auto pb-5 no-scrollbar'>
                 {displayJobs.map((job) => (
-                    <div 
+                    <motion.div 
                         key={job._id} 
                         onClick={() => navigate(`/description/${job._id}`)}
-                        className='min-w-[320px] p-6 rounded-2xl shadow-sm border border-gray-100 bg-white cursor-pointer hover:shadow-lg transition-all duration-300'
+                        className='min-w-[320px] p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-300 cursor-pointer group'
                     >
                         <div className='flex items-center gap-4 mb-4'>
                             <Avatar className="h-12 w-12 border p-1">
                                 <AvatarImage src={job?.company?.logo} className="object-contain" />
                             </Avatar>
                             <div className='w-full overflow-hidden'>
-                                <h1 className='font-bold text-lg truncate'>{job?.title}</h1>
+                                <h1 className='font-bold text-lg truncate group-hover:text-indigo-600 transition-colors'>{job?.title}</h1>
                                 <p className='text-sm text-gray-500 truncate'>{job?.company?.name}</p>
                             </div>
                         </div>
@@ -55,14 +56,24 @@ const RecommendedJobs = () => {
                         <div className='flex items-center gap-3 text-sm text-gray-500 mb-4 font-sans'>
                              <span>📍 {job?.location}</span>
                              <span>•</span>
-                             <span>💰 {job?.salary} LPA</span>
+                             <span>{job?.experienceLevel} yrs</span>
                         </div>
 
-                        <div className='flex items-center gap-2'>
-                            <Badge className={'text-blue-700 font-bold bg-blue-50'} variant="ghost">{job?.jobType}</Badge>
-                            <Badge className={'text-[#F83002] font-bold bg-red-50'} variant="ghost">{job?.experienceLevel} yrs</Badge>
-                        </div>
-                    </div>
+                       <div className="flex flex-wrap items-center gap-2 mt-auto pb-4">
+  
+  <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md hover:bg-indigo-100 hover:text-indigo-800 transition-colors">
+    {job?.position} Positions
+  </Badge>
+
+  <Badge className="bg-orange-50 text-orange-600 border border-orange-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md hover:bg-orange-100 hover:text-orange-700 transition-colors">
+    {job?.jobType}
+  </Badge>
+
+  <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md hover:bg-emerald-100 hover:text-emerald-800 transition-colors">
+    {job?.salary} LPA
+  </Badge>
+</div>
+                    </motion.div>
                 ))}
             </div>
         </div>

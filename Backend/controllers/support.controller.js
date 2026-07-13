@@ -1,4 +1,5 @@
 import { Support } from "../models/support.model.js";
+import { User } from "../models/user.model.js";
 import { Notification } from "../models/notification.model.js";
 import sendEmail from "../utils/sendEmail.js";
 import {
@@ -6,6 +7,12 @@ import {
   supportTicketReplyTemplate,
   supportTicketStatusUpdateTemplate,
 } from "../utils/emailTemplates.js";
+
+const getSupportResponseLink = (role) => {
+  if (role === "employer") return "/employer/support-responses";
+  return "/jobseeker/support-responses";
+};
+
 // CREATE a new support ticket
 export const createSupportTicket = async (req, res) => {
   try {
@@ -16,6 +23,7 @@ export const createSupportTicket = async (req, res) => {
       message,
       category = "general",
       priority = "medium",
+      role,
     } = req.body;
 
     // Validation
@@ -45,6 +53,16 @@ export const createSupportTicket = async (req, res) => {
 
     await supportTicket.save();
 
+    let supportLink = "/contact-support";
+    if (userId) {
+      try {
+        const ticketUser = await User.findById(userId).select("role");
+        supportLink = getSupportResponseLink(role || ticketUser?.role);
+      } catch (lookupError) {
+        console.log("Failed to resolve support response link:", lookupError);
+      }
+    }
+
     // Create notification for user
     if (userId) {
       try {
@@ -53,7 +71,7 @@ export const createSupportTicket = async (req, res) => {
           type: "SUPPORT",
           title: "Support Request Submitted",
           message: `Your support request has been submitted successfully. Ticket #${supportTicket._id.toString().slice(-8).toUpperCase()}`,
-          link: "/contact-support",
+          link: supportLink,
         });
       } catch (notifError) {
         console.log("Notification creation failed:", notifError);
@@ -127,7 +145,6 @@ export const getUserSupportTickets = async (req, res) => {
         tickets: [],
       });
     }
-
     return res.status(200).json({
       success: true,
       count: tickets.length,
@@ -196,6 +213,16 @@ export const updateSupportTicket = async (req, res) => {
 
     await ticket.save();
 
+    let supportLink = "/contact-support";
+    if (ticket.userId) {
+      try {
+        const ticketUser = await User.findById(ticket.userId).select("role");
+        supportLink = getSupportResponseLink(ticketUser?.role);
+      } catch (lookupError) {
+        console.log("Failed to resolve support response link:", lookupError);
+      }
+    }
+
     // Send reply email if reply is provided
     if (reply) {
       try {
@@ -219,7 +246,7 @@ export const updateSupportTicket = async (req, res) => {
               type: "SUPPORT",
               title: "Support Response Received",
               message: `You have received a response to your support request #${ticketId.toString().slice(-8).toUpperCase()}`,
-              link: "/contact-support",
+              link: supportLink,
             });
           } catch (notifError) {
             console.log("Reply notification creation failed:", notifError);
@@ -254,7 +281,7 @@ export const updateSupportTicket = async (req, res) => {
               type: "SUPPORT",
               title: "Support Request Status Updated",
               message: `Your support request #${ticketId.toString().slice(-8).toUpperCase()} status changed from ${oldStatus} to ${status}`,
-              link: "/contact-support",
+              link: supportLink,
             });
           } catch (notifError) {
             console.log("Status notification creation failed:", notifError);

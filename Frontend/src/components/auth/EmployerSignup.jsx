@@ -21,12 +21,32 @@ const EmployerSignup = () => {
   });
 
   const [preview, setPreview] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading } = useSelector(store => store.auth);
 
   const changeEventHandler = (e) => {
+    if (e.target.name === "phoneNumber") {
+      const rawValue = e.target.value;
+      const digitsOnly = rawValue.replace(/\D/g, "");
+      const limitedDigits = digitsOnly.slice(0, 10);
+
+      if (rawValue !== digitsOnly) {
+        setPhoneError("Only numbers are allowed.");
+      } else if (digitsOnly.length > 10) {
+        setPhoneError("Phone number cannot be more than 10 digits.");
+      } else if (limitedDigits.length > 0 && limitedDigits.length < 10) {
+        setPhoneError("Phone number must be exactly 10 digits.");
+      } else {
+        setPhoneError("");
+      }
+
+      setInput({ ...input, phoneNumber: limitedDigits });
+      return;
+    }
+
     setInput({ ...input, [e.target.name]: e.target.value });
   };
 
@@ -61,6 +81,9 @@ const EmployerSignup = () => {
     }
     if (!phoneRegex.test(input.phoneNumber.trim())) {
       return toast.error("Phone number must be exactly 10 digits.");
+    }
+    if (phoneError) {
+      return toast.error(phoneError);
     }
     if (!passwordRegex.test(input.password)) {
       return toast.error("Password must be at least 8 chars, include an uppercase, lowercase, number, and special character.");
@@ -148,9 +171,14 @@ const EmployerSignup = () => {
                 name="phoneNumber" 
                 onChange={changeEventHandler} 
                 placeholder="9000000000" 
+                inputMode="numeric"
+                maxLength={10}
                 required
                 className="h-12 bg-white/50 border-gray-200 focus:border-purple-400 focus:ring-purple-400 rounded-xl px-4 transition-all"
               />
+              {phoneError && (
+                <p className="text-xs text-red-600 font-medium">{phoneError}</p>
+              )}
             </div>
 
             <div className='space-y-2'>

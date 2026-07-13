@@ -11,6 +11,7 @@ const employerSidebarItems = [
   { label: "My Jobs", path: "/employer/jobs", icon: "Briefcase" },
   { label: "Interview List", path: "/employer/interview-list", icon: "Calendar" },
   { label: "FAQ & Support", path: "/employer/faq", icon: "HelpCircle" },
+  { label: "View Support Response", path: "/employer/support-responses", icon: "MessageSquare" },
 ];
 
 export function EmployerLayout({ children }) {

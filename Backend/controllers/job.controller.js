@@ -13,6 +13,7 @@ export const postJob = async (req, res) => {
       experience,
       position,
       companyId,
+      applicationDeadline,
     } = req.body;
 
     const userId = req.id;
@@ -47,6 +48,7 @@ export const postJob = async (req, res) => {
       position,
       company: companyId,
       created_by: userId,
+      ...(applicationDeadline ? { applicationDeadline } : {}),
     });
 
     return res.status(201).json({
@@ -104,35 +106,46 @@ export const getAllJobs = async (req, res) => {
     const limit = Number(req.query.limit) || 6;
     const skip = (page - 1) * limit;
 
-    //  FIXED BASE QUERY (keyword optional)
-    const query = { status: "approved" };
+    const now = new Date();
+    const andConditions = [
+      { status: "approved" },
+      {
+        $or: [
+          { applicationDeadline: { $exists: false } },
+          { applicationDeadline: null },
+          { applicationDeadline: { $gt: now } },
+        ],
+      },
+    ];
 
     if (keyword) {
       const matchingCompanies = await Company.find({
         name: { $regex: keyword, $options: "i" },
       }).select("_id");
 
-      query.$or = [
+      const keywordOr = [
         { title: { $regex: keyword, $options: "i" } },
         { description: { $regex: keyword, $options: "i" } },
         { location: { $regex: keyword, $options: "i" } },
       ];
 
       if (matchingCompanies.length > 0) {
-        query.$or.push({
+        keywordOr.push({
           company: { $in: matchingCompanies.map((company) => company._id) },
         });
       }
+
+      andConditions.push({ $or: keywordOr });
     }
 
     // Category filter (replaces old title filter)
     if (category) {
-      query.title = { $regex: category, $options: "i" };
+      andConditions.push({ title: { $regex: category, $options: "i" } });
     }
 
     // Location filter
     if (location) {
-      query.location = { $regex: location, $options: "i" };
+      andConditions.push({ location: { $regex: location, $options: "i" } });
     }
 
     // Job Type filter (supports Full-Time, Full Time, fulltime)
@@ -140,22 +153,24 @@ export const getAllJobs = async (req, res) => {
       const normalizedJobTypePattern = jobType
         .trim()
         .replace(/[-\s]+/g, "[-\\s]*");
-      query.jobType = {
-        $regex: `^${normalizedJobTypePattern}$`,
-        $options: "i",
-      };
+      andConditions.push({
+        jobType: {
+          $regex: `^${normalizedJobTypePattern}$`,
+          $options: "i",
+        },
+      });
     }
 
     // Experience filter - handle range strings
     if (experience) {
       if (experience === "0-1 years") {
-        query.experienceLevel = { $gte: 0, $lte: 1 };
+        andConditions.push({ experienceLevel: { $gte: 0, $lte: 1 } });
       } else if (experience === "1-3 years") {
-        query.experienceLevel = { $gte: 1, $lte: 3 };
+        andConditions.push({ experienceLevel: { $gte: 1, $lte: 3 } });
       } else if (experience === "3-5 years") {
-        query.experienceLevel = { $gte: 3, $lte: 5 };
+        andConditions.push({ experienceLevel: { $gte: 3, $lte: 5 } });
       } else if (experience === "5+ years") {
-        query.experienceLevel = { $gte: 5 };
+        andConditions.push({ experienceLevel: { $gte: 5 } });
       }
     }
 
@@ -177,8 +192,10 @@ export const getAllJobs = async (req, res) => {
         max = 100;
       } // High upper limit for 10+
 
-      query.salary = { $gte: min, $lte: max };
+      andConditions.push({ salary: { $gte: min, $lte: max } });
     }
+
+    const query = { $and: andConditions };
 
     //  total count
     const totalJobs = await Job.countDocuments(query);
@@ -309,6 +326,10 @@ export const updateJob = async (req, res) => {
     if (req.body.companyId !== undefined && req.body.companyId !== "")
       updateData.company = req.body.companyId;
 
+    if (req.body.applicationDeadline !== undefined) {
+      updateData.applicationDeadline = req.body.applicationDeadline || null;
+    }
+
     // Update database
     const updatedJob = await Job.findByIdAndUpdate(jobId, updateData, {
       new: true,
@@ -332,7 +353,7 @@ export const updateJob = async (req, res) => {
 
 export const getRecommendedJobs = async (req, res) => {
   try {
-    const userId = req.id; 
+    const userId = req.id;
     const user = await User.findById(userId);
 
     if (!user || user.role !== "jobseeker") {
@@ -343,7 +364,6 @@ export const getRecommendedJobs = async (req, res) => {
 
     const userSkills = user.profile.skills;
 
-   
     let query = {};
     if (userSkills && userSkills.length > 0) {
       query = {
@@ -355,14 +375,14 @@ export const getRecommendedJobs = async (req, res) => {
           },
           { title: { $in: userSkills.map((skill) => new RegExp(skill, "i")) } },
         ],
-        status: "approved", 
+        status: "approved",
       };
     }
 
     const recommendedJobs = await Job.find(query)
       .populate({ path: "company" })
       .sort({ createdAt: -1 })
-      .limit(6); 
+      .limit(6);
 
     return res.status(200).json({
       success: true,

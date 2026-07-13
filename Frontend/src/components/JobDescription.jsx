@@ -14,6 +14,7 @@ const JobDescription = () => {
   const { singleJob } = useSelector((store) => store.job);
   const { user } = useSelector((store) => store.auth);
   const [isApplied, setIsApplied] = useState(false);
+  const isJobClosed = singleJob?.status === "closed";
 
   const applyJobHandler = async () => {
     if (!user?.profile?.resume) {
@@ -107,14 +108,14 @@ const JobDescription = () => {
         <div className="flex flex-col md:items-end gap-4">
           <Button
             onClick={isApplied ? null : applyJobHandler}
-            disabled={isApplied}
+            disabled={isApplied || isJobClosed}
             className={`px-7 py-3 rounded-xl text-lg font-semibold shadow ${
-              isApplied
+              isApplied || isJobClosed
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-blue-600 hover:bg-blue-700"
             }`}
           >
-            {isApplied ? "Already Applied" : "Apply Now"}
+            {isJobClosed ? "Job Closed" : isApplied ? "Already Applied" : "Apply Now"}
           </Button>
 
           <div className="text-sm text-gray-600 space-y-1 text-right">
@@ -139,6 +140,20 @@ const JobDescription = () => {
               <Users size={14} />
               Applicants: <span className="font-medium">{singleJob?.applications?.length}+</span>
             </p>
+
+            {singleJob?.applicationDeadline && (
+              <p className="flex items-center gap-2 justify-end">
+                <CalendarDays size={14} />
+                Deadline: <span className="font-medium">{new Date(singleJob.applicationDeadline).toLocaleDateString('en-GB').replace(/\//g, '-')}</span>
+              </p>
+            )}
+
+            {isJobClosed && (
+              <p className="flex items-center gap-2 justify-end text-rose-600 font-semibold">
+                <CalendarDays size={14} />
+                This job is closed
+              </p>
+            )}
 
           </div>
         </div>

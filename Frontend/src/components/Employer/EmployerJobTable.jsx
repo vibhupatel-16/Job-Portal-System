@@ -5,6 +5,26 @@ import { Edit2, Eye, MoreHorizontal, Briefcase } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
+const getStatusStyles = (status) => {
+  switch (status) {
+    case 'approved':
+      return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    case 'rejected':
+      return 'bg-rose-100 text-rose-700 border-rose-200';
+    case 'closed':
+      return 'bg-slate-100 text-slate-700 border-slate-200';
+    default:
+      return 'bg-amber-100 text-amber-700 border-amber-200';
+  }
+};
+
+const getStatusLabel = (status) => {
+  if (status === 'approved') return 'Approved';
+  if (status === 'rejected') return 'Rejected';
+  if (status === 'closed') return 'Closed';
+  return 'Pending';
+};
+
 const EmployerJobTable = () => {
   const { allEmployerJobs, searchJobByText } = useSelector((store) => store.job);
   const [filterJobs, setFilterJobs] = useState(allEmployerJobs);
@@ -36,6 +56,7 @@ const EmployerJobTable = () => {
           <TableRow className="border-slate-100 hover:bg-transparent">
             <TableHead className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Company</TableHead>
             <TableHead className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Role</TableHead>
+            <TableHead className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Status</TableHead>
             <TableHead className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Created</TableHead>
             <TableHead className="text-right text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Action</TableHead>
           </TableRow>
@@ -44,7 +65,7 @@ const EmployerJobTable = () => {
         <TableBody>
           {filterJobs?.length === 0 ? (
             <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={4} className="py-16 text-center">
+              <TableCell colSpan={5} className="py-16 text-center">
                 <div className="flex flex-col items-center gap-3 text-slate-400">
                   <div className="rounded-full bg-slate-100 p-4">
                     <Briefcase size={24} />
@@ -65,6 +86,14 @@ const EmployerJobTable = () => {
 
                 <TableCell>
                   <span className="font-semibold text-slate-700">{job?.title}</span>
+                </TableCell>
+
+                <TableCell>
+                  <span
+                    className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${getStatusStyles(job?.status)}`}
+                  >
+                    {getStatusLabel(job?.status)}
+                  </span>
                 </TableCell>
 
                 <TableCell className="font-medium text-slate-600">

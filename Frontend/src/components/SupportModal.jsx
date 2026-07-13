@@ -38,7 +38,8 @@ const SupportModal = ({ isOpen, onClose }) => {
                 name: user?.fullname || "Guest User",
                 email: user?.email,
                 message: message.trim(),
-                category: category
+                category: category,
+                role: user?.role
             });
 
             if (res.data.success) {

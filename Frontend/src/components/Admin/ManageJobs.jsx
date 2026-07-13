@@ -126,6 +126,8 @@ const ManageJobs = () => {
                             ? "bg-emerald-50 text-emerald-700"
                             : job.status === "rejected"
                               ? "bg-rose-50 text-rose-700"
+                              : job.status === "closed"
+                                ? "bg-slate-100 text-slate-700"
                               : "bg-amber-50 text-amber-700"
                         }`}>
                           {job.status || "pending"}

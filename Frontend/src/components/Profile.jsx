@@ -15,6 +15,11 @@ const Profile = () => {
   useGetAppliedJobs();
   const [open, setOpen] = useState(false);
   const { user } = useSelector(store => store.auth);
+  const normalizedSkills = Array.isArray(user?.profile?.skills)
+    ? user.profile.skills
+    : typeof user?.profile?.skills === "string"
+      ? user.profile.skills.split(",").map((skill) => skill.trim()).filter(Boolean)
+      : [];
 
   return (
     <div className='min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-blue-50 py-10 relative overflow-hidden'>
@@ -87,8 +92,8 @@ const Profile = () => {
              Skills Matrix
           </h1>
           <div className='flex flex-wrap items-center gap-2'>
-            {user?.profile?.skills?.length > 0 ? (
-              user?.profile?.skills.map((skill, index) => (
+            {normalizedSkills.length > 0 ? (
+              normalizedSkills.map((skill, index) => (
                 <Badge
                   key={index}
                   className='px-4 py-2 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100/50 font-bold rounded-xl transition-colors'

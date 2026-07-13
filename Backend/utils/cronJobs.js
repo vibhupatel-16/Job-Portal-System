@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import { Interview } from "../models/interview.model.js";
+import { Job } from "../models/job.model.js";
 import sendEmail from "../utils/sendEmail.js";
 import { Notification } from "../models/notification.model.js";
 
@@ -132,10 +133,22 @@ const finalizeInterviewIfDue = async (interview, now) => {
   await interview.save();
 };
 
+const closeExpiredJobs = async (now) => {
+  await Job.updateMany(
+    {
+      status: "approved",
+      applicationDeadline: { $ne: null, $lte: now },
+    },
+    { $set: { status: "closed" } },
+  );
+};
+
 // Every minute: reminders + interview auto-finalization.
 cron.schedule("* * * * *", async () => {
   try {
     const now = new Date();
+
+    await closeExpiredJobs(now);
 
     const interviews = await Interview.find({
       status: { $in: ["scheduled", "reschedule_requested"] },

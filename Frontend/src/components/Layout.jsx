@@ -19,6 +19,11 @@ const Layout = () => {
     hideFooterPaths.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith("/reset-password/");
 
+  const isDashboardRoute =
+    pathname.startsWith("/jobseeker") ||
+    pathname.startsWith("/employer") ||
+    pathname.startsWith("/admin");
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
@@ -30,7 +35,11 @@ const Layout = () => {
       <div className="min-h-[calc(100vh-4rem)]">
         <Outlet />  
       </div>
-      {!shouldHideFooter && <Footer />}
+      {!shouldHideFooter && (
+        <div className={isDashboardRoute ? "lg:ml-64 lg:max-w-[calc(100%-16rem)]" : ""}>
+          <Footer />
+        </div>
+      )}
     </>
   );
 };

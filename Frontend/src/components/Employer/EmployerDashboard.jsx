@@ -109,6 +109,27 @@ const EmployerDashboard = () => {
   ];
 const [selectedIds, setSelectedIds] = useState([]); 
 const COLORS = ['#94a3b8', '#9333ea', '#16a34a', '#dc2626']; // Pending, Shortlisted, Accepted, Rejected
+
+  const getJobStatusStyles = (status) => {
+    switch (status) {
+      case 'approved':
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'rejected':
+        return 'bg-rose-100 text-rose-700 border-rose-200';
+      case 'closed':
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+      default:
+        return 'bg-amber-100 text-amber-700 border-amber-200';
+    }
+  };
+
+  const getJobStatusLabel = (status) => {
+    if (status === 'approved') return 'Approved';
+    if (status === 'rejected') return 'Rejected';
+    if (status === 'closed') return 'Closed';
+    return 'Pending';
+  };
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -462,6 +483,9 @@ const interviews = applications.filter(app => app.status === 'accepted').length;
                 onClick={() => navigate('/employer/jobs')}
                 className="p-5 border border-gray-100 rounded-3xl hover:border-purple-300 cursor-pointer bg-gray-50/50 hover:bg-white transition-all hover:shadow-md group"
               >
+                <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${getJobStatusStyles(job.status)}`}>
+                  {getJobStatusLabel(job.status)}
+                </span>
                 <h3 className="font-bold truncate text-gray-800 group-hover:text-purple-600 transition-colors">{job.title}</h3>
                 <p className="text-xs text-blue-500 font-bold mt-1 uppercase tracking-tighter">{job.company?.name}</p>
                 <div className="flex justify-between items-center mt-4">

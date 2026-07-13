@@ -70,7 +70,7 @@ export function DashboardLayout({ sidebarItems, children, title }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-16 left-0 z-50 h-[calc(100vh-4rem)] w-64 flex-shrink-0 border-r transform transition-transform duration-200 ease-out lg:translate-x-0",
+          "fixed top-16 left-0 z-50 h-[calc(100vh-4rem)] w-64 flex-shrink-0 border-r transform transition-transform duration-200 ease-out lg:translate-x-0",
           "border-gray-200 bg-white text-gray-900",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -160,7 +160,7 @@ export function DashboardLayout({ sidebarItems, children, title }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 lg:ml-64">
         <div className="lg:hidden flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-white">
           <button
             type="button"

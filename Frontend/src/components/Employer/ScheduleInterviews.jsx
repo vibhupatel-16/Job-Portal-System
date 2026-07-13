@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, User, Briefcase, MapPin, Trash2, CheckCircle2, Timer, RefreshCw } from "lucide-react";
+import { Calendar, Clock, Video, User, Briefcase, MapPin, Trash2, MessageSquareText, Timer, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import FeedbackModal from './FeedbackModel';
 import axiosInstance from '@/utils/axiosInstance';
@@ -223,28 +223,18 @@ const ScheduledInterviews = () => {
 
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-2">
-                      {(() => {
-                        const now = new Date().getTime();
-                        const parts = item.date.split('-');
-                        const isoDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : item.date;
-                        const interviewTime = new Date(`${isoDate} ${item.time}`).getTime();
-
-                        if (item.status === 'completed' || now > interviewTime) {
-                          return (
-                            <button
-                              onClick={() => {
-                                setSelectedInterviewId(item._id);
-                                setOpenFeedback(true);
-                              }}
-                              className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-emerald-700 transition hover:bg-emerald-100"
-                            >
-                              <CheckCircle2 size={14} />
-                              Feedback
-                            </button>
-                          );
-                        }
-                        return null;
-                      })()}
+                      {item.status === "completed" && (
+                        <button
+                          onClick={() => {
+                            setSelectedInterviewId(item._id);
+                            setOpenFeedback(true);
+                          }}
+                          className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-white shadow-sm transition hover:from-emerald-600 hover:to-teal-700 hover:shadow-md"
+                        >
+                          <MessageSquareText size={14} />
+                          Feedback
+                        </button>
+                      )}
 
                       {item.status === 'reschedule_requested' && (
                         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-left">

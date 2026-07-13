@@ -40,7 +40,7 @@ const Testimonials = () => {
     fetchTestimonials();
   }, []);
   return (
-    <section className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white py-16 lg:py-20">
+    <section className="bg-gradient-to-br  bg-[#3e557e] text-white py-16 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {loading ? (

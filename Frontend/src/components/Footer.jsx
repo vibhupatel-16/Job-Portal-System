@@ -9,7 +9,6 @@ import {
 import SupportModal from "./SupportModal";
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
   const { user } = useSelector(store => store.auth);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
@@ -36,8 +35,8 @@ const Footer = () => {
     // Default to Jobseeker (student)
     return [
       { label: "Browse Jobs", path: "/jobs" },
-      {label: "View Applications", path: "/admin/applications"},
-      { label: "Interviews", path: "/admin/interview-list" },
+      {label: "View Applications", path: "/profile"},
+      { label: "Interviews", path: "/jobseeker/interviews" },
       { label: "Support & FAQ", path: "/faq" },
     ];
   };
@@ -45,11 +44,7 @@ const Footer = () => {
   const dynamicLinks = getDynamicLinks();
 
   return (
-    <footer className="bg-gradient-to-b from-[#1a1f2e] via-[#232b3a] to-[#1a1f2e] text-gray-400 py-16 mt-20 font-sans selection:bg-orange-500 selection:text-white relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/8 blur-[120px] rounded-full"></div>
-      <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-purple-600/8 blur-[120px] rounded-full"></div>
-      
+    <footer className="bg-[#132138] text-gray-400 py-16 mt-20 font-sans selection:bg-orange-500 selection:text-white">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         {/* Main Content Grid */}
@@ -58,11 +53,14 @@ const Footer = () => {
           {/* Column 1: Brand & Mission */}
           <div className="lg:col-span-4 space-y-6">
             <div>
-              <h2 className="text-3xl font-black tracking-tight text-white leading-snug">
-                <span className="text-[#7C3AED]">Nex</span>
-                <span className="bg-gradient-to-r from-[#FDE68A] via-[#FB923C] to-[#F97316] bg-clip-text text-transparent">Forge</span>
-              </h2>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mt-1">NEXT-GEN HIRING PLATFORM</p>
+              <Link to="/" className="inline-flex items-center rounded-2xl bg-white/95 px-5 py-2 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.45)] ring-1 ring-white/30">
+                <img 
+                  src="/logo.png" 
+                  alt="NexForge Logo" 
+                  className="block h-14 sm:h-16 md:h-18 lg:h-20 w-auto max-w-[280px] object-contain"
+                />
+              </Link>
+              <p className="text-xs font-bold uppercase tracking-widest text-white mt-3">NEXT-GEN HIRING PLATFORM</p>
             </div>
 
             <p className="text-sm leading-relaxed text-gray-300 font-medium max-w-sm">
@@ -116,7 +114,7 @@ const Footer = () => {
                   <FaMapMarkerAlt size={16}/>
                 </div>
                 <div className="pt-1">
-                  <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Location</p>
+                  <p className="text-xs text-white font-semibold uppercase tracking-wide mb-1">Location</p>
                   <a 
                     href="https://www.google.com/maps/search/?api=1&query=Aries+Galleria+Vasna+Main+Road+Vadodara" 
                     target="_blank" 
@@ -137,7 +135,7 @@ const Footer = () => {
                   <FaEnvelope size={16}/>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Email</p>
+                  <p className="text-xs text-white font-semibold uppercase tracking-wide mb-1">Email</p>
                   <a 
                     href="mailto:info@nexforge.tech" 
                     className="text-gray-400 hover:text-orange-400 transition-colors text-xs"
@@ -153,7 +151,7 @@ const Footer = () => {
         <FaPhoneAlt size={14}/>
       </div>
       <div>
-        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Call Us</p>
+        <p className="text-xs text-white font-semibold uppercase tracking-wide mb-1">Call Us</p>
         <a 
           href="tel:+919876543210" 
           className="text-gray-400 hover:text-orange-400 transition-colors text-xs font-medium"
@@ -173,14 +171,9 @@ const Footer = () => {
         <div className="pt-12 border-t border-gray-900/50 flex flex-col md:flex-row justify-between items-center gap-6">
           
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 bg-gray-900/40 px-4 py-2 rounded-full border border-gray-800/40 hover:border-green-500/30 transition-all duration-300">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">System Live</span>
-            </div>
-            <p className="text-xs font-semibold text-gray-600">© {currentYear} Nexforge. All Rights Reserved.</p>
+            <a href="https://nexforge.tech" target="_blank" rel="noopener noreferrer" className="text-m font-semibold text-gray-300 hover:text-gray-100 transition-colors">
+              https://nexforge.tech
+            </a>
           </div>
 
         <div className="flex gap-6">

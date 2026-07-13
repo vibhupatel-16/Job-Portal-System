@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import axiosInstance from "@/utils/axiosInstance";
 
 const usePaginatedJobs = (page = 1, limit = 5) => {
   const { searchedQuery, filters } = useSelector((state) => state.job);
+  const location = useLocation();
+  const isJobsPage = location.pathname === "/jobs";
+  const keyword = isJobsPage ? "" : searchedQuery || "";
 
   const [jobs, setJobs] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -16,7 +20,7 @@ const usePaginatedJobs = (page = 1, limit = 5) => {
 
         const response = await axiosInstance.get(`/job/get`, {
           params: {
-            keyword: searchedQuery || "",
+            keyword,
             location: filters.location || "",
             category: filters.category || "",
             jobType: filters.jobType || "",
@@ -39,7 +43,7 @@ const usePaginatedJobs = (page = 1, limit = 5) => {
     };
 
     fetchJobs();
-  }, [page, limit, searchedQuery, filters]);
+  }, [page, limit, keyword, filters]);
 
   return { jobs, totalPages, loading };
 };

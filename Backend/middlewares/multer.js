@@ -6,7 +6,7 @@ import cloudinary from "../utils/cloudinary.js";
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
-    const isCompanyRoute = req.originalUrl.includes("company");
+    const isCompanyRoute = req.originalUrl.includes("compan");
     const isProfileUpdate = req.originalUrl.includes("profile/update");
 
     return {
@@ -20,43 +20,39 @@ const storage = new CloudinaryStorage({
 
       resource_type: isProfileUpdate ? "raw" : "auto",
 
-      public_id: `${Date.now()}-${file.originalname.split(".")[0]}`
+      public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
     };
-  }
+  },
 });
 
 export const upload = multer({
   storage,
-fileFilter: (req, file, cb) => {
-  const isCompanyRoute = req.originalUrl.includes("company");
-  const isRegisterRoute = req.originalUrl.includes("register"); // Signup check
+  fileFilter: (req, file, cb) => {
+    const isCompanyRoute = req.originalUrl.includes("compan");
+    const isRegisterRoute = req.originalUrl.includes("register"); // Signup check
 
-  if (file.fieldname === "file") {
-    
-    if (isCompanyRoute || isRegisterRoute) {
+    if (file.fieldname === "file") {
+      if (isCompanyRoute || isRegisterRoute) {
+        if (!file.mimetype.startsWith("image/")) {
+          return cb(new Error("Only images (jpg, png) allowed"), false);
+        }
+      } else {
+        if (file.mimetype !== "application/pdf") {
+          return cb(new Error("Only PDF resume allowed"), false);
+        }
+      }
+    }
+
+    if (file.fieldname === "profilePhoto") {
       if (!file.mimetype.startsWith("image/")) {
-        return cb(new Error("Only images (jpg, png) allowed"), false);
-      }
-    } 
-    
-    else {
-      if (file.mimetype !== "application/pdf") {
-        return cb(new Error("Only PDF resume allowed"), false);
+        return cb(new Error("Only image allowed for profile photo"), false);
       }
     }
-  }
-  
-  
-  if (file.fieldname === "profilePhoto") {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Only image allowed for profile photo"), false);
-    }
-  }
 
-  cb(null, true);
-}
+    cb(null, true);
+  },
 }).fields([
   { name: "file", maxCount: 1 },
   { name: "profilePhoto", maxCount: 1 },
-  { name: "logo", maxCount: 1 }
+  { name: "logo", maxCount: 1 },
 ]);

@@ -49,6 +49,7 @@ import ScheduledInterviews from "./components/Employer/ScheduleInterviews";
 import AdminInterviewList from "./components/Admin/AdminInterviewList";
 import JobseekerInterviews from "./components/JobseekerInterviews";
 import JobSeekerDashboard from "./components/Jobseeker/JobSeekerDashboard";
+import SupportResponses from "./components/Jobseeker/SupportResponses";
 import JobSeekerLayout from "./components/dashboard/JobSeekerLayout";
 import SavedJobs from "./components/SavedJobs";
 import FAQSection from "./components/shared/FAQSection";
@@ -100,6 +101,7 @@ const appRouter = createBrowserRouter([
     { path: "saved-jobs", element: <SavedJobs /> },
     { path: "interviews", element: <JobseekerInterviews /> },
     { path: "faq", element: <FAQSection /> },
+    { path: "support-responses", element: <SupportResponses /> },
 
         ]
       },
@@ -122,6 +124,7 @@ const appRouter = createBrowserRouter([
           { path: "jobs/:id", element: <JobSetup /> },
           { path: "interview-list", element: <ScheduledInterviews /> },
           { path: "faq", element: <FAQSection /> },
+          { path: "support-responses", element: <SupportResponses /> },
         ],
       },
       { path: "/privacy-policy", element: <PrivacyPolicy /> },

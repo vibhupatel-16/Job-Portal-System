@@ -11,6 +11,7 @@ const jobSeekerSidebarItems = [
   { label: "Saved Jobs", path: "/saved-jobs", icon: "Bookmark" },
   { label: "My Interviews", path: "/jobseeker/interviews", icon: "Calendar" },
   { label: "FAQ & Support", path: "/jobseeker/faq", icon: "HelpCircle" },
+  { label: "View Support Response", path: "/jobseeker/support-responses", icon: "MessageSquare" },
 ];
 
 export function JobSeekerLayout() {

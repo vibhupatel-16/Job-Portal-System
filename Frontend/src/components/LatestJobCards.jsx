@@ -126,10 +126,21 @@ function LatestJobCards({ job }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mt-auto pb-4">
-        <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.position} Positions</Badge>
-        <Badge className="bg-orange-50 text-orange-600 border border-orange-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.jobType}</Badge>
-        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md">{job?.salary} LPA</Badge>
-      </div>
+  
+  <Badge className="bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md hover:bg-indigo-100 hover:text-indigo-800 transition-colors">
+    {job?.position} Positions
+  </Badge>
+
+  
+  <Badge className="bg-orange-50 text-orange-600 border border-orange-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md hover:bg-orange-100 hover:text-orange-700 transition-colors">
+    {job?.jobType}
+  </Badge>
+
+  
+  <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm font-bold text-[10px] px-2 py-1 rounded-md hover:bg-emerald-100 hover:text-emerald-800 transition-colors">
+    {job?.salary} LPA
+  </Badge>
+</div>
     </motion.div>
   );
 }

@@ -10,7 +10,7 @@ import {
 } from '../ui/select';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Briefcase, Building2, MapPin, FileText } from 'lucide-react';
+import { Loader2, Briefcase, Building2, MapPin, FileText, CalendarDays } from 'lucide-react';
 import RichTextEditor from '../RichTextEditor';
 import axiosInstance from '@/utils/axiosInstance';
 import useGetAllCompanies from '../hooks/useGetAllCompanies';
@@ -21,6 +21,7 @@ const PostJob = () => {
     description: "",
     requirements: "",
     salary: "",
+    applicationDeadline: "",
     location: "",
     jobType: "",
     experience: "",
@@ -201,6 +202,25 @@ const PostJob = () => {
                 placeholder="3 LPA - 10 LPA"
                 className="mt-1 h-11 rounded-lg"
               />
+            </div>
+          </div>
+
+          {/* DEADLINE CARD */}
+          <div className="bg-[#FAFAFA] p-6 rounded-xl border shadow-sm">
+            <h2 className="font-semibold text-lg flex items-center gap-2 mb-4">
+              <CalendarDays size={18} className="text-purple-600" /> Application Deadline
+            </h2>
+
+            <div className="w-full md:w-1/2">
+              <Label>Deadline (Optional)</Label>
+              <Input
+                type="date"
+                name="applicationDeadline"
+                value={input.applicationDeadline}
+                onChange={changeEventHandler}
+                className="mt-1 h-11 rounded-lg"
+              />
+              <p className="mt-2 text-xs text-gray-500">If set, the job will auto-close after this date.</p>
             </div>
           </div>
 

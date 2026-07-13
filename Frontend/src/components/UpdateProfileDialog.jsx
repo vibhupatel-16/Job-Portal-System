@@ -13,18 +13,55 @@ const UpdateProfileDialog = ({open, setOpen}) => {
     const [loading, setLoading] = useState(false);
     const {user} = useSelector(store=> store.auth);
 
+const normalizeSkills = (skills) => {
+  if (Array.isArray(skills)) {
+    return skills.map((skill) => skill?.toString().trim()).filter(Boolean);
+  }
+  if (typeof skills === "string") {
+    return skills
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const initialSkills = normalizeSkills(user?.profile?.skills);
+
 const [input, setInput] = useState({
   fullname: user?.fullname || "",
   email: user?.email || "",
   phoneNumber: user?.phoneNumber || "",
   bio: user?.profile?.bio || "",
-  skills: user?.profile?.skills?.join(", ") || "",
+  skills: initialSkills.join(", "),
   file: null
 });
+const [skillInput, setSkillInput] = useState("");
+const [skillsList, setSkillsList] = useState(initialSkills);
+const [phoneError, setPhoneError] = useState("");
 
     const dispatch = useDispatch();
 
     const changeEventHandler = (e)=> {
+        if (e.target.name === "phoneNumber") {
+          const rawValue = e.target.value;
+          const digitsOnly = rawValue.replace(/\D/g, "");
+          const limitedDigits = digitsOnly.slice(0, 10);
+
+          if (rawValue !== digitsOnly) {
+            setPhoneError("Only numbers are allowed.");
+          } else if (digitsOnly.length > 10) {
+            setPhoneError("Phone number cannot be more than 10 digits.");
+          } else if (limitedDigits.length > 0 && limitedDigits.length < 10) {
+            setPhoneError("Phone number must be exactly 10 digits.");
+          } else {
+            setPhoneError("");
+          }
+
+          setInput({ ...input, phoneNumber: limitedDigits });
+          return;
+        }
+
         setInput({...input, [e.target.name]: e.target.value});
     }
 
@@ -33,8 +70,42 @@ const [input, setInput] = useState({
         setInput({...input, file})
     }
 
+    const addSkill = () => {
+      const nextSkill = skillInput.trim();
+      if (!nextSkill) return;
+      if (skillsList.some((skill) => skill.toLowerCase() === nextSkill.toLowerCase())) {
+        setSkillInput("");
+        return;
+      }
+      const updatedSkills = [...skillsList, nextSkill];
+      setSkillsList(updatedSkills);
+      setInput((prev) => ({ ...prev, skills: updatedSkills.join(", ") }));
+      setSkillInput("");
+    };
+
+    const removeSkill = (skillToRemove) => {
+      const updatedSkills = skillsList.filter((skill) => skill !== skillToRemove);
+      setSkillsList(updatedSkills);
+      setInput((prev) => ({ ...prev, skills: updatedSkills.join(", ") }));
+    };
+
+    const skillKeyDownHandler = (e) => {
+      if (e.key === "Enter" || e.key === ",") {
+        e.preventDefault();
+        addSkill();
+      }
+    };
+
     const submitHandler = async (e)=>{
         e.preventDefault();
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(input.phoneNumber.trim())) {
+          return toast.error("Phone number must be exactly 10 digits.");
+        }
+        if (phoneError) {
+          return toast.error(phoneError);
+        }
+
         const formData = new FormData();
         formData.append("fullname", input.fullname);
         formData.append("email", input.email);
@@ -77,7 +148,7 @@ setOpen(false);
     }
   return (
     <div>
-      <Dialog open={open}>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[425px]" onInteractOutside={()=> setOpen(false)}>
             <DialogTitle>Update Profile</DialogTitle>
   <DialogDescription>Update your profile details below.</DialogDescription>
@@ -108,26 +179,49 @@ setOpen(false);
                     name = "phoneNumber"
                     value = {input.phoneNumber}
                     onChange = {changeEventHandler}
+                    inputMode="numeric"
+                    maxLength={10}
                     className= "col-span-3"/>
+                    {phoneError && (
+                      <p className="col-span-4 text-right text-xs text-red-600 font-medium">{phoneError}</p>
+                    )}
                  </div>
 
                  <div className='grid grid-cols-4 items-center gap-4'>
                     <Label htmlFor="bio" className="text-right">Bio</Label>
-                    <Input id="bio"
+                    <textarea id="bio"
                     name = "bio"
                     value = {input.bio}
                     onChange = {changeEventHandler}
-                    className= "col-span-3"/>
+                    rows={3}
+                    className= "col-span-3 min-h-20 rounded-md border border-input bg-background px-3 py-2 text-sm"/>
                  </div>
 
                  <div className='grid grid-cols-4 items-center gap-4'>
                     <Label htmlFor="skills" className="text-right">Skills</Label>
                     <Input id="skills"
-                    name = "skills"
-                    value = {input.skills}
-                    onChange = {changeEventHandler}
+                    name="skillInput"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyDown={skillKeyDownHandler}
+                    placeholder="Type a skill and press Enter"
                     className= "col-span-3"/>
                  </div>
+                 {skillsList.length > 0 && (
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <span className="text-right text-sm text-muted-foreground">Added</span>
+                    <div className="col-span-3 flex flex-wrap gap-2">
+                      {skillsList.map((skill) => (
+                        <span key={skill} className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700">
+                          {skill}
+                          <button type="button" onClick={() => removeSkill(skill)} className="text-indigo-700 hover:text-indigo-900">
+                            x
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                 )}
                    
                    <div className='grid grid-cols-4 items-center gap-4'>
                     <Label htmlFor="file" className="text-right">Resume</Label>

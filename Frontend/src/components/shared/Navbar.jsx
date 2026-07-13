@@ -3,18 +3,18 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Avatar, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { LogOut, User2, Briefcase, Bell, Calendar, Bookmark, ChevronDown, ChevronLeft, ChevronRight, HelpCircle, PlusCircle, Building2, ListChecks, Menu, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import { logout } from '@/redux/authSlice';
 import { socket } from '@/App';
 import axiosInstance from '@/utils/axiosInstance';
-import { motion } from 'framer-motion';
 
 function Navbar() {
     const user = useSelector((store) => store.auth.user);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const [notifications, setNotifications] = useState([]);
@@ -75,6 +75,11 @@ function Navbar() {
         return link;
     };
 
+    const getSupportNotificationLink = () => {
+        if (user?.role === "employer") return "/employer/support-responses";
+        return "/jobseeker/support-responses";
+    };
+
     const handleNotificationClick = async (notification) => {
         try {
             // Mark this specific notification as read
@@ -87,12 +92,16 @@ function Navbar() {
                 // Navigate to the appropriate page based on notification link
                 const targetLink = normalizeInterviewNotificationLink(notification.link);
                 if (targetLink) {
-                    navigate(targetLink);
+                    if (notification.type === "SUPPORT" && targetLink === "/contact-support") {
+                        navigate(getSupportNotificationLink());
+                    } else {
+                        navigate(targetLink);
+                    }
                 } else {
                     // Fallback based on notification type
                     switch (notification.type) {
                         case 'SUPPORT':
-                            navigate('/contact-support');
+                            navigate(getSupportNotificationLink());
                             break;
                         case 'INTERVIEW_SCHEDULED':
                         case 'INTERVIEW_CANCELLED':
@@ -113,9 +122,13 @@ function Navbar() {
             console.log(error);
             // Still navigate even if marking as read fails
             if (notification.link) {
-                navigate(notification.link);
+                if (notification.type === "SUPPORT" && notification.link === "/contact-support") {
+                    navigate(getSupportNotificationLink());
+                } else {
+                    navigate(notification.link);
+                }
             } else {
-                navigate('/contact-support');
+                navigate(notification.type === "SUPPORT" ? getSupportNotificationLink() : '/contact-support');
             }
         }
     };
@@ -159,40 +172,22 @@ function Navbar() {
         }
     };
 
+    const isDashboardRoute =
+        location.pathname.startsWith('/admin') ||
+        location.pathname.startsWith('/employer') ||
+        location.pathname.startsWith('/jobseeker');
+
     return (
         <div className="bg-white shadow-sm sticky top-0 z-50">
-            <div className="flex justify-between items-center mx-auto max-w-7xl h-16 px-4">
+            <div className={`flex justify-between items-center mx-auto max-w-7xl h-16 px-4 ${isDashboardRoute ? 'lg:ml-64 lg:max-w-[calc(100%-16rem)]' : ''}`}>
                 {/* Navigation arrows + Logo */}
                 <div className="flex items-center gap-3">
-                    <div className="hidden sm:flex items-center gap-1">
-                        <motion.button
-                            onClick={() => navigate(-1)}
-                            className="p-2 rounded-full hover:bg-gray-100 transition shadow-lg hover:shadow-indigo-400/50 hover:shadow-2xl"
-                            title="Go Back"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <motion.div
-                                animate={{ 
-                                    boxShadow: [
-                                        `0 0 0 0 rgba(99, 102, 241, 0.7)`,
-                                        `0 0 0 10px rgba(99, 102, 241, 0)`,
-                                        `0 0 0 0 rgba(99, 102, 241, 0)`,
-                                    ]
-                                }}
-                                transition={{ duration: 1.5, repeat: Infinity }}
-                                className="inline-block"
-                            >
-                                <ChevronLeft size={28} className="text-indigo-600 font-bold" />
-                            </motion.div>
-                        </motion.button>
-                    
-                    </div>
+               
                     <Link to="/" className="flex items-center gap-2">
                         <img 
-                            src="../logo.png" 
+                            src="/logo.png" 
                             alt="NexForge Logo" 
-                            className="h-10 sm:h-12 w-auto object-contain" 
+                            className="h-14 sm:h-16 md:h-20 w-auto object-contain" 
                         />
                     </Link>
                 </div>
@@ -206,7 +201,6 @@ function Navbar() {
                         {user && user.role === 'admin' ? (
                             <>
                                 <li><Link to="/admin/panel" className="hover:text-[#6A38C2] transition font-medium">Dashboard</Link></li>
-                                <li><Link to="/browse" className="hover:text-[#6A38C2] transition font-medium">Browse</Link></li>
                                 <li><Link to="/admin/interview-list" className="hover:text-[#6A38C2] transition font-medium">Interviews</Link></li>
                                 
                             </>
@@ -263,8 +257,9 @@ function Navbar() {
                                         </Link>
                                     </div>
                                 </li>
-                                <li><Link to="/jobseeker/dashboard" className="hover:text-[#6A38C2] transition font-medium">Dashboard</Link></li>
-                                <li><Link to="/browse" className="hover:text-[#6A38C2] transition font-medium">Browse</Link></li>
+                                {user && user.role === "jobseeker" && (
+                                    <li><Link to="/jobseeker/dashboard" className="hover:text-[#6A38C2] transition font-medium">Dashboard</Link></li>
+                                )}
                                 {/* {user && <li><Link to="/jobseeker/interviews" className="hover:text-[#6A38C2] transition font-medium">My Schedule</Link></li>} */}
                             </>
                         )}
@@ -468,9 +463,8 @@ function Navbar() {
                             <>
                                 <Link to="/jobs" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">All Jobs</Link>
                                 <Link to="/saved-jobs" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Saved Jobs</Link>
-                                {user && <Link to="/jobseeker/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Dashboard</Link>}
-                                <Link to="/browse" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Browse</Link>
-                                {user && <Link to="/jobseeker/interviews" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">My Interviews</Link>}
+                                {user && user.role === "jobseeker" && <Link to="/jobseeker/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">Dashboard</Link>}
+                                {user && user.role === "jobseeker" && <Link to="/jobseeker/interviews" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">My Interviews</Link>}
                                 <Link to="/faq" onClick={() => setIsMobileMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-100 rounded-lg transition font-medium text-sm">FAQ</Link>
                             </>
                         )}
